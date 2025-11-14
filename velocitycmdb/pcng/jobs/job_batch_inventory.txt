@@ -1,0 +1,8 @@
+# inventory Capture Jobs (All Vendors)
+# Generated: 2025-10-16T06:37:32.048955
+# Jobs: 4
+
+job_344_arista_inventory.json
+job_345_cisco-ios_inventory.json
+job_346_cisco-nxos_inventory.json
+job_347_juniper_inventory.json

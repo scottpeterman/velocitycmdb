@@ -1,0 +1,463 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit Note' if note else 'Create Note' }} - Notes{% endblock %}
+
+{% block head_extra %}
+<script src="{{ url_for('static', filename='tinymce/js/tinymce/tinymce.min.js') }}"></script>
+<style>
+    .form-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    .form-header {
+        margin-bottom: 32px;
+    }
+
+    .form-header h1 {
+        font: var(--md-typescale-headline-large);
+        margin: 0 0 8px 0;
+    }
+
+    .form-group {
+        margin-bottom: 24px;
+    }
+
+    .form-label {
+        display: block;
+        font: var(--md-typescale-title-medium);
+        margin-bottom: 8px;
+        color: var(--md-on-surface);
+    }
+
+    .form-label.required::after {
+        content: ' *';
+        color: var(--md-error);
+    }
+
+    .form-input,
+    .form-select {
+        width: 100%;
+        padding: 12px 16px;
+        font: var(--md-typescale-body-large);
+        background: var(--md-surface-container);
+        border: 1px solid var(--md-outline);
+        border-radius: var(--md-shape-corner-medium);
+        color: var(--md-on-surface);
+        box-sizing: border-box;
+    }
+
+    .form-input:focus,
+    .form-select:focus {
+        outline: none;
+        border-color: var(--md-primary);
+        box-shadow: 0 0 0 3px rgba(103, 80, 164, 0.1);
+    }
+
+    .form-hint {
+        font: var(--md-typescale-body-small);
+        color: var(--md-on-surface-variant);
+        margin-top: 4px;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid var(--md-outline-variant);
+    }
+
+    .md-button {
+        padding: 10px 24px;
+        border-radius: 20px;
+        border: none;
+        cursor: pointer;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font: var(--md-typescale-label-large);
+    }
+
+    .md-button-filled {
+        background: var(--md-primary);
+        color: var(--md-on-primary);
+    }
+
+    .md-button-outlined {
+        background: transparent;
+        border: 1px solid var(--md-outline);
+        color: var(--md-on-surface);
+    }
+
+    .md-button:hover {
+        opacity: 0.9;
+    }
+
+    .association-fields {
+        background: var(--md-surface-container-low);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        padding: 20px;
+        margin-top: 24px;
+    }
+
+    .association-fields h3 {
+        font: var(--md-typescale-title-medium);
+        margin: 0 0 16px 0;
+    }
+
+    /* TinyMCE theme integration */
+    [data-theme="light"] .tox .tox-menubar,
+    [data-theme="light"] .tox .tox-toolbar,
+    [data-theme="light"] .tox .tox-toolbar__overflow,
+    [data-theme="light"] .tox .tox-toolbar__primary {
+        background: #f5f5f5 !important;
+    }
+
+    [data-theme="light"] .tox .tox-edit-area__iframe {
+        background: #ffffff !important;
+    }
+
+    [data-theme="dark"] .tox .tox-menubar,
+    [data-theme="dark"] .tox .tox-toolbar,
+    [data-theme="dark"] .tox .tox-toolbar__overflow,
+    [data-theme="dark"] .tox .tox-toolbar__primary {
+        background: #1e1e1e !important;
+    }
+
+    [data-theme="dark"] .tox .tox-edit-area__iframe {
+        background: #2d2d2d !important;
+    }
+
+    [data-theme="dark"] .tox {
+        border-color: #404040 !important;
+    }
+
+    [data-theme="dark"] .tox .tox-mbtn,
+    [data-theme="dark"] .tox .tox-tbtn {
+        color: #e0e0e0 !important;
+    }
+
+    [data-theme="dark"] .tox .tox-mbtn:hover,
+    [data-theme="dark"] .tox .tox-tbtn:hover {
+        background: #333333 !important;
+    }
+
+    [data-theme="dark"] .tox .tox-statusbar {
+        background: #1e1e1e !important;
+        border-color: #404040 !important;
+        color: #e0e0e0 !important;
+    }
+
+    /* Cyber theme */
+    [data-theme="cyber"] .tox .tox-menubar,
+    [data-theme="cyber"] .tox .tox-toolbar,
+    [data-theme="cyber"] .tox .tox-toolbar__overflow,
+    [data-theme="cyber"] .tox .tox-toolbar__primary {
+        background: #0a0e27 !important;
+        border-color: #00ffff !important;
+    }
+
+    [data-theme="cyber"] .tox .tox-edit-area__iframe {
+        background: #0d1117 !important;
+    }
+
+    [data-theme="cyber"] .tox {
+        border-color: #00ffff !important;
+        box-shadow: 0 0 10px rgba(0, 255, 255, 0.3) !important;
+    }
+
+    [data-theme="cyber"] .tox .tox-mbtn,
+    [data-theme="cyber"] .tox .tox-tbtn {
+        color: #00ffff !important;
+    }
+
+    [data-theme="cyber"] .tox .tox-mbtn:hover,
+    [data-theme="cyber"] .tox .tox-tbtn:hover {
+        background: rgba(0, 255, 255, 0.1) !important;
+    }
+
+    [data-theme="cyber"] .tox .tox-statusbar {
+        background: #0a0e27 !important;
+        border-color: #00ffff !important;
+        color: #00ffff !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-header">
+        <h1>{{ 'Edit Note' if note else 'Create Note' }}</h1>
+    </div>
+
+    <form method="POST" id="noteForm">
+        <div class="form-group">
+            <label for="title" class="form-label required">Title</label>
+            <input
+                type="text"
+                id="title"
+                name="title"
+                class="form-input"
+                placeholder="Enter note title"
+                value="{{ note.title if note else (form_data.title if form_data else '') }}"
+                required
+                autofocus
+            >
+        </div>
+
+        <div class="form-group">
+            <label for="note_type" class="form-label">Type</label>
+            <select id="note_type" name="note_type" class="form-select">
+                {% set current_type = note.note_type if note else (form_data.note_type if form_data else 'general') %}
+                <option value="general" {{ 'selected' if current_type == 'general' }}>General</option>
+                <option value="site" {{ 'selected' if current_type == 'site' }}>Site</option>
+                <option value="device" {{ 'selected' if current_type == 'device' }}>Device</option>
+                <option value="kb" {{ 'selected' if current_type == 'kb' }}>Knowledge Base</option>
+                <option value="incident" {{ 'selected' if current_type == 'incident' }}>Incident</option>
+                <option value="maintenance" {{ 'selected' if current_type == 'maintenance' }}>Maintenance</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="tags" class="form-label">Tags</label>
+            <input
+                type="text"
+                id="tags"
+                name="tags"
+                class="form-input"
+                placeholder="network, cisco, troubleshooting (comma-separated)"
+                value="{{ tags_str if tags_str is defined else (form_data.tags if form_data else '') }}"
+            >
+            <div class="form-hint">Comma-separated tags for categorization</div>
+        </div>
+
+        <div class="form-group">
+            <label for="content" class="form-label required">Content</label>
+            <textarea
+                id="content"
+                name="content"
+                rows="20"
+            >{{ note.content if note else (form_data.content if form_data else '') }}</textarea>
+        </div>
+
+        {% if device_id or site_code %}
+        <div class="association-fields">
+            <h3>
+                <i data-lucide="link" size="18"></i>
+                Associations
+            </h3>
+            {% if device_id %}
+            <input type="hidden" name="device_id" value="{{ device_id }}">
+            <div class="form-hint">Will be linked to Device ID: {{ device_id }}</div>
+            {% endif %}
+            {% if site_code %}
+            <input type="hidden" name="site_code" value="{{ site_code }}">
+            <div class="form-hint">Will be linked to Site: {{ site_code }}</div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="form-actions">
+            <button type="submit" class="md-button md-button-filled">
+                <i data-lucide="save" size="16"></i>
+                {{ 'Update Note' if note else 'Create Note' }}
+            </button>
+            <a href="{{ url_for('notes.index') }}" class="md-button md-button-outlined">
+                <i data-lucide="x" size="16"></i>
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Lucide icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+
+    // Get current theme
+    function getCurrentTheme() {
+        return document.documentElement.getAttribute('data-theme') || 'light';
+    }
+
+    // Get TinyMCE skin based on theme
+    function getTinymceSkin(theme) {
+        if (theme === 'cyber' || theme === 'dark') {
+            return 'oxide-dark';
+        }
+        return 'oxide';
+    }
+
+    // Get content CSS based on theme
+    function getContentCss(theme) {
+        const baseStyles = 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; line-height: 1.6; padding: 20px; }';
+
+        if (theme === 'dark') {
+            return baseStyles + 'body { background: #2d2d2d; color: #e0e0e0; } a { color: #64b5f6; }';
+        } else if (theme === 'cyber') {
+            return baseStyles + 'body { background: #0d1117; color: #00ffff; } a { color: #00ffff; } h1, h2, h3 { color: #00ffff; text-shadow: 0 0 10px rgba(0, 255, 255, 0.5); }';
+        }
+        return baseStyles + 'body { background: #ffffff; color: #000000; }';
+    }
+
+    // Initialize TinyMCE with theme support
+    const currentTheme = getCurrentTheme();
+
+    tinymce.init({
+        selector: '#content',
+        license_key: 'gpl',
+        height: 500,
+        skin: getTinymceSkin(currentTheme),
+        content_css: 'default',
+        menubar: true,
+        plugins: [
+            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+            'insertdatetime', 'media', 'table', 'help', 'wordcount', 'codesample'
+        ],
+        toolbar: 'undo redo | blocks | ' +
+            'bold italic forecolor | alignleft aligncenter ' +
+            'alignright alignjustify | bullist numlist outdent indent | ' +
+            'link image media table codesample | ' +
+            'removeformat code fullscreen help',
+
+        content_style: getContentCss(currentTheme),
+
+        images_upload_handler: function (blobInfo, progress) {
+            return new Promise(function(resolve, reject) {
+                const formData = new FormData();
+                formData.append('file', blobInfo.blob(), blobInfo.filename());
+
+                const noteId = window.location.pathname.match(/\/notes\/(\d+)/)?.[1];
+
+                if (!noteId) {
+                    reject('Please save the note first before uploading images');
+                    return;
+                }
+
+                fetch(`/notes/${noteId}/upload`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        resolve(data.url);
+                    } else {
+                        reject(data.error || 'Upload failed');
+                    }
+                })
+                .catch(error => {
+                    reject('Upload failed: ' + error);
+                });
+            });
+        },
+
+        codesample_languages: [
+            { text: 'Python', value: 'python' },
+            { text: 'JavaScript', value: 'javascript' },
+            { text: 'HTML/XML', value: 'markup' },
+            { text: 'CSS', value: 'css' },
+            { text: 'Shell', value: 'shell' },
+            { text: 'SQL', value: 'sql' },
+            { text: 'JSON', value: 'json' },
+            { text: 'YAML', value: 'yaml' },
+        ],
+
+        link_target_list: [
+            { title: 'None', value: '' },
+            { title: 'New window', value: '_blank' }
+        ],
+
+        setup: function(editor) {
+            editor.ui.registry.addButton('internallink', {
+                icon: 'bookmark',
+                tooltip: 'Insert internal note link',
+                onAction: function() {
+                    editor.windowManager.open({
+                        title: 'Link to Another Note',
+                        body: {
+                            type: 'panel',
+                            items: [{
+                                type: 'input',
+                                name: 'noteTitle',
+                                label: 'Note Title',
+                                placeholder: 'Start typing note title...'
+                            }]
+                        },
+                        buttons: [
+                            {
+                                type: 'cancel',
+                                text: 'Cancel'
+                            },
+                            {
+                                type: 'submit',
+                                text: 'Insert Link',
+                                primary: true
+                            }
+                        ],
+                        onSubmit: function(api) {
+                            const data = api.getData();
+                            editor.insertContent(`[[${data.noteTitle}]]`);
+                            api.close();
+                        }
+                    });
+                }
+            });
+        },
+
+        valid_children: '+body[style]',
+        extended_valid_elements: 'span[*]',
+        protect: [
+            /\[\[.*?\]\]/g
+        ]
+    });
+
+    // Listen for theme changes and reinitialize TinyMCE
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
+                const newTheme = getCurrentTheme();
+
+                // Remove existing TinyMCE instance
+                if (tinymce.get('content')) {
+                    tinymce.get('content').remove();
+                }
+
+                // Reinitialize with new theme
+                setTimeout(() => {
+                    tinymce.init({
+                        selector: '#content',
+                        license_key: 'gpl',
+                        height: 500,
+                        skin: getTinymceSkin(newTheme),
+                        content_css: 'default',
+                        content_style: getContentCss(newTheme),
+                        // ... (copy all other config from above)
+                        menubar: true,
+                        plugins: [
+                            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                            'insertdatetime', 'media', 'table', 'help', 'wordcount', 'codesample'
+                        ],
+                        toolbar: 'undo redo | blocks | bold italic forecolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media table codesample | removeformat code fullscreen help'
+                    });
+                }, 100);
+            }
+        });
+    });
+
+    observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['data-theme']
+    });
+});
+</script>
+{% endblock %}

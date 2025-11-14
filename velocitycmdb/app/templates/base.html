@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>{% block title %}VelocityCMDB{% endblock %}</title>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <!-- Enhanced Material Design 3 CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}">
+    <script>
+        // Immediately Invoked Function Expression (IIFE)
+        // Runs synchronously during HTML parsing
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+
+    <style>
+        /* ===== LAYOUT STRUCTURE ===== */
+        body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        /* Top Navigation Bar */
+        .top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: var(--md-surface-container);
+            border-bottom: 1px solid var(--md-outline-variant);
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            gap: 20px;
+            z-index: 1000;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font: var(--md-typescale-title-medium);
+            color: var(--md-on-surface);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .nav-spacer {
+            flex: 1;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .theme-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .theme-selector {
+            padding: 8px 14px;
+            border-radius: var(--md-shape-corner-small);
+            border: 1px solid var(--md-outline);
+            background: var(--md-surface);
+            color: var(--md-on-surface);
+            font: var(--md-typescale-body-small);
+            min-width: 90px;
+            cursor: pointer;
+        }
+
+        /* User Menu */
+        .user-menu {
+            position: relative;
+        }
+
+        .user-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: var(--md-shape-corner-small);
+            background: transparent;
+            border: 1px solid var(--md-outline-variant);
+            color: var(--md-on-surface);
+            cursor: pointer;
+            font: var(--md-typescale-body-small);
+            transition: border-color 0.2s;
+        }
+
+        .user-button:hover {
+            border-color: var(--md-outline);
+        }
+
+        .user-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: var(--md-surface);
+            border: 1px solid var(--md-outline);
+            border-radius: var(--md-shape-corner-small);
+            min-width: 200px;
+            padding: 8px;
+            display: none;
+            z-index: 1001;
+            box-shadow: var(--md-elevation-2);
+        }
+
+        .user-menu.open .user-dropdown {
+            display: block;
+        }
+
+        .dropdown-header {
+            padding: 8px 12px;
+            font: var(--md-typescale-label-small);
+            color: var(--md-on-surface-variant);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: var(--md-shape-corner-small);
+            color: var(--md-on-surface);
+            text-decoration: none;
+            font: var(--md-typescale-body-small);
+            transition: background-color 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background: var(--md-surface-container);
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: var(--md-outline-variant);
+            margin: 8px 0;
+        }
+
+        /* Main Layout Container */
+        .layout-container {
+            display: flex;
+            margin-top: 64px;
+            min-height: calc(100vh - 64px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--md-surface);
+            border-right: 1px solid var(--md-outline-variant);
+            overflow-y: auto;
+            position: fixed;
+            left: 0;
+            top: 64px;
+            bottom: 0;
+            padding: 16px;
+        }
+
+        /* Navigation Sections */
+        .nav-section {
+            margin-bottom: 24px;
+        }
+
+        .nav-section-title {
+            font: var(--md-typescale-label-small);
+            color: var(--md-on-surface-variant);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 8px 16px;
+            margin-bottom: 4px;
+        }
+
+        .nav-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .nav-item {
+            margin-bottom: 2px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: var(--md-shape-corner-small);
+            color: var(--md-on-surface);
+            text-decoration: none;
+            font: var(--md-typescale-body-medium);
+            transition: background-color 0.2s;
+            position: relative;
+        }
+
+        .nav-link:hover {
+            background: var(--md-surface-container);
+        }
+
+        .nav-link.active {
+            background: var(--md-secondary-container);
+            color: var(--md-on-secondary-container);
+        }
+
+        .nav-link.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 8px;
+            bottom: 8px;
+            width: 3px;
+            background: var(--md-primary);
+            border-radius: 0 2px 2px 0;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 24px;
+            background: var(--md-background);
+            min-height: calc(100vh - 64px);
+        }
+
+        /* Flash Messages */
+        .flash-messages {
+            margin-bottom: 24px;
+        }
+
+        .flash-message {
+            padding: 12px 16px;
+            border-radius: var(--md-shape-corner-small);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font: var(--md-typescale-body-medium);
+            border: 1px solid;
+        }
+
+        .flash-message.error {
+            background: var(--md-error-container);
+            color: var(--md-on-error-container);
+            border-color: var(--md-error);
+        }
+
+        .flash-message.success {
+            background: var(--md-success-container);
+            color: var(--md-on-success-container);
+            border-color: var(--md-success);
+        }
+
+        .flash-message.warning {
+            background: var(--md-warning-container);
+            color: var(--md-on-warning-container);
+            border-color: var(--md-warning);
+        }
+
+        .flash-close {
+            background: none;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: var(--md-shape-corner-small);
+            display: flex;
+            align-items: center;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .flash-close:hover {
+            opacity: 1;
+        }
+
+        /* Mobile Menu Toggle */
+        .mobile-menu-btn {
+            display: none;
+        }
+
+        /* Mobile Styles */
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: flex;
+            }
+
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+                z-index: 999;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .theme-controls select {
+                display: none;
+            }
+
+            .sidebar-backdrop {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 998;
+                display: none;
+            }
+
+            .sidebar-backdrop.show {
+                display: block;
+            }
+        }
+    </style>
+
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+        <button class="mobile-menu-btn md-icon-button" id="mobile-menu-btn" type="button">
+            <i data-lucide="menu"></i>
+        </button>
+
+        <a href="{{ url_for('dashboard.index') }}" class="nav-brand">
+            <i data-lucide="network" size="20"></i>
+            VelocityCMDB
+        </a>
+
+        <div class="nav-spacer"></div>
+
+        <div class="nav-actions">
+            <!-- Theme Controls -->
+            <div class="theme-controls">
+                <button id="theme-toggle" class="md-icon-button" title="Toggle Theme">
+                    <i data-lucide="moon" id="theme-icon"></i>
+                </button>
+                <select id="theme-selector" class="theme-selector">
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                    <option value="cyber">Cyber</option>
+                </select>
+            </div>
+
+            {% if session.username %}
+            <!-- User Menu -->
+            <div class="user-menu" id="user-menu">
+    <button class="user-button" type="button">
+        <i data-lucide="user" size="14"></i>
+        {{ session.display_name or session.username }}
+        <i data-lucide="chevron-down" size="12"></i>
+    </button>
+    <div class="user-dropdown">
+        <div class="dropdown-header">System</div>
+        <a href="{{ url_for('assets.devices') }}" class="dropdown-item">
+            <i data-lucide="settings" size="14"></i>
+            Device Management
+        </a>
+
+
+
+        <!-- ⭐ ADD ADMIN LINK HERE ⭐ -->
+{% if session.is_admin %}
+<div class="dropdown-divider"></div>
+<div class="dropdown-header">Administration</div>
+<a href="{{ url_for('admin.index') }}" class="dropdown-item">
+    <i data-lucide="shield" size="14"></i>
+    Admin Panel
+</a>
+<a href="{{ url_for('discovery.wizard') }}" class="dropdown-item">
+    <i data-lucide="compass" size="14"></i>
+    Discovery Wizard
+</a>
+<a href="{{ url_for('collection.wizard') }}" class="dropdown-item">
+    <i data-lucide="package-search" size="14"></i>
+    Collection Wizard
+</a>
+<a href="{{ url_for('admin.maintenance') }}" class="dropdown-item">
+    <i data-lucide="database" size="14"></i>
+    Maintenance Tools
+</a>
+{% endif %}
+<!-- ⭐ END ADMIN LINK ⭐ -->
+        <!-- ⭐ END ADMIN LINK ⭐ -->
+
+        <div class="dropdown-divider"></div>
+        <a href="{{ url_for('auth.logout') }}" class="dropdown-item">
+            <i data-lucide="log-out" size="14"></i>
+            Logout
+        </a>
+    </div>
+</div>
+
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Mobile Backdrop -->
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+    <!-- Layout Container -->
+    <div class="layout-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <!-- Dashboard -->
+            <div class="nav-section">
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}"
+                           href="{{ url_for('dashboard.index') }}">
+                            <i data-lucide="gauge" size="18"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Assets -->
+            <div class="nav-section">
+                <div class="nav-section-title">Assets</div>
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'assets.devices' %}active{% endif %}"
+                           href="{{ url_for('assets.devices') }}">
+                            <i data-lucide="server" size="18"></i>
+                            Devices
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('components.') %}active{% endif %}"
+                           href="{{ url_for('components.index') }}">
+                            <i data-lucide="cpu" size="18"></i>
+                            Components
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('sites.') %}active{% endif %}"
+                           href="{{ url_for('sites.index') }}">
+                            <i data-lucide="building" size="18"></i>
+                            Sites
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('vendors.') %}active{% endif %}"
+                           href="{{ url_for('vendors.index') }}">
+                            <i data-lucide="factory" size="18"></i>
+                            Vendors
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('roles.') %}active{% endif %}"
+                           href="{{ url_for('roles.index') }}">
+                            <i data-lucide="shield" size="18"></i>
+                            Device Roles
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Search & Analysis -->
+            <div class="nav-section">
+                <div class="nav-section-title">Search & Analysis</div>
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('search.') %}active{% endif %}"
+                           href="{{ url_for('search.index') }}">
+                            <i data-lucide="search" size="18"></i>
+                            Device Search
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('capture.') %}active{% endif %}"
+                           href="{{ url_for('capture.search') }}">
+                            <i data-lucide="database" size="18"></i>
+                            Capture Search
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('osversions.') %}active{% endif %}"
+                           href="{{ url_for('osversions.index') }}">
+                            <i data-lucide="package" size="18"></i>
+                            OS Versions
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Discovery -->
+            <div class="nav-section">
+                <div class="nav-section-title">Discovery</div>
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('coverage.') %}active{% endif %}"
+                           href="{{ url_for('coverage.index') }}">
+                            <i data-lucide="pie-chart" size="18"></i>
+                            Coverage
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('changes.') %}active{% endif %}"
+                           href="{{ url_for('changes.index') }}">
+                            <i data-lucide="git-compare" size="18"></i>
+                            Changes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('arp.') %}active{% endif %}"
+                           href="{{ url_for('arp.search_page') }}">
+                            <i data-lucide="radio" size="18"></i>
+                            ARP Search
+                        </a>
+                    </li>
+
+                </ul>
+            </div>
+
+            <!-- Network Maps -->
+            <div class="nav-section">
+                <div class="nav-section-title">Network Maps</div>
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('maps.') %}active{% endif %}"
+                           href="{{ url_for('maps.index') }}">
+                            <i data-lucide="map" size="18"></i>
+                            Topology Maps
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('scmaps') %}active{% endif %}"
+                           href="{{ url_for('scmaps.index') }}">
+                            <i data-lucide="network" size="18"></i>
+                            Secure Cartography Maps
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Tools -->
+            <div class="nav-section">
+                <div class="nav-section-title">Tools</div>
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('bulk.') %}active{% endif %}"
+                           href="{{ url_for('bulk.index') }}">
+                            <i data-lucide="zap" size="18"></i>
+                            Bulk Operations
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('notes.') %}active{% endif %}"
+                           href="{{ url_for('notes.index') }}">
+                            <i data-lucide="file-text" size="18"></i>
+                            Notes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('terminal.') %}active{% endif %}"
+                           href="{{ url_for('terminal.index') }}">
+                            <i data-lucide="terminal" size="18"></i>
+                            SSH Terminal
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            {% if get_flashed_messages() %}
+            <div class="flash-messages">
+                {% for category, message in get_flashed_messages(with_categories=true) %}
+                <div class="flash-message {{ 'error' if category == 'error' else category }}" role="alert">
+                    <span>{{ message }}</span>
+                    <button type="button" class="flash-close" onclick="this.parentElement.remove()">
+                        <i data-lucide="x" size="14"></i>
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Theme handling
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeSelector = document.getElementById('theme-selector');
+            const themeIcon = document.getElementById('theme-icon');
+            const html = document.documentElement;
+
+            // Load saved theme
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            html.setAttribute('data-theme', savedTheme);
+            themeSelector.value = savedTheme;
+            updateThemeIcon(savedTheme);
+
+            function updateThemeIcon(theme) {
+                const iconName = theme === 'light' ? 'sun' : theme === 'dark' ? 'moon' : 'zap';
+                themeIcon.setAttribute('data-lucide', iconName);
+                lucide.createIcons();
+            }
+
+            themeToggle.addEventListener('click', function() {
+                const currentTheme = html.getAttribute('data-theme');
+                const themes = ['light', 'dark', 'cyber'];
+                const currentIndex = themes.indexOf(currentTheme);
+                const nextTheme = themes[(currentIndex + 1) % themes.length];
+
+                html.setAttribute('data-theme', nextTheme);
+                themeSelector.value = nextTheme;
+                localStorage.setItem('theme', nextTheme);
+                updateThemeIcon(nextTheme);
+            });
+
+            themeSelector.addEventListener('change', function() {
+                const theme = this.value;
+                html.setAttribute('data-theme', theme);
+                localStorage.setItem('theme', theme);
+                updateThemeIcon(theme);
+            });
+
+            // Mobile menu
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+
+            function toggleSidebar() {
+                sidebar.classList.toggle('open');
+                backdrop.classList.toggle('show');
+            }
+
+            function closeSidebar() {
+                sidebar.classList.remove('open');
+                backdrop.classList.remove('show');
+            }
+
+            if (mobileMenuBtn) {
+                mobileMenuBtn.addEventListener('click', toggleSidebar);
+            }
+
+            if (backdrop) {
+                backdrop.addEventListener('click', closeSidebar);
+            }
+
+            // User menu
+            const userMenu = document.getElementById('user-menu');
+            if (userMenu) {
+                const userButton = userMenu.querySelector('.user-button');
+                userButton.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    userMenu.classList.toggle('open');
+                });
+
+                document.addEventListener('click', function() {
+                    userMenu.classList.remove('open');
+                });
+            }
+
+            // Reinitialize icons after dynamic content
+            lucide.createIcons();
+        });
+    </script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

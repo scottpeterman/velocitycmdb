@@ -1,0 +1,102 @@
+{
+  "usa1-core-01": {
+    "node_details": {
+      "ip": "172.16.2.130",
+      "platform": "C9KV-UADP-8P"
+    },
+    "peers": {
+      "": {
+        "ip": "172.16.99.12",
+        "platform": "",
+        "connections": [
+          [
+            "Gi1/0/6",
+            "Gi0/0"
+          ],
+          [
+            "Gi1/0/5",
+            "Gi0/0"
+          ],
+          [
+            "Gi1/0/1",
+            "Eth1/2"
+          ]
+        ]
+      },
+      "usa1-sw-d-1": {
+        "ip": "172.16.2.134",
+        "platform": "vEOS-lab",
+        "connections": [
+          [
+            "Gi1/0/2",
+            "01"
+          ]
+        ]
+      }
+    }
+  },
+  "usa1-access-1": {
+    "node_details": {
+      "ip": "172.16.99.12",
+      "platform": "IOSv"
+    },
+    "peers": {
+      "": {
+        "ip": "172.16.99.1",
+        "platform": "",
+        "connections": [
+          [
+            "Gi0/0",
+            "Gi1/0/6"
+          ]
+        ]
+      }
+    }
+  },
+  "usa1-sw-d-1": {
+    "node_details": {
+      "ip": "172.16.2.134",
+      "platform": "vEOS-lab"
+    },
+    "peers": {
+      "usa1-core-01": {
+        "ip": "172.16.2.133",
+        "platform": "C9KV-UADP-8P",
+        "connections": [
+          [
+            "Eth1",
+            "Gi1/0/2"
+          ]
+        ]
+      },
+      "usa1-sw-a-a-1": {
+        "ip": "172.16.98.32",
+        "platform": "vEOS-lab",
+        "connections": [
+          [
+            "Eth2",
+            "Eth1"
+          ]
+        ]
+      }
+    }
+  },
+  "usa1-sw-a-a-1": {
+    "node_details": {
+      "ip": "172.16.98.32",
+      "platform": "vEOS-lab"
+    },
+    "peers": {
+      "usa1-sw-d-1": {
+        "ip": "172.16.2.134",
+        "platform": "vEOS-lab",
+        "connections": [
+          [
+            "Eth1",
+            "Eth2"
+          ]
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}System Status - Admin - Anguis{% endblock %}
+
+{% block content %}
+<div style="padding: 32px;">
+    <!-- Header -->
+    <div style="margin-bottom: 32px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1 style="font: var(--md-typescale-headline-large); margin: 0 0 8px 0; display: flex; align-items: center; gap: 12px;">
+                <i data-lucide="activity" size="32"></i>
+                System Status
+            </h1>
+            <p style="font: var(--md-typescale-body-large); color: var(--md-on-surface-variant); margin: 0;">
+                Monitor system health, database statistics, and resource usage
+            </p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <button onclick="location.reload()" class="md-button md-button-outlined">
+                <i data-lucide="refresh-cw" size="18"></i>
+                Refresh
+            </button>
+            <a href="{{ url_for('admin.index') }}" class="md-button md-button-outlined">
+                <i data-lucide="arrow-left" size="18"></i>
+                Back to Admin
+            </a>
+        </div>
+    </div>
+
+    <!-- System Health -->
+    <div class="md-card" style="margin-bottom: 20px; border-left: 4px solid #4caf50;">
+        <div class="md-card-content">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="width: 64px; height: 64px; background: rgba(76, 175, 80, 0.1); border-radius: var(--md-shape-corner-medium); display: flex; align-items: center; justify-content: center; color: #4caf50;">
+                    <i data-lucide="check-circle" size="32"></i>
+                </div>
+                <div>
+                    <h5 style="font: var(--md-typescale-title-large); margin: 0 0 4px 0;">System Operational</h5>
+                    <p style="font: var(--md-typescale-body-medium); color: var(--md-on-surface-variant); margin: 0;">All services running normally</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Database Statistics -->
+    <div class="md-card" style="margin-bottom: 20px;">
+        <div class="md-card-header">
+            <h5 style="margin: 0; font: var(--md-typescale-title-large);">Database Statistics</h5>
+        </div>
+        <div class="md-card-content">
+            {% if db_stats %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;">
+                {% for table_name, count in db_stats.items() %}
+                <div style="background: var(--md-surface-container-high); padding: 20px; border-radius: var(--md-shape-corner-medium);">
+                    <div style="font: var(--md-typescale-headline-medium); margin-bottom: 8px;">{{ count }}</div>
+                    <div style="font: var(--md-typescale-body-medium); color: var(--md-on-surface-variant); text-transform: capitalize;">{{ table_name|replace('_', ' ') }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="color: var(--md-on-surface-variant); text-align: center; padding: 20px;">
+                No database statistics available
+            </p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- File System -->
+    <div class="md-card">
+        <div class="md-card-header">
+            <h5 style="margin: 0; font: var(--md-typescale-title-large);">File System Usage</h5>
+        </div>
+        <div class="md-card-content">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                <div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font: var(--md-typescale-label-large); color: var(--md-on-surface-variant);">Total Space</span>
+                        <span style="font: var(--md-typescale-title-medium);">{{ "%.2f"|format(fs_stats.total_gb) }} GB</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font: var(--md-typescale-label-large); color: var(--md-on-surface-variant);">Used Space</span>
+                        <span style="font: var(--md-typescale-title-medium);">{{ "%.2f"|format(fs_stats.used_gb) }} GB</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font: var(--md-typescale-label-large); color: var(--md-on-surface-variant);">Free Space</span>
+                        <span style="font: var(--md-typescale-title-medium);">{{ "%.2f"|format(fs_stats.free_gb) }} GB</span>
+                    </div>
+                </div>
+
+                <div>
+                    <div style="font: var(--md-typescale-label-large); color: var(--md-on-surface-variant); margin-bottom: 12px;">Usage</div>
+                    <div style="position: relative; height: 24px; background: var(--md-surface-container-high); border-radius: 12px; overflow: hidden;">
+                        <div style="position: absolute; top: 0; left: 0; height: 100%; width: {{ "%.1f"|format(fs_stats.used_percent) }}%; background: {% if fs_stats.used_percent > 90 %}var(--md-error){% elif fs_stats.used_percent > 75 %}#ff9800{% else %}var(--md-primary){% endif %}; transition: width 0.3s ease;"></div>
+                        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font: var(--md-typescale-label-medium); font-weight: 600; color: {% if fs_stats.used_percent > 50 %}white{% else %}var(--md-on-surface){% endif %};">
+                            {{ "%.1f"|format(fs_stats.used_percent) }}%
+                        </div>
+                    </div>
+                    {% if fs_stats.used_percent > 90 %}
+                    <p style="color: var(--md-error); margin: 8px 0 0 0; font: var(--md-typescale-body-small); display: flex; align-items: center; gap: 4px;">
+                        <i data-lucide="alert-triangle" size="14"></i>
+                        Critical: Low disk space
+                    </p>
+                    {% elif fs_stats.used_percent > 75 %}
+                    <p style="color: #ff9800; margin: 8px 0 0 0; font: var(--md-typescale-body-small); display: flex; align-items: center; gap: 4px;">
+                        <i data-lucide="alert-circle" size="14"></i>
+                        Warning: Disk space running low
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Information -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+        <!-- Application Info -->
+        <div class="md-card">
+            <div class="md-card-header">
+                <h5 style="margin: 0; font: var(--md-typescale-title-large);">Application Information</h5>
+            </div>
+            <div class="md-card-content">
+                <table style="width: 100%; font: var(--md-typescale-body-medium);">
+                    <tr>
+                        <td style="padding: 8px 0; color: var(--md-on-surface-variant);">Application:</td>
+                        <td style="padding: 8px 0; text-align: right;"><strong>Anguis NMS</strong></td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: var(--md-on-surface-variant);">Version:</td>
+                        <td style="padding: 8px 0; text-align: right;">1.0.0</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: var(--md-on-surface-variant);">Framework:</td>
+                        <td style="padding: 8px 0; text-align: right;">Flask</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: var(--md-on-surface-variant);">Database:</td>
+                        <td style="padding: 8px 0; text-align: right;">SQLite</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="md-card">
+            <div class="md-card-header">
+                <h5 style="margin: 0; font: var(--md-typescale-title-large);">Quick Actions</h5>
+            </div>
+            <div class="md-card-content">
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <a href="{{ url_for('admin.api_system_health') }}" class="md-button md-button-outlined" style="justify-content: flex-start;">
+                        <i data-lucide="code" size="18"></i>
+                        View Health API
+                    </a>
+                    <a href="{{ url_for('admin.config_view') }}" class="md-button md-button-outlined" style="justify-content: flex-start;">
+                        <i data-lucide="file-text" size="18"></i>
+                        View Configuration
+                    </a>
+                    <a href="{{ url_for('admin.users_list') }}" class="md-button md-button-outlined" style="justify-content: flex-start;">
+                        <i data-lucide="users" size="18"></i>
+                        Manage Users
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Real-time Monitoring Notice -->
+    <div class="md-card" style="margin-top: 20px; border-left: 4px solid var(--md-primary);">
+        <div class="md-card-content">
+            <div style="display: flex; align-items: start; gap: 12px;">
+                <i data-lucide="info" size="24" style="color: var(--md-primary); flex-shrink: 0;"></i>
+                <div>
+                    <strong style="display: block; margin-bottom: 4px;">Real-time Monitoring</strong>
+                    <p style="margin: 0; font: var(--md-typescale-body-medium); color: var(--md-on-surface-variant);">
+                        System statistics are refreshed on page load. For continuous monitoring, consider implementing a real-time dashboard or enabling auto-refresh.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Auto-refresh every 30 seconds (optional)
+    // Uncomment to enable
+    // setInterval(() => location.reload(), 30000);
+</script>
+{% endblock %}

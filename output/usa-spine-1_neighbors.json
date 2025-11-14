@@ -1,0 +1,25 @@
+{
+  "cdp": {},
+  "lldp": {
+    "usa-spine-2": {
+      "ip": "172.16.1.6",
+      "platform": "eos",
+      "connections": [
+        [
+          "Gi0/0",
+          "Ethernet4"
+        ]
+      ]
+    },
+    "usa-spine-1": {
+      "ip": "172.16.0.2",
+      "platform": "eos",
+      "connections": [
+        [
+          "Gi0/1",
+          "Ethernet4"
+        ]
+      ]
+    }
+  }
+}

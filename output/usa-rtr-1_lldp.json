@@ -1,0 +1,62 @@
+[
+  {
+    "NEIGHBOR_NAME": "usa-rtr-1.lab.local",
+    "CHASSIS_ID": "0cb3.9361.0000",
+    "MGMT_ADDRESS": "172.16.1.5",
+    "NEIGHBOR_DESCRIPTION": "Cisco IOS Software, IOSv Software (VIOS-ADVENTERPRISEK9-M), Version 15.6(2)T, RELEASE SOFTWARE (fc2)\\x0aTechnical Support: http://www.cisco.com/techsupport\\x0aCopyright (c) 1986-2016 by Cisco Systems, Inc.\\x0aCompiled Tue 22-Mar-16 16:19 by prod_rel_team",
+    "NEIGHBOR_INTERFACE": "Gi0/2",
+    "LOCAL_INTERFACE": "Ethernet1",
+    "NEIGHBOR_COUNT": "1",
+    "AGE": "10 seconds"
+  },
+  {
+    "NEIGHBOR_NAME": "usa-spine-1",
+    "CHASSIS_ID": "0caf.da85.dc95",
+    "MGMT_ADDRESS": "172.16.0.2",
+    "NEIGHBOR_DESCRIPTION": "Arista Networks EOS version 4.33.1F running on an Arista vEOS-lab",
+    "NEIGHBOR_INTERFACE": "Ethernet2",
+    "LOCAL_INTERFACE": "Ethernet2",
+    "NEIGHBOR_COUNT": "1",
+    "AGE": "7 seconds"
+  },
+  {
+    "NEIGHBOR_NAME": "usa-leaf-3.lab.local",
+    "CHASSIS_ID": "0c53.c9a1.0000",
+    "MGMT_ADDRESS": "172.16.10.23",
+    "NEIGHBOR_DESCRIPTION": "Cisco IOS Software, vios_l2 Software (vios_l2-ADVENTERPRISEK9-M), Version 15.2(4.0.55)E, TEST ENGINEERING ESTG_WEEKLY BUILD, synced to  END_OF_FLO_ISP\\x0aTechnical Support: http://www.cisco.com/techsupport\\x0aCopyright (c) 1986-2015 by Cisco Systems, Inc.\\x0aCompi",
+    "NEIGHBOR_INTERFACE": "Gi0/0",
+    "LOCAL_INTERFACE": "Ethernet3",
+    "NEIGHBOR_COUNT": "1",
+    "AGE": "20 seconds"
+  },
+  {
+    "NEIGHBOR_NAME": "usa-leaf-2.lab.local",
+    "CHASSIS_ID": "0c89.c3d1.0000",
+    "MGMT_ADDRESS": "172.16.10.22",
+    "NEIGHBOR_DESCRIPTION": "Cisco IOS Software, vios_l2 Software (vios_l2-ADVENTERPRISEK9-M), Version 15.2(4.0.55)E, TEST ENGINEERING ESTG_WEEKLY BUILD, synced to  END_OF_FLO_ISP\\x0aTechnical Support: http://www.cisco.com/techsupport\\x0aCopyright (c) 1986-2015 by Cisco Systems, Inc.\\x0aCompi",
+    "NEIGHBOR_INTERFACE": "Gi0/0",
+    "LOCAL_INTERFACE": "Ethernet4",
+    "NEIGHBOR_COUNT": "1",
+    "AGE": "20 seconds"
+  },
+  {
+    "NEIGHBOR_NAME": "usa-leaf-1.lab.local",
+    "CHASSIS_ID": "0c5c.72f7.0000",
+    "MGMT_ADDRESS": "172.16.10.21",
+    "NEIGHBOR_DESCRIPTION": "Cisco IOS Software, vios_l2 Software (vios_l2-ADVENTERPRISEK9-M), Version 15.2(4.0.55)E, TEST ENGINEERING ESTG_WEEKLY BUILD, synced to  END_OF_FLO_ISP\\x0aTechnical Support: http://www.cisco.com/techsupport\\x0aCopyright (c) 1986-2015 by Cisco Systems, Inc.\\x0aCompi",
+    "NEIGHBOR_INTERFACE": "Gi0/0",
+    "LOCAL_INTERFACE": "Ethernet5",
+    "NEIGHBOR_COUNT": "1",
+    "AGE": "14 seconds"
+  },
+  {
+    "NEIGHBOR_NAME": "usa-rtr-1.lab.local",
+    "CHASSIS_ID": "0cb3.9361.0000",
+    "MGMT_ADDRESS": "172.16.0.1",
+    "NEIGHBOR_DESCRIPTION": "Cisco IOS Software, IOSv Software (VIOS-ADVENTERPRISEK9-M), Version 15.6(2)T, RELEASE SOFTWARE (fc2)\\x0aTechnical Support: http://www.cisco.com/techsupport\\x0aCopyright (c) 1986-2016 by Cisco Systems, Inc.\\x0aCompiled Tue 22-Mar-16 16:19 by prod_rel_team",
+    "NEIGHBOR_INTERFACE": "Gi0/1",
+    "LOCAL_INTERFACE": "Ethernet6",
+    "NEIGHBOR_COUNT": "1",
+    "AGE": "13 seconds"
+  }
+]

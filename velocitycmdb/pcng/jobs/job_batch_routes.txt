@@ -1,0 +1,8 @@
+# routes Capture Jobs (All Vendors)
+# Generated: 2025-10-16T06:37:32.049976
+# Jobs: 4
+
+job_380_arista_routes.json
+job_381_cisco-ios_routes.json
+job_382_cisco-nxos_routes.json
+job_383_juniper_routes.json

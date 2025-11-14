@@ -1,0 +1,374 @@
+{
+  "cisco_show_ip_route": {
+    "name": "Cisco IP Route Table",
+    "command": "show ip route",
+    "description": "Display IP routing table",
+    "vendor": "cisco"
+  },
+  "cisco_show_ip_arp": {
+    "name": "Cisco ARP Table",
+    "command": "show ip arp",
+    "description": "Display ARP table entries",
+    "vendor": "cisco"
+  },
+  "cisco_show_ip_bgp_summary": {
+    "name": "Cisco BGP Summary",
+    "command": "show ip bgp summary",
+    "description": "Display BGP neighbor summary",
+    "vendor": "cisco"
+  },
+  "cisco_show_ip_bgp": {
+    "name": "Cisco BGP Table",
+    "command": "show ip bgp",
+    "description": "Display BGP routing table",
+    "vendor": "cisco"
+  },
+  "cisco_show_ip_bgp_neighbor": {
+    "name": "Cisco BGP Neighbors",
+    "command": "show ip bgp neighbor",
+    "description": "Display detailed BGP neighbor information",
+    "vendor": "cisco"
+  },
+  "cisco_show_ip_bgp_detail": {
+    "name": "Cisco BGP Detail",
+    "command": "show ip bgp detail",
+    "description": "Display detailed BGP routing table",
+    "vendor": "cisco"
+  },
+  "cisco_show_ip_ospf_neighbor": {
+    "name": "Cisco OSPF Neighbors",
+    "command": "show ip ospf neighbor",
+    "description": "Display OSPF neighbor adjacencies",
+    "vendor": "cisco"
+  },
+  "cisco_show_ip_eigrp_neighbor": {
+    "name": "Cisco EIGRP Neighbors",
+    "command": "show ip eigrp neighbor",
+    "description": "Display EIGRP neighbor table",
+    "vendor": "cisco"
+  },
+  "cisco_show_run": {
+    "name": "Cisco Running Config",
+    "command": "terminal length 0,show running-config",
+    "description": "Display running configuration",
+    "vendor": "cisco"
+  },
+  "cisco_wlc_show_run": {
+    "name": "Cisco WLC Running Config",
+    "command": "show run-config",
+    "description": "Display WLC running configuration",
+    "vendor": "cisco"
+  },
+  "cisco_ip_bgp_summary_vpnv4": {
+    "name": "Cisco BGP VPNv4 Summary",
+    "command": "show ip bgp vpnv4 summary",
+    "description": "Display BGP VPNv4 neighbor summary",
+    "vendor": "cisco"
+  },
+  "cisco_ip_bgp_summary": {
+    "name": "Cisco BGP Summary (Alt)",
+    "command": "show ip bgp summary",
+    "description": "Display BGP summary information",
+    "vendor": "cisco"
+  },
+  "cisco_show_spanning_tree": {
+    "name": "Cisco Spanning Tree",
+    "command": "show spanning-tree",
+    "description": "Display spanning tree protocol status",
+    "vendor": "cisco"
+  },
+  "cisco_int_desc": {
+    "name": "Cisco Interface Descriptions",
+    "command": "show interface desc",
+    "description": "Display interface descriptions",
+    "vendor": "cisco"
+  },
+  "cisco_int_status": {
+    "name": "Cisco Interface Status",
+    "command": "show interface status",
+    "description": "Display interface status summary",
+    "vendor": "cisco"
+  },
+  "cisco_ios_port_channel_summary": {
+    "name": "Cisco IOS EtherChannel",
+    "command": "show etherchannel summary",
+    "description": "Display EtherChannel summary (IOS)",
+    "vendor": "cisco"
+  },
+  "cisco_nxos_port_channel_summary": {
+    "name": "Cisco NX-OS Port Channel",
+    "command": "show port-channel summary",
+    "description": "Display port-channel summary (NX-OS)",
+    "vendor": "cisco"
+  },
+  "cisco_show_vrf": {
+    "name": "Cisco VRF Table",
+    "command": "show vrf",
+    "description": "Display VRF configuration",
+    "vendor": "cisco"
+  },
+  "cisco_mac_address_table": {
+    "name": "Cisco MAC Address Table",
+    "command": "show mac address-table",
+    "description": "Display MAC address table",
+    "vendor": "cisco"
+  },
+  "cisco_cdp_neighbor_detail": {
+    "name": "Cisco CDP Neighbors Detail",
+    "command": "show cdp neighbor detail",
+    "description": "Display detailed CDP neighbor information",
+    "vendor": "cisco"
+  },
+  "cisco_lldp_neighbor_detail": {
+    "name": "Cisco LLDP Neighbors Detail",
+    "command": "show lldp neighbor detail",
+    "description": "Display detailed LLDP neighbor information",
+    "vendor": "cisco"
+  },
+  "cisco_show_inventory": {
+    "name": "Cisco Hardware Inventory",
+    "command": "show inventory",
+    "description": "Display hardware inventory",
+    "vendor": "cisco"
+  },
+  "cisco_show_version": {
+    "name": "Cisco Version Information",
+    "command": "show version",
+    "description": "Display system version and hardware info",
+    "vendor": "cisco"
+  },
+  "cisco_show_boot": {
+    "name": "Cisco Boot Information",
+    "command": "show boot",
+    "description": "Display boot configuration",
+    "vendor": "cisco"
+  },
+  "cisco_show_tacacs": {
+    "name": "Cisco TACACS Configuration",
+    "command": "show tacacs",
+    "description": "Display TACACS+ configuration",
+    "vendor": "cisco"
+  },
+  "cisco_dir_flash": {
+    "name": "Cisco Flash Directory",
+    "command": "dir flash:",
+    "description": "Display flash filesystem contents",
+    "vendor": "cisco"
+  },
+  "aruba_show_version": {
+    "name": "Aruba Version Information",
+    "command": "show version",
+    "description": "Display Aruba system version",
+    "vendor": "arista"
+  },
+  "aruba_show_system_info": {
+    "name": "Aruba System Information",
+    "command": "show system info",
+    "description": "Display Aruba system information",
+    "vendor": "arista"
+  },
+  "aruba_show_console": {
+    "name": "Aruba Console Configuration",
+    "command": "show console",
+    "description": "Display console configuration",
+    "vendor": "arista"
+  },
+  "aruba_show_authentication": {
+    "name": "Aruba Authentication Config",
+    "command": "show authentication",
+    "description": "Display authentication configuration",
+    "vendor": "arista"
+  },
+  "aruba_show_authorization": {
+    "name": "Aruba Authorization Config",
+    "command": "show authorization",
+    "description": "Display authorization configuration",
+    "vendor": "arista"
+  },
+  "aruba_show_run": {
+    "name": "Aruba Running Config",
+    "command": "show run",
+    "description": "Display Aruba running configuration",
+    "vendor": "arista"
+  },
+  "aruba_show_tacacs": {
+    "name": "Aruba TACACS Configuration",
+    "command": "show tacacs",
+    "description": "Display TACACS+ configuration",
+    "vendor": "arista"
+  },
+  "aruba_show_ip_ssh": {
+    "name": "Aruba SSH Configuration",
+    "command": "show ip ssh",
+    "description": "Display SSH configuration",
+    "vendor": "arista"
+  },
+  "aruba_show_syslog_config": {
+    "name": "Aruba Syslog Configuration",
+    "command": "show syslog config",
+    "description": "Display syslog configuration",
+    "vendor": "arista"
+  },
+  "aruba_show_ntp_status": {
+    "name": "Aruba NTP Status",
+    "command": "show ntp status",
+    "description": "Display NTP synchronization status",
+    "vendor": "arista"
+  },
+  "aruba_show_cdp": {
+    "name": "Aruba CDP Neighbors",
+    "command": "show cdp neigh",
+    "description": "Display CDP neighbor information",
+    "vendor": "arista"
+  },
+  "aruba_show_cdp_detail": {
+    "name": "Aruba CDP Neighbors Detail",
+    "command": "show cdp nei detail",
+    "description": "Display detailed CDP neighbor information",
+    "vendor": "arista"
+  },
+  "aruba_show_lldp_remote": {
+    "name": "Aruba LLDP Remote Devices",
+    "command": "sh lldp info remote-device",
+    "description": "Display LLDP remote device information",
+    "vendor": "arista"
+  },
+  "aruba_show_lldp_remote_detail": {
+    "name": "Aruba LLDP Remote Detail",
+    "command": "sh lldp info remote-device detail",
+    "description": "Display detailed LLDP remote device info",
+    "vendor": "arista"
+  },
+  "aruba_show_mac_address": {
+    "name": "Aruba MAC Address Table",
+    "command": "show mac-address",
+    "description": "Display MAC address table",
+    "vendor": "arista"
+  },
+  "aruba_show_int_status": {
+    "name": "Aruba Interface Status",
+    "command": "show interfaces status",
+    "description": "Display interface status",
+    "vendor": "arista"
+  },
+  "aruba_show_snmp_server": {
+    "name": "Aruba SNMP Configuration",
+    "command": "show snmp-server",
+    "description": "Display SNMP server configuration",
+    "vendor": "arista"
+  },
+  "ion_dump_lldp_all": {
+    "name": "CloudGenix LLDP All",
+    "command": "dump lldp all",
+    "description": "Dump all LLDP information",
+    "vendor": "cloudgenix"
+  },
+  "ion_dump_lldp_controller": {
+    "name": "CloudGenix LLDP Controller",
+    "command": "dump lldp interface=controller",
+    "description": "Dump LLDP for controller interface",
+    "vendor": "cloudgenix"
+  },
+  "ion_dump_cpu_info": {
+    "name": "CloudGenix CPU Information",
+    "command": "dump cpu info",
+    "description": "Display CPU information",
+    "vendor": "cloudgenix"
+  },
+  "ion_inspect_system_arp_all": {
+    "name": "CloudGenix System ARP",
+    "command": "inspect system arp all",
+    "description": "Inspect system ARP table",
+    "vendor": "cloudgenix"
+  },
+  "ion_dump_interface_config_all": {
+    "name": "CloudGenix Interface Config",
+    "command": "set paging off\\ndump interface config all\\n",
+    "description": "Dump all interface configurations",
+    "vendor": "cloudgenix"
+  },
+  "paloalto_show_system_info": {
+    "name": "Palo Alto System Info",
+    "command": "show system info",
+    "description": "Display Palo Alto system information",
+    "vendor": "paloalto"
+  },
+  "paloalto_show_arp": {
+    "name": "Palo Alto ARP Table",
+    "command": "show arp all",
+    "description": "Display ARP table entries",
+    "vendor": "paloalto"
+  },
+  "arista_show_run": {
+    "name": "Arista Running Config",
+    "command": "show running-config",
+    "description": "Display Arista running configuration",
+    "vendor": "arista"
+  },
+  "arista_show_ip_bgp_summary": {
+    "name": "Arista BGP Summary",
+    "command": "show ip bgp summary",
+    "description": "Display BGP neighbor summary",
+    "vendor": "arista"
+  },
+  "arista_show_ip_bgp_neighbors": {
+    "name": "Arista BGP Neighbors",
+    "command": "show ip bgp neighbors",
+    "description": "Display BGP neighbor details",
+    "vendor": "arista"
+  },
+  "arista_show_interfaces_status": {
+    "name": "Arista Interface Status",
+    "command": "show interfaces status",
+    "description": "Display interface status",
+    "vendor": "arista"
+  },
+  "arista_show_lldp_neighbors_detail": {
+    "name": "Arista LLDP Neighbors Detail",
+    "command": "show lldp neighbors detail",
+    "description": "Display detailed LLDP neighbor information",
+    "vendor": "arista"
+  },
+  "arista_show_version": {
+    "name": "Arista Version Information",
+    "command": "show version",
+    "description": "Display Arista system version",
+    "vendor": "arista"
+  },
+  "arista_show_ip_arp": {
+    "name": "Arista ARP Table",
+    "command": "show ip arp",
+    "description": "Display ARP table entries",
+    "vendor": "arista"
+  },
+  "arista_show_mac_address_table": {
+    "name": "Arista MAC Address Table",
+    "command": "show mac address-table",
+    "description": "Display MAC address table",
+    "vendor": "arista"
+  },
+  "arista_show_inventory": {
+    "name": "Arista Hardware Inventory",
+    "command": "show inventory",
+    "description": "Display hardware inventory",
+    "vendor": "arista"
+  },
+  "arista_show_ip_ospf_neighbor": {
+    "name": "Arista OSPF Neighbors",
+    "command": "show ip ospf neighbor",
+    "description": "Display OSPF neighbor adjacencies",
+    "vendor": "arista"
+  },
+  "arista_show_ip_route": {
+    "name": "Arista IP Route Table",
+    "command": "show ip route",
+    "description": "Display IP routing table",
+    "vendor": "arista"
+  },
+  "arista_show_port_channel_summary": {
+    "name": "Arista Port Channel Summary",
+    "command": "show port-channel dense",
+    "description": "Display port-channel summary",
+    "vendor": "arista"
+  }
+}

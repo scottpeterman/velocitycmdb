@@ -1,0 +1,56 @@
+{
+  "cdp": {
+    "usa-rtr-1": {
+      "ip": "172.16.128.5",
+      "platform": "ios",
+      "connections": [
+        [
+          "GigabitEthernet0/0",
+          "GigabitEthernet0/3"
+        ]
+      ]
+    },
+    "wan-core-1": {
+      "ip": "172.16.128.1",
+      "platform": "ios",
+      "connections": [
+        [
+          "GigabitEthernet0/1",
+          "Ethernet1/2"
+        ]
+      ]
+    }
+  },
+  "lldp": {
+    "eng-spine-2": {
+      "ip": "172.16.2.6",
+      "platform": "eos",
+      "connections": [
+        [
+          "Gi0/3",
+          "Ethernet1"
+        ]
+      ]
+    },
+    "usa-rtr-1": {
+      "ip": "172.16.128.5",
+      "platform": "ios",
+      "connections": [
+        [
+          "Gi0/0",
+          "Gi0/3"
+        ]
+      ]
+    },
+    "eng-spine-1": {
+      "ip": "172.16.2.2",
+      "platform": "eos",
+      "connections": [
+        [
+          "Gi0/2",
+          "Ethernet1"
+        ]
+      ]
+    }
+  }
+}

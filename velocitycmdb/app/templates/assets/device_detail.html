@@ -1,0 +1,1908 @@
+{% extends "base.html" %}
+
+{% block title %}{{ device.name }} - Device Details{% endblock %}
+
+{% block head_extra %}
+<style>
+    /* Device detail specific styles using MD3 design system */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 32px;
+        gap: 24px;
+    }
+
+    .page-header-content {
+        flex: 1;
+    }
+
+    .page-header-actions {
+        display: flex;
+        gap: 12px;
+        flex-shrink: 0;
+    }
+
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        list-style: none;
+        padding: 0;
+    }
+
+    .breadcrumb-item {
+        color: var(--md-on-surface-variant);
+        font: var(--md-typescale-body-medium);
+    }
+
+    .breadcrumb-item a {
+        color: var(--md-primary);
+        text-decoration: none;
+    }
+
+    .breadcrumb-item a:hover {
+        text-decoration: underline;
+    }
+
+    .breadcrumb-item:not(:last-child)::after {
+        content: "/";
+        margin-left: 8px;
+        color: var(--md-on-surface-variant);
+    }
+
+    .device-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .status-online { background-color: var(--md-success); }
+    .status-partial { background-color: var(--md-warning); }
+    .status-offline { background-color: var(--md-error); }
+
+    .device-badges {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .device-badge {
+        padding: 4px 12px;
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-label-medium);
+        font-weight: 500;
+    }
+
+    .badge-stack {
+        background: var(--md-primary);
+        color: var(--md-on-primary);
+    }
+
+    .badge-infrastructure {
+        background: var(--md-tertiary);
+        color: var(--md-on-tertiary);
+    }
+
+    .badge-serials {
+        background: var(--md-success-container);
+        color: var(--md-on-success-container);
+    }
+
+    /* Overview cards grid */
+    .overview-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 24px;
+        margin-bottom: 32px;
+    }
+
+    .info-card {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        overflow: hidden;
+    }
+
+    .info-card-header {
+        background: var(--md-surface-container);
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--md-outline-variant);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .info-card-header h3 {
+        margin: 0;
+        font: var(--md-typescale-title-medium);
+        color: var(--md-on-surface);
+        font-weight: 500;
+    }
+
+    .info-card-content {
+        padding: 24px;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--md-outline-variant);
+        gap: 16px;
+    }
+
+    .info-row:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .info-row:first-child {
+        padding-top: 0;
+    }
+
+    .info-label {
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-surface-variant);
+        font-weight: 500;
+        min-width: 120px;
+        flex-shrink: 0;
+    }
+
+    .info-value {
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-surface);
+        text-align: right;
+        flex: 1;
+    }
+
+    .info-value code {
+        background: var(--md-surface-container);
+        padding: 2px 6px;
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-body-small);
+    }
+
+    .info-value .text-muted {
+        color: var(--md-on-surface-variant);
+    }
+
+    /* Tab system */
+    .detail-tabs-container {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        overflow: hidden;
+    }
+
+    .detail-tabs-header {
+        background: var(--md-surface-container);
+        border-bottom: 1px solid var(--md-outline-variant);
+        padding: 0;
+    }
+
+    .detail-tabs {
+        display: flex;
+        overflow-x: auto;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .detail-tab {
+        flex-shrink: 0;
+    }
+
+    .detail-tab-button {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 16px 24px;
+        border: none;
+        background: transparent;
+        color: var(--md-on-surface-variant);
+        font: var(--md-typescale-title-small);
+        cursor: pointer;
+        transition: all var(--md-motion-duration-short2) var(--md-motion-easing-standard);
+        border-bottom: 2px solid transparent;
+        white-space: nowrap;
+    }
+
+    .detail-tab-button:hover {
+        background: var(--md-surface-container-high);
+        color: var(--md-on-surface);
+    }
+
+    .detail-tab-button.active {
+        color: var(--md-primary);
+        border-bottom-color: var(--md-primary);
+        background: var(--md-surface);
+    }
+
+    .detail-tab-content {
+        padding: 24px;
+    }
+
+    .tab-pane {
+        display: none;
+    }
+
+    .tab-pane.active {
+        display: block;
+    }
+
+    /* Serial numbers grid */
+    .serials-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+    }
+
+    .serial-card {
+        background: var(--md-surface-container);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-small);
+        padding: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .serial-card code {
+        font: var(--md-typescale-body-medium);
+        font-family: 'Courier New', monospace;
+    }
+
+    .serial-badge-primary {
+        background: var(--md-success-container);
+        color: var(--md-on-success-container);
+        padding: 2px 8px;
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-label-small);
+        font-weight: 500;
+    }
+
+    /* Stack members grid */
+    .stack-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 16px;
+    }
+
+    .stack-member-card {
+        background: var(--md-surface-container);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-small);
+        padding: 16px;
+    }
+
+    .stack-member-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .stack-member-title {
+        font: var(--md-typescale-title-small);
+        color: var(--md-on-surface);
+        margin: 0;
+    }
+
+    .stack-badge-master {
+        background: var(--md-warning-container);
+        color: var(--md-on-warning-container);
+        padding: 2px 8px;
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-label-small);
+        font-weight: 500;
+    }
+
+    /* Component items */
+    .component-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .component-item {
+        background: var(--md-surface-container);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-small);
+        padding: 20px;
+    }
+
+    .component-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+    }
+
+    .component-title {
+        font: var(--md-typescale-title-small);
+        color: var(--md-on-surface);
+        margin: 0 0 4px 0;
+    }
+
+    .component-description {
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-surface-variant);
+        margin: 0;
+    }
+
+    .component-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+    }
+
+    .component-detail {
+        font: var(--md-typescale-body-small);
+    }
+
+    .component-detail strong {
+        color: var(--md-on-surface);
+    }
+
+    .component-confidence {
+        font: var(--md-typescale-body-small);
+        color: var(--md-on-surface-variant);
+        text-align: right;
+    }
+
+    .component-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 16px;
+    }
+
+    /* Capture items */
+    .capture-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 16px;
+    }
+
+    .capture-item {
+        background: var(--md-surface-container);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-small);
+        padding: 16px;
+        border-left: 4px solid var(--md-outline-variant);
+    }
+
+    .capture-item.capture-success {
+        border-left-color: var(--md-success);
+    }
+
+    .capture-item.capture-failed {
+        border-left-color: var(--md-error);
+    }
+
+    .capture-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 8px;
+    }
+
+    .capture-title {
+        font: var(--md-typescale-title-small);
+        color: var(--md-on-surface);
+        margin: 0;
+    }
+
+    .capture-status {
+        flex-shrink: 0;
+    }
+
+    .capture-details {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .capture-command {
+        font: var(--md-typescale-body-small);
+        color: var(--md-on-surface-variant);
+        margin-bottom: 8px;
+    }
+
+    .capture-command code {
+        background: var(--md-surface);
+        padding: 2px 4px;
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-body-small);
+    }
+
+    .capture-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    /* Fingerprint items */
+    .fingerprint-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .fingerprint-item {
+        background: var(--md-surface-container);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-small);
+        padding: 20px;
+    }
+
+    .fingerprint-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+    }
+
+    .fingerprint-timestamp {
+        font: var(--md-typescale-title-small);
+        color: var(--md-on-surface);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .fingerprint-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+    }
+
+    .fingerprint-detail {
+        font: var(--md-typescale-body-small);
+    }
+
+    .fingerprint-detail strong {
+        color: var(--md-on-surface);
+    }
+
+    /* Notes specific styles */
+    .note-type-badge {
+        padding: 4px 8px;
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-label-small);
+        font-weight: 500;
+    }
+
+    .note-type-site { background: var(--md-primary-container); color: var(--md-on-primary-container); }
+    .note-type-device { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
+    .note-type-kb { background: var(--md-tertiary-container); color: var(--md-on-tertiary-container); }
+    .note-type-general { background: var(--md-surface-container-highest); color: var(--md-on-surface); }
+
+    /* Empty states */
+    .empty-state {
+        text-align: center;
+        padding: 48px 24px;
+        color: var(--md-on-surface-variant);
+    }
+
+    .empty-state-icon {
+        margin-bottom: 16px;
+        opacity: 0.6;
+    }
+
+    .empty-state h3 {
+        font: var(--md-typescale-headline-small);
+        margin: 0 0 8px 0;
+    }
+
+    .empty-state p {
+        font: var(--md-typescale-body-large);
+        margin: 0 0 16px 0;
+    }
+
+    /* Status icons */
+    .status-icon-success {
+        color: var(--md-success);
+    }
+
+    .status-icon-error {
+        color: var(--md-error);
+    }
+
+    /* Badge styling */
+    .md-badge {
+        padding: 4px 8px;
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-label-small);
+        font-weight: 500;
+    }
+
+    .md-badge-success {
+        background: var(--md-success-container);
+        color: var(--md-on-success-container);
+    }
+
+    .md-badge-secondary {
+        background: var(--md-surface-container-high);
+        color: var(--md-on-surface-variant);
+    }
+
+    /* Content Viewer Modal */
+    .content-viewer-modal .md-modal-content {
+        max-width: 95vw;
+        width: 1200px;
+        max-height: 90vh;
+    }
+
+    .content-viewer-body {
+        padding: 0;
+        max-height: 70vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .content-viewer-toolbar {
+        padding: 12px 24px;
+        border-bottom: 1px solid var(--md-outline-variant);
+        background: var(--md-surface-container);
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .content-viewer-content {
+        flex: 1;
+        overflow: auto;
+        padding: 24px;
+        background: var(--md-surface-container-low);
+    }
+
+    .content-viewer-pre {
+        margin: 0;
+        padding: 16px;
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-small);
+        overflow-x: auto;
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+        line-height: 1.5;
+        color: var(--md-on-surface);
+        white-space: pre;
+    }
+
+    .json-viewer {
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    .json-key { color: var(--md-primary); font-weight: 500; }
+    .json-string { color: var(--md-tertiary); }
+    .json-number { color: var(--md-success); }
+    .json-boolean { color: var(--md-warning); }
+    .json-null { color: var(--md-error); }
+
+    .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid var(--md-outline-variant);
+        border-top: 3px solid var(--md-primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Component Filter Buttons */
+    .component-filter-btn {
+        padding: 8px 16px;
+        border: 1px solid var(--md-outline-variant);
+        background: var(--md-surface);
+        color: var(--md-on-surface);
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-label-large);
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .component-filter-btn:hover {
+        background: var(--md-surface-container);
+        border-color: var(--md-outline);
+    }
+
+    .component-filter-btn.active {
+        background: var(--md-primary-container);
+        color: var(--md-on-primary-container);
+        border-color: var(--md-primary);
+    }
+
+    /* Component Groups */
+    .component-group {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        margin-bottom: 16px;
+        overflow: hidden;
+    }
+
+    .component-group-header {
+        padding: 20px 24px;
+        background: var(--md-surface-container);
+        border-bottom: 1px solid var(--md-outline-variant);
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        user-select: none;
+    }
+
+    .component-group-header:hover {
+        background: var(--md-surface-container-high);
+    }
+
+    .component-count-badge {
+        background: var(--md-secondary-container);
+        color: var(--md-on-secondary-container);
+        padding: 2px 10px;
+        border-radius: 12px;
+        font: var(--md-typescale-label-medium);
+        font-weight: 500;
+    }
+
+    .group-toggle-icon {
+        transition: transform 0.2s;
+    }
+
+    .component-group-header.collapsed .group-toggle-icon {
+        transform: rotate(-90deg);
+    }
+
+    .component-group-content {
+        padding: 16px;
+    }
+
+    /* Component Grid */
+    .component-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 16px;
+    }
+
+    /* Component Cards */
+    .component-card {
+        background: var(--md-surface-container-low);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-small);
+        padding: 16px;
+        transition: all 0.2s;
+    }
+
+    .component-card:hover {
+        border-color: var(--md-outline);
+        box-shadow: var(--md-elevation-1);
+    }
+
+    .component-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 12px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--md-outline-variant);
+    }
+
+    .component-card-title {
+        font: var(--md-typescale-title-small);
+        color: var(--md-on-surface);
+        font-weight: 500;
+        line-height: 1.3;
+    }
+
+    .component-card-subtitle {
+        font: var(--md-typescale-body-small);
+        color: var(--md-on-surface-variant);
+        margin-top: 4px;
+        line-height: 1.4;
+    }
+
+    .component-card-details {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        font: var(--md-typescale-body-small);
+    }
+
+    .detail-label {
+        color: var(--md-on-surface-variant);
+        font-weight: 500;
+        flex-shrink: 0;
+    }
+
+    .detail-value {
+        color: var(--md-on-surface);
+        text-align: right;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .serial-mono {
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        background: var(--md-surface-container);
+        padding: 2px 6px;
+        border-radius: 4px;
+    }
+
+    .mini-confidence-bar {
+        width: 50px;
+        height: 4px;
+        background: var(--md-surface-container-high);
+        border-radius: 2px;
+        overflow: hidden;
+    }
+
+    .mini-confidence-fill {
+        height: 100%;
+        transition: width 0.3s;
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .page-header-actions {
+            justify-content: center;
+        }
+
+        .overview-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .detail-tabs {
+            overflow-x: auto;
+        }
+
+        .serials-grid,
+        .stack-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .capture-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .component-details,
+        .fingerprint-details {
+            grid-template-columns: 1fr;
+        }
+
+        .component-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="page-header">
+    <div class="page-header-content">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('assets.devices') }}">Devices</a></li>
+                <li class="breadcrumb-item">{{ device.name }}</li>
+            </ol>
+        </nav>
+
+        <div class="device-title">
+            {% if device.current_captures > 0 and device.last_fingerprint_success %}
+            <span class="status-indicator status-online" title="Online - Has captures and fingerprint"></span>
+            {% elif device.current_captures > 0 or device.last_fingerprint_success %}
+            <span class="status-indicator status-partial" title="Partial - Limited data"></span>
+            {% else %}
+            <span class="status-indicator status-offline" title="Offline - No recent data"></span>
+            {% endif %}
+            <h1 class="md-headline-large" style="margin: 0;">{{ device.name }}</h1>
+        </div>
+
+        <div class="device-badges">
+            {% if device.is_stack %}
+            <span class="device-badge badge-stack">Stack ({{ device.stack_count }} members)</span>
+            {% endif %}
+            {% if device.is_infrastructure %}
+            <span class="device-badge badge-infrastructure">Infrastructure</span>
+            {% endif %}
+            {% if device.have_sn %}
+            <span class="device-badge badge-serials">Has Serials</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="page-header-actions">
+        <a href="{{ url_for('assets.device_edit', device_id=device.id) }}" class="md-button md-button-filled">
+            <i data-lucide="edit" size="16"></i>
+            Edit&nbsp;&nbsp;&nbsp;
+        </a>
+        <button class="md-button md-button-filled" onclick="showComingSoon('SSH Connect')">
+            <i data-lucide="terminal" size="16"></i>
+            SSH&nbsp;&nbsp;&nbsp;
+        </button>
+        <button class="md-button md-button-filled" onclick="showComingSoon('Run Capture')">
+            <i data-lucide="play" size="16"></i>
+            Capture&nbsp;&nbsp;&nbsp;
+        </button>
+        <button class="md-button md-button-outlined" onclick="exportDeviceData()">
+            <i data-lucide="download" size="16"></i>
+            Export&nbsp;&nbsp;&nbsp;
+        </button>
+        <button class="md-button md-button-outlined" onclick="document.getElementById('deleteModal').classList.add('open')" style="color: var(--md-error); border-color: var(--md-error);">
+            <i data-lucide="trash-2" size="16"></i>
+            Delete&nbsp;&nbsp;&nbsp;
+        </button>
+    </div>
+</div>
+
+<!-- Device Overview Cards -->
+<!-- Device Overview Cards -->
+<div class="overview-grid">
+    <div class="info-card">
+        <div class="info-card-header">
+            <i data-lucide="info" size="20"></i>
+            <h3>Basic Information</h3>
+        </div>
+        <div class="info-card-content">
+            <div class="info-row">
+                <span class="info-label">Name:</span>
+                <span class="info-value">{{ device.name }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Normalized:</span>
+                <span class="info-value">{{ device.normalized_name }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Site:</span>
+                <span class="info-value">
+                    {{ device.site_code or 'Unknown' }}
+                    {% if device.site_name %}({{ device.site_name }}){% endif %}
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Role:</span>
+                <span class="info-value">{{ device.role_name or 'Unknown' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Management IP:</span>
+                <span class="info-value">
+                    {% if device.management_ip %}
+                    <code>{{ device.management_ip }}</code>
+                    {% else %}
+                    <span class="text-muted">Not set</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-card">
+        <div class="info-card-header">
+            <i data-lucide="cpu" size="20"></i>
+            <h3>Hardware Information</h3>
+        </div>
+        <div class="info-card-content">
+            <div class="info-row">
+                <span class="info-label">Vendor:</span>
+                <span class="info-value">{{ device.vendor_name or 'Unknown' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Model:</span>
+                <span class="info-value">{{ device.model or 'Unknown' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">OS Version:</span>
+                <span class="info-value">{{ device.os_version or 'Unknown' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Device Type:</span>
+                <span class="info-value">{{ device.device_type_name or 'Unknown' }}</span>
+            </div>
+            {% if device.device_type_name %}
+            <div class="info-row">
+                <span class="info-label">Driver:</span>
+                <span class="info-value">
+                    {% if device.netmiko_driver %}
+                    <div class="md-body-small"><strong>Netmiko:</strong> {{ device.netmiko_driver }}</div>
+                    {% endif %}
+                    {% if device.napalm_driver %}
+                    <div class="md-body-small"><strong>NAPALM:</strong> {{ device.napalm_driver }}</div>
+                    {% endif %}
+                </span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="info-card">
+        <div class="info-card-header">
+            <i data-lucide="activity" size="20"></i>
+            <h3>Capture Status</h3>
+        </div>
+        <div class="info-card-content">
+            <div class="info-row">
+                <span class="info-label">Current Captures:</span>
+                <span class="info-value">
+                    {% if device.current_captures > 0 %}
+                    <span class="md-badge md-badge-success">{{ device.current_captures }}</span>
+                    {% else %}
+                    <span class="md-badge md-badge-secondary">0</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Capture Types:</span>
+                <span class="info-value">{{ device.capture_types or 0 }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Last Fingerprint:</span>
+                <span class="info-value">
+                    {% if device.last_fingerprint %}
+                    <div class="md-body-small">{{ device.last_fingerprint[:19] }}</div>
+                    <div style="margin-top: 4px;">
+                        {% if device.last_fingerprint_success %}
+                        <i data-lucide="check-circle" size="16" class="status-icon-success"></i>
+                        {% else %}
+                        <i data-lucide="x-circle" size="16" class="status-icon-error"></i>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <span class="text-muted">Never</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Last Updated:</span>
+                <span class="info-value">
+                    {% if device.last_updated %}
+                    <div class="md-body-small">{{ device.last_updated[:19] }}</div>
+                    {% else %}
+                    <span class="text-muted">Unknown</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Detailed Information Tabs -->
+<div class="detail-tabs-container">
+    <div class="detail-tabs-header">
+        <ul class="detail-tabs" role="tablist">
+            <li class="detail-tab" role="presentation">
+                <button class="detail-tab-button active" onclick="switchTab('serials')" role="tab">
+                    <i data-lucide="tag" size="16"></i>
+                    Serial Numbers ({{ serials|length }})
+                </button>
+            </li>
+            {% if device.is_stack and stack_members %}
+            <li class="detail-tab" role="presentation">
+                <button class="detail-tab-button" onclick="switchTab('stack')" role="tab">
+                    <i data-lucide="layers" size="16"></i>
+                    Stack Members ({{ stack_members|length }})
+                </button>
+            </li>
+            {% endif %}
+            <li class="detail-tab" role="presentation">
+                <button class="detail-tab-button" onclick="switchTab('components')" role="tab">
+                    <i data-lucide="cpu" size="16"></i>
+                    Components ({{ components|length }})
+                </button>
+            </li>
+            <li class="detail-tab" role="presentation">
+                <button class="detail-tab-button" onclick="switchTab('captures')" role="tab">
+                    <i data-lucide="camera" size="16"></i>
+                    Captures ({{ captures|length }})
+                </button>
+            </li>
+            <li class="detail-tab" role="presentation">
+                <button class="detail-tab-button" onclick="switchTab('fingerprints')" role="tab">
+                    <i data-lucide="fingerprint" size="16"></i>
+                    Fingerprints ({{ fingerprints|length }})
+                </button>
+            </li>
+            <li class="detail-tab" role="presentation">
+                <button class="detail-tab-button" onclick="switchTab('notes')" role="tab">
+                    <i data-lucide="file-text" size="16"></i>
+                    Notes ({{ device_notes|length }})
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <div class="detail-tab-content">
+        <!-- Serial Numbers Tab -->
+        <div class="tab-pane active" id="serials-tab" role="tabpanel">
+            {% if serials %}
+            <div class="serials-grid">
+                {% for serial in serials %}
+                <div class="serial-card">
+                    <code>{{ serial.serial }}</code>
+                    {% if serial.is_primary %}
+                    <span class="serial-badge-primary">Primary</span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i data-lucide="tag" size="48"></i>
+                </div>
+                <h3>No serial numbers available</h3>
+                <p>No serial numbers have been discovered for this device</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Stack Members Tab -->
+        {% if device.is_stack %}
+        <div class="tab-pane" id="stack-tab" role="tabpanel">
+            {% if stack_members %}
+            <div class="stack-grid">
+                {% for member in stack_members %}
+                <div class="stack-member-card">
+                    <div class="stack-member-header">
+                        <h4 class="stack-member-title">Position {{ member.position or '?' }}</h4>
+                        {% if member.is_master %}
+                        <span class="stack-badge-master">Master</span>
+                        {% endif %}
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Serial:</span>
+                        <span class="info-value"><code>{{ member.serial }}</code></span>
+                    </div>
+                    {% if member.model %}
+                    <div class="info-row">
+                        <span class="info-label">Model:</span>
+                        <span class="info-value">{{ member.model }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i data-lucide="layers" size="48"></i>
+                </div>
+                <h3>No stack members found</h3>
+                <p>No stack member information is available</p>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Components Tab -->
+        <div class="tab-pane" id="components-tab" role="tabpanel">
+            {% if components %}
+            <!-- Component Summary Bar -->
+            <div style="background: var(--md-surface-container); border-radius: var(--md-shape-corner-medium); padding: 16px 24px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+                    <div>
+                        <div style="font: var(--md-typescale-body-small); color: var(--md-on-surface-variant);">Total Components</div>
+                        <div style="font: var(--md-typescale-title-large); color: var(--md-on-surface); font-weight: 500;">{{ components|length }}</div>
+                    </div>
+                    <div>
+                        <div style="font: var(--md-typescale-body-small); color: var(--md-on-surface-variant);">With Serials</div>
+                        <div style="font: var(--md-typescale-title-large); color: var(--md-success); font-weight: 500;">
+                            {{ components|selectattr('serial')|list|length }}
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font: var(--md-typescale-body-small); color: var(--md-on-surface-variant);">Component Types</div>
+                        <div style="font: var(--md-typescale-title-large); color: var(--md-on-surface); font-weight: 500;">
+                            {{ components|map(attribute='type')|unique|list|length }}
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="md-button md-button-filled" onclick="viewAllInventory({{ device.id }})">
+                        <i data-lucide="eye" size="16"></i>
+                        View Raw Inventory
+                    </button>
+                    <button class="md-button md-button-tonal" onclick="exportComponents()">
+                        <i data-lucide="download" size="16"></i>
+                        Export
+                    </button>
+                </div>
+            </div>
+
+            <!-- Component Type Filter -->
+            <div style="margin-bottom: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="component-filter-btn active" data-type="all" onclick="filterComponentsByType('all', this)">
+                    <i data-lucide="grid-3x3" size="14"></i>
+                    All ({{ components|length }})
+                </button>
+                {% set component_types = {} %}
+                {% for comp in components %}
+                    {% set comp_type = comp.type or 'unknown' %}
+                    {% if comp_type not in component_types %}
+                        {% set _ = component_types.update({comp_type: 0}) %}
+                    {% endif %}
+                    {% set _ = component_types.update({comp_type: component_types[comp_type] + 1}) %}
+                {% endfor %}
+
+                {% for type, count in component_types.items()|sort %}
+                <button class="component-filter-btn" data-type="{{ type }}" onclick="filterComponentsByType('{{ type }}', this)">
+                    {{ type|capitalize }} ({{ count }})
+                </button>
+                {% endfor %}
+            </div>
+
+            <!-- Grouped Components by Type -->
+            {% set components_by_type = {} %}
+            {% for comp in components %}
+                {% set comp_type = comp.type or 'unknown' %}
+                {% if comp_type not in components_by_type %}
+                    {% set _ = components_by_type.update({comp_type: []}) %}
+                {% endif %}
+                {% set _ = components_by_type[comp_type].append(comp) %}
+            {% endfor %}
+
+            <div class="component-groups">
+                {% for type in ['chassis', 'module', 'supervisor', 'psu', 'fan', 'transceiver', 'unknown'] %}
+                    {% if type in components_by_type %}
+                    {% set type_components = components_by_type[type] %}
+
+                    <div class="component-group" data-component-type="{{ type }}">
+                        <div class="component-group-header" onclick="toggleComponentGroup(this)">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <i data-lucide="{% if type == 'chassis' %}box
+                                                {% elif type == 'module' %}package
+                                                {% elif type == 'supervisor' %}shield
+                                                {% elif type == 'psu' %}zap
+                                                {% elif type == 'fan' %}wind
+                                                {% elif type == 'transceiver' %}activity
+                                                {% else %}help-circle{% endif %}" size="20"></i>
+                                <h3 style="margin: 0; font: var(--md-typescale-title-medium); text-transform: capitalize;">
+                                    {{ type }} Components
+                                </h3>
+                                <span class="component-count-badge">{{ type_components|length }}</span>
+                            </div>
+                            <i data-lucide="chevron-down" size="20" class="group-toggle-icon"></i>
+                        </div>
+
+                        <div class="component-group-content" style="display: block;">
+                            <div class="component-grid">
+                                {% for comp in type_components %}
+                                <div class="component-card">
+                                    <div class="component-card-header">
+                                        <div>
+                                            <div class="component-card-title">{{ comp.name }}</div>
+                                            {% if comp.description and comp.description != comp.name %}
+                                            <div class="component-card-subtitle">{{ comp.description }}</div>
+                                            {% endif %}
+                                        </div>
+                                        {% if comp.serial %}
+                                        <i data-lucide="check-circle" size="16" style="color: var(--md-success); flex-shrink: 0;" title="Has serial number"></i>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="component-card-details">
+                                        {% if comp.serial %}
+                                        <div class="detail-row">
+                                            <span class="detail-label">Serial:</span>
+                                            <code class="detail-value serial-mono">{{ comp.serial }}</code>
+                                        </div>
+                                        {% endif %}
+
+                                        {% if comp.position %}
+                                        <div class="detail-row">
+                                            <span class="detail-label">Position:</span>
+                                            <span class="detail-value">{{ comp.position }}</span>
+                                        </div>
+                                        {% endif %}
+
+                                        {% if comp.subtype %}
+                                        <div class="detail-row">
+                                            <span class="detail-label">Subtype:</span>
+                                            <span class="detail-value">{{ comp.subtype }}</span>
+                                        </div>
+                                        {% endif %}
+
+                                        {% if comp.extraction_confidence %}
+                                        <div class="detail-row">
+                                            <span class="detail-label">Confidence:</span>
+                                            <span class="detail-value">
+                                                <div class="mini-confidence-bar">
+                                                    <div class="mini-confidence-fill
+                                                        {% if comp.extraction_confidence >= 0.7 %}confidence-high
+                                                        {% elif comp.extraction_confidence >= 0.4 %}confidence-medium
+                                                        {% else %}confidence-low{% endif %}"
+                                                        style="width: {{ (comp.extraction_confidence * 100)|round }}%">
+                                                    </div>
+                                                </div>
+                                                <span style="font-size: 11px; color: var(--md-on-surface-variant);">
+                                                    {{ "%.0f"|format(comp.extraction_confidence * 100) }}%
+                                                </span>
+                                            </span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i data-lucide="cpu" size="48"></i>
+                </div>
+                <h3>No components discovered</h3>
+                <p>No hardware components have been identified for this device</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Captures Tab -->
+        <div class="tab-pane" id="captures-tab" role="tabpanel">
+            {% if captures %}
+            <div class="capture-grid">
+                {% for capture in captures %}
+                <div class="capture-item {% if capture.extraction_success %}capture-success{% else %}capture-failed{% endif %}">
+                    <div class="capture-header">
+                        <h4 class="capture-title">{{ capture.capture_type }}</h4>
+                        <div class="capture-status">
+                            {% if capture.extraction_success %}
+                            <i data-lucide="check-circle" size="16" class="status-icon-success" title="Success"></i>
+                            {% else %}
+                            <i data-lucide="x-circle" size="16" class="status-icon-error" title="Failed"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="capture-details">
+                        <div class="md-body-small">
+                            <strong>Size:</strong>
+                            {% if capture.file_size %}
+                            {{ "%.1f"|format(capture.file_size / 1024) }} KB
+                            {% else %}
+                            Unknown
+                            {% endif %}
+                        </div>
+                        <div class="md-body-small">
+                            <strong>Captured:</strong> {{ capture.capture_timestamp[:19] }}
+                        </div>
+                    </div>
+                    {% if capture.command_used %}
+                    <div class="capture-command">
+                        Command: <code>{{ capture.command_used }}</code>
+                    </div>
+                    {% endif %}
+                    <div class="capture-actions">
+                        <button class="md-button md-button-filled" onclick="viewCapture({{ device.id }}, '{{ capture.capture_type }}')">
+                            <i data-lucide="eye" size="16"></i>
+                            View
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i data-lucide="camera" size="48"></i>
+                </div>
+                <h3>No captures available</h3>
+                <p>No configuration captures have been taken for this device</p>
+                <button class="md-button md-button-filled" onclick="showComingSoon('Run Capture')">
+                    <i data-lucide="play" size="16"></i>
+                    Run Capture
+                </button>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Fingerprints Tab -->
+        <div class="tab-pane" id="fingerprints-tab" role="tabpanel">
+            {% if fingerprints %}
+            <div class="fingerprint-list">
+                {% for fp in fingerprints %}
+                <div class="fingerprint-item">
+                    <div class="fingerprint-header">
+                        <h4 class="fingerprint-timestamp">
+                            {{ fp.extraction_timestamp[:19] }}
+                            {% if fp.extraction_success %}
+                            <i data-lucide="check-circle" size="16" class="status-icon-success"></i>
+                            {% else %}
+                            <i data-lucide="x-circle" size="16" class="status-icon-error"></i>
+                            {% endif %}
+                        </h4>
+                        <button class="md-button md-button-filled" onclick="viewFingerprint({{ device.id }}, '{{ fp.extraction_timestamp }}')">
+                            <i data-lucide="file-json" size="16"></i>
+                            View JSON
+                        </button>
+                    </div>
+                    <div class="fingerprint-details">
+                        {% if fp.template_used %}
+                        <div class="fingerprint-detail">
+                            <strong>Template:</strong> {{ fp.template_used }}
+                        </div>
+                        {% endif %}
+                        {% if fp.template_score %}
+                        <div class="fingerprint-detail">
+                            <strong>Score:</strong> {{ "%.2f"|format(fp.template_score) }}
+                        </div>
+                        {% endif %}
+                        {% if fp.fields_extracted and fp.total_fields_available %}
+                        <div class="fingerprint-detail">
+                            <strong>Fields:</strong> {{ fp.fields_extracted }}/{{ fp.total_fields_available }}
+                        </div>
+                        {% endif %}
+                        {% if fp.extraction_duration_ms %}
+                        <div class="fingerprint-detail">
+                            <strong>Duration:</strong> {{ fp.extraction_duration_ms }}ms
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i data-lucide="fingerprint" size="48"></i>
+                </div>
+                <h3>No fingerprint data available</h3>
+                <p>No device fingerprinting has been performed</p>
+                <button class="md-button md-button-filled" onclick="showComingSoon('Run Fingerprint')">
+                    <i data-lucide="fingerprint" size="16"></i>
+                    Run Fingerprint
+                </button>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Notes Tab -->
+        <!-- Notes Tab -->
+        <div class="tab-pane" id="notes-tab" role="tabpanel">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0; font: var(--md-typescale-title-medium);">
+                    Device Notes
+                    <span style="margin-left: 8px; font-size: 0.8em; color: var(--md-on-surface-variant); font-weight: normal;">
+                        ({{ device_notes|length if device_notes else 0 }})
+                    </span>
+                </h3>
+                <div style="display: flex; gap: 8px;">
+                    <a href="{{ url_for('notes.index', type='device') }}" class="md-button md-button-outlined">
+                        <i data-lucide="list" size="16"></i>
+                        All Device Notes
+                    </a>
+                    <a href="{{ url_for('notes.create', device_id=device.id) }}" class="md-button md-button-filled">
+                        <i data-lucide="plus" size="16"></i>
+                        Add Note
+                    </a>
+                </div>
+            </div>
+
+            {% if device_notes %}
+            <table class="devices-table" style="table-layout: fixed;">
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Title</th>
+                        <th style="width: 12%;">Type</th>
+                        <th style="width: 45%;">Preview</th>
+                        <th style="width: 12%;">Updated</th>
+                        <th style="width: 6%; text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for note in device_notes %}
+                    <tr style="cursor: pointer;" onclick="window.location='{{ url_for('notes.detail', note_id=note.id) }}'">
+                        <td>
+                            <strong style="color: var(--md-primary);">{{ note.title }}</strong>
+                            {% if note.tags %}
+                            <div style="margin-top: 4px; display: flex; gap: 4px; flex-wrap: wrap;">
+                                {% set tags = note.tags|from_json %}
+                                {% for tag in tags[:2] %}
+                                <span style="background: var(--md-surface-container-high); padding: 2px 8px; border-radius: 12px; font-size: 10px; color: var(--md-on-surface-variant);">
+                                    {{ tag }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="note-type-badge note-type-{{ note.note_type }}">
+                                {{ note.note_type|title }}
+                            </span>
+                        </td>
+                        <td style="color: var(--md-on-surface-variant); max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            {{ note.content|striptags|truncate(80) }}
+                        </td>
+                        <td style="white-space: nowrap;">
+                            {{ note.updated_at[:10] }}
+                        </td>
+                        <td style="text-align: right;">
+                            <a href="{{ url_for('notes.detail', note_id=note.id) }}"
+                               class="md-icon-button"
+                               title="View Note"
+                               onclick="event.stopPropagation();">
+                                <i data-lucide="eye" size="16"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i data-lucide="file-text" size="48"></i>
+                </div>
+                <h3>No notes for this device</h3>
+                <p>Document configurations, issues, maintenance activities, or troubleshooting steps</p>
+                <a href="{{ url_for('notes.create', device_id=device.id) }}" class="md-button md-button-filled">
+                    <i data-lucide="plus" size="16"></i>
+                    Create First Note
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+
+<!-- Content Viewer Modal -->
+<div class="md-modal content-viewer-modal" id="contentViewerModal">
+    <div class="md-modal-content">
+        <div class="md-modal-header">
+            <h2 class="md-modal-title" id="contentViewerTitle">
+                <i data-lucide="file-text" size="20"></i>
+                Content Viewer
+            </h2>
+            <button class="md-icon-button" onclick="closeContentViewer()">
+                <i data-lucide="x" size="20"></i>
+            </button>
+        </div>
+        <div class="content-viewer-body">
+            <div class="content-viewer-toolbar">
+                <button class="md-button md-button-text" onclick="copyContent()" id="copyButton">
+                    <i data-lucide="copy" size="16"></i>
+                    Copy
+                </button>
+                <button class="md-button md-button-text" onclick="downloadContent()" id="downloadButton">
+                    <i data-lucide="download" size="16"></i>
+                    Download
+                </button>
+                <div style="flex: 1;"></div>
+                <span class="md-body-small" id="contentInfo" style="color: var(--md-on-surface-variant);"></span>
+            </div>
+            <div class="content-viewer-content" id="contentViewerContent">
+                <div style="text-align: center; padding: 40px;">
+                    <div class="loading-spinner"></div>
+                    <p class="md-body-medium" style="margin-top: 16px; color: var(--md-on-surface-variant);">Loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="md-modal" id="deleteModal">
+    <div class="md-modal-content">
+        <div class="md-modal-header">
+            <h2 class="md-modal-title" style="color: var(--md-error); display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="alert-triangle" size="20"></i>
+                Confirm Deletion
+            </h2>
+            <button class="md-icon-button" onclick="document.getElementById('deleteModal').classList.remove('open')">
+                <i data-lucide="x" size="20"></i>
+            </button>
+        </div>
+        <div class="md-modal-body">
+            <p class="md-body-large"><strong>Delete device "{{ device.name }}"?</strong></p>
+
+            {% if device.current_captures > 0 or fingerprints|length > 0 or serials|length > 0 or stack_members|length > 0 or components|length > 0 %}
+            <div style="background: var(--md-warning-container); color: var(--md-on-warning-container); padding: 16px; border-radius: var(--md-shape-corner-small); margin: 16px 0;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <i data-lucide="alert-triangle" size="16"></i>
+                    <strong>This will also delete:</strong>
+                </div>
+                <ul style="margin: 8px 0 0 24px; padding: 0;">
+                    {% if device.current_captures > 0 %}<li>{{ device.current_captures }} captures</li>{% endif %}
+                    {% if fingerprints|length > 0 %}<li>{{ fingerprints|length }} fingerprints</li>{% endif %}
+                    {% if serials|length > 0 %}<li>{{ serials|length }} serial numbers</li>{% endif %}
+                    {% if stack_members|length > 0 %}<li>{{ stack_members|length }} stack members</li>{% endif %}
+                    {% if components|length > 0 %}<li>{{ components|length }} components</li>{% endif %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <p class="md-body-large" style="color: var(--md-error); margin-top: 16px;"><strong>This action cannot be undone!</strong></p>
+        </div>
+        <div class="md-modal-footer">
+            <button class="md-button md-button-text" onclick="document.getElementById('deleteModal').classList.remove('open')">
+                Cancel
+            </button>
+            <form method="POST" action="{{ url_for('assets.device_delete', device_id=device.id) }}" style="display: inline;">
+                <input type="hidden" name="confirm" value="yes">
+                <button type="submit" class="md-button md-button-filled" style="background: var(--md-error); color: var(--md-on-error);">
+                    <i data-lucide="trash-2" size="16"></i>
+                    Delete Permanently
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Content viewer state
+let currentContent = '';
+let currentFilename = '';
+
+// View capture file
+async function viewCapture(deviceId, captureType) {
+    openContentViewer();
+    setContentViewerTitle(`Capture: ${captureType}`);
+    currentFilename = `${captureType}.txt`;
+
+    try {
+        const response = await fetch(`/assets/api/devices/${deviceId}/capture/${encodeURIComponent(captureType)}`);
+        if (!response.ok) throw new Error('Failed to load capture');
+
+        const data = await response.json();
+        currentContent = data.content || 'No content available';
+        displayTextContent(currentContent);
+        setContentInfo(`${data.lines || 0} lines, ${formatBytes(data.size || 0)}`);
+    } catch (error) {
+        displayError(`Error loading capture: ${error.message}`);
+    }
+}
+
+// View full inventory
+async function viewAllInventory(deviceId) {
+    openContentViewer();
+    setContentViewerTitle('Full Device Inventory');
+    currentFilename = 'inventory.txt';
+
+    try {
+        const response = await fetch(`/assets/api/devices/${deviceId}/inventory`);
+        if (!response.ok) throw new Error('Failed to load inventory');
+
+        const data = await response.json();
+        currentContent = data.content || 'No inventory data available';
+        displayTextContent(currentContent);
+        setContentInfo(`${data.component_count || 0} components`);
+    } catch (error) {
+        displayError(`Error loading inventory: ${error.message}`);
+    }
+}
+
+// View fingerprint JSON
+async function viewFingerprint(deviceId, timestamp) {
+    openContentViewer();
+    setContentViewerTitle(`Fingerprint: ${timestamp}`);
+    currentFilename = 'fingerprint.json';
+
+    try {
+        const response = await fetch(`/assets/api/devices/${deviceId}/fingerprint/${encodeURIComponent(timestamp)}`);
+        if (!response.ok) throw new Error('Failed to load fingerprint');
+
+        const data = await response.json();
+        currentContent = JSON.stringify(data.fingerprint, null, 2);
+        displayJsonContent(data.fingerprint);
+        setContentInfo(`${Object.keys(data.fingerprint || {}).length} top-level keys`);
+    } catch (error) {
+        displayError(`Error loading fingerprint: ${error.message}`);
+    }
+}
+
+// Display functions
+function displayTextContent(text) {
+    const container = document.getElementById('contentViewerContent');
+    const pre = document.createElement('pre');
+    pre.className = 'content-viewer-pre';
+    pre.textContent = text;
+    container.innerHTML = '';
+    container.appendChild(pre);
+    lucide.createIcons();
+}
+
+function displayJsonContent(json) {
+    const container = document.getElementById('contentViewerContent');
+    container.innerHTML = `<pre class="content-viewer-pre json-viewer">${syntaxHighlightJson(json)}</pre>`;
+    lucide.createIcons();
+}
+
+function displayError(message) {
+    document.getElementById('contentViewerContent').innerHTML = `
+        <div style="text-align: center; padding: 40px; color: var(--md-error);">
+            <i data-lucide="alert-circle" size="48"></i>
+            <p class="md-body-large" style="margin-top: 16px;">${message}</p>
+        </div>
+    `;
+    lucide.createIcons();
+}
+
+// JSON syntax highlighting
+function syntaxHighlightJson(obj) {
+    let json = JSON.stringify(obj, null, 2);
+    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+        let cls = 'json-number';
+        if (/^"/.test(match)) {
+            cls = /:$/.test(match) ? 'json-key' : 'json-string';
+        } else if (/true|false/.test(match)) {
+            cls = 'json-boolean';
+        } else if (/null/.test(match)) {
+            cls = 'json-null';
+        }
+        return '<span class="' + cls + '">' + match + '</span>';
+    });
+}
+
+// Modal controls
+function openContentViewer() {
+    document.getElementById('contentViewerModal').classList.add('open');
+}
+
+function closeContentViewer() {
+    document.getElementById('contentViewerModal').classList.remove('open');
+}
+
+function setContentViewerTitle(title) {
+    document.getElementById('contentViewerTitle').innerHTML = `<i data-lucide="file-text" size="20"></i> ${title}`;
+    lucide.createIcons();
+}
+
+function setContentInfo(info) {
+    document.getElementById('contentInfo').textContent = info;
+}
+
+// Copy content to clipboard
+async function copyContent() {
+    try {
+        await navigator.clipboard.writeText(currentContent);
+        const btn = document.getElementById('copyButton');
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<i data-lucide="check" size="16"></i> Copied!';
+        lucide.createIcons();
+        setTimeout(() => { btn.innerHTML = orig; lucide.createIcons(); }, 2000);
+    } catch (error) {
+        alert('Failed to copy content');
+    }
+}
+
+// Download content as file
+function downloadContent() {
+    const blob = new Blob([currentContent], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = currentFilename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
+
+// Helper functions
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+// Close modals on background click
+document.getElementById('contentViewerModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeContentViewer();
+});
+
+document.getElementById('deleteModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        this.classList.remove('open');
+    }
+});
+
+// Tab switching
+function switchTab(tabName) {
+    const allPanes = document.querySelectorAll('.tab-pane');
+    allPanes.forEach(pane => pane.classList.remove('active'));
+
+    const allButtons = document.querySelectorAll('.detail-tab-button');
+    allButtons.forEach(button => button.classList.remove('active'));
+
+    const selectedPane = document.getElementById(tabName + '-tab');
+    if (selectedPane) {
+        selectedPane.classList.add('active');
+    }
+
+    event.target.classList.add('active');
+    lucide.createIcons();
+}
+
+// Component filter functions
+function toggleComponentGroup(header) {
+    header.classList.toggle('collapsed');
+    const content = header.nextElementSibling;
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+    } else {
+        content.style.display = 'none';
+    }
+    lucide.createIcons();
+}
+
+function filterComponentsByType(type, button) {
+    // Update button states
+    document.querySelectorAll('.component-filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    button.classList.add('active');
+
+    // Show/hide groups
+    const groups = document.querySelectorAll('.component-group');
+    groups.forEach(group => {
+        if (type === 'all') {
+            group.style.display = 'block';
+        } else {
+            const groupType = group.getAttribute('data-component-type');
+            group.style.display = (groupType === type) ? 'block' : 'none';
+        }
+    });
+}
+
+function exportComponents() {
+    const components = {{ components|tojson }};
+    let csv = 'Type,Name,Description,Serial,Position,Confidence\n';
+
+    components.forEach(comp => {
+        const row = [
+            comp.type || '',
+            comp.name || '',
+            comp.description || '',
+            comp.serial || '',
+            comp.position || '',
+            comp.extraction_confidence ? (comp.extraction_confidence * 100).toFixed(1) + '%' : ''
+        ];
+        csv += row.map(field => '"' + String(field).replace(/"/g, '""') + '"').join(',') + '\n';
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '{{ device.name }}_components.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
+
+function exportDeviceData() {
+    const device = {
+        name: "{{ device.name }}",
+        normalized_name: "{{ device.normalized_name }}",
+        site: "{{ device.site_code or '' }}",
+        vendor: "{{ device.vendor_name or '' }}",
+        model: "{{ device.model or '' }}",
+        os_version: "{{ device.os_version or '' }}",
+        management_ip: "{{ device.management_ip or '' }}",
+        role: "{{ device.role_name or '' }}"
+    };
+
+    const components = {{ components|tojson|safe }};
+
+    // Create comprehensive CSV
+    let csv = 'Export Type,Device Name,Site,Vendor,Model,OS Version,Management IP,Role,Component Type,Component Name,Description,Serial,Position,Subtype,Confidence\n';
+
+    // Add device row
+    csv += [
+        'Device',
+        device.name,
+        device.site,
+        device.vendor,
+        device.model,
+        device.os_version,
+        device.management_ip,
+        device.role,
+        '', '', '', '', '', '', ''
+    ].map(escapeCSV).join(',') + '\n';
+
+    // Add component rows
+    components.forEach(comp => {
+        csv += [
+            'Component',
+            device.name,
+            device.site,
+            device.vendor,
+            device.model,
+            device.os_version,
+            device.management_ip,
+            device.role,
+            comp.type || '',
+            comp.name || '',
+            comp.description || '',
+            comp.serial || '',
+            comp.position || '',
+            comp.subtype || '',
+            comp.extraction_confidence ? (comp.extraction_confidence * 100).toFixed(1) + '%' : ''
+        ].map(escapeCSV).join(',') + '\n';
+    });
+
+    // Download
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${device.name}_full_export_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+
+    showToast('Device and component data exported successfully');
+}
+
+function escapeCSV(field) {
+    if (field === null || field === undefined) return '""';
+    const str = String(field);
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return '"' + str.replace(/"/g, '""') + '"';
+    }
+    return '"' + str + '"';
+}
+
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--md-inverse-surface); color: var(--md-inverse-on-surface); padding: 12px 24px; border-radius: 8px; z-index: 10000; box-shadow: var(--md-elevation-3);';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+function showComingSoon(feature) {
+    showToast(`${feature} - Coming Soon`);
+}
+
+// Initialize on load
+document.addEventListener('DOMContentLoaded', function() {
+    lucide.createIcons();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,569 @@
+{% extends "base.html" %}
+
+{% block title %}{{ form_title }} - Network Asset Management{% endblock %}
+
+{% block head_extra %}
+<style>
+    /* Page header */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 32px;
+        gap: 24px;
+    }
+
+    .page-header-content {
+        flex: 1;
+    }
+
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        list-style: none;
+        padding: 0;
+    }
+
+    .breadcrumb-item {
+        color: var(--md-on-surface-variant);
+        font: var(--md-typescale-body-medium);
+    }
+
+    .breadcrumb-item a {
+        color: var(--md-primary);
+        text-decoration: none;
+    }
+
+    .breadcrumb-item a:hover {
+        text-decoration: underline;
+    }
+
+    .breadcrumb-item:not(:last-child)::after {
+        content: "/";
+        margin-left: 8px;
+        color: var(--md-on-surface-variant);
+    }
+
+    /* Form layout */
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+        margin-bottom: 24px;
+    }
+
+    /* Form sections */
+    .form-section {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        overflow: hidden;
+    }
+
+    .form-section-header {
+        background: var(--md-surface-container);
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--md-outline-variant);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .form-section-header h3 {
+        margin: 0;
+        font: var(--md-typescale-title-medium);
+        color: var(--md-on-surface);
+        font-weight: 500;
+    }
+
+    .form-section-content {
+        padding: 24px;
+    }
+
+    /* Form fields using MD3 text field styles */
+    .md-form-field {
+        margin-bottom: 24px;
+    }
+
+    .md-form-field:last-child {
+        margin-bottom: 0;
+    }
+
+    .md-form-label {
+        display: block;
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-surface);
+        font-weight: 500;
+        margin-bottom: 8px;
+    }
+
+    .required-indicator {
+        color: var(--md-error);
+        margin-left: 4px;
+    }
+
+    .md-form-input,
+    .md-form-select {
+        width: 100%;
+        padding: 14px 16px;
+        font: var(--md-typescale-body-large);
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline);
+        border-radius: var(--md-shape-corner-small);
+        color: var(--md-on-surface);
+        transition: border-color var(--md-motion-duration-short4) var(--md-motion-easing-standard),
+                    border-width var(--md-motion-duration-short4) var(--md-motion-easing-standard);
+        outline: none;
+    }
+
+    .md-form-input:focus,
+    .md-form-select:focus {
+        border-color: var(--md-primary);
+        border-width: 2px;
+        padding: 13px 15px;
+    }
+
+    .md-form-input::placeholder {
+        color: var(--md-on-surface-variant);
+        opacity: 0.6;
+    }
+
+    .md-form-help {
+        font: var(--md-typescale-body-small);
+        color: var(--md-on-surface-variant);
+        margin-top: 4px;
+    }
+
+    .md-form-error {
+        font: var(--md-typescale-body-small);
+        color: var(--md-error);
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    /* Action buttons section */
+    .form-actions {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        padding: 24px;
+    }
+
+    .form-actions-buttons {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+    }
+
+    /* Danger zone */
+    .danger-zone {
+        background: var(--md-surface);
+        border: 1px solid var(--md-error-container);
+        border-radius: var(--md-shape-corner-medium);
+        overflow: hidden;
+        margin-top: 24px;
+    }
+
+    .danger-zone-header {
+        background: var(--md-error-container);
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--md-outline-variant);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .danger-zone-header h3 {
+        margin: 0;
+        font: var(--md-typescale-title-medium);
+        color: var(--md-on-error-container);
+        font-weight: 500;
+    }
+
+    .danger-zone-content {
+        padding: 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 24px;
+    }
+
+    .danger-zone-text h4 {
+        font: var(--md-typescale-title-small);
+        color: var(--md-on-surface);
+        margin: 0 0 8px 0;
+    }
+
+    .danger-zone-text p {
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-surface-variant);
+        margin: 0;
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-actions-buttons {
+            flex-direction: column;
+        }
+
+        .danger-zone-content {
+            flex-direction: column;
+            align-items: stretch;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="page-header">
+    <div class="page-header-content">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('assets.devices') }}">Devices</a></li>
+                {% if device %}
+                <li class="breadcrumb-item"><a href="{{ url_for('assets.device_detail', device_id=device.id) }}">{{ device.name }}</a></li>
+                <li class="breadcrumb-item">Edit</li>
+                {% else %}
+                <li class="breadcrumb-item">Create</li>
+                {% endif %}
+            </ol>
+        </nav>
+        <h1 class="md-headline-large" style="margin: 0;">
+            {% if device %}Edit Device{% else %}Create Device{% endif %}
+        </h1>
+    </div>
+</div>
+
+<!-- Form -->
+<form method="POST" id="device-form">
+    <div class="form-grid">
+        <!-- Basic Information -->
+        <div class="form-section">
+            <div class="form-section-header">
+                <i data-lucide="info" size="20"></i>
+                <h3>Basic Information</h3>
+            </div>
+            <div class="form-section-content">
+                <div class="md-form-field">
+                    <label class="md-form-label" for="name">
+                        Device Name
+                        <span class="required-indicator">*</span>
+                    </label>
+                    <input type="text"
+                           class="md-form-input"
+                           id="name"
+                           name="name"
+                           value="{{ device.name if device else '' }}"
+                           required
+                           placeholder="e.g., dc-core-01, branch-sw-02">
+                    <div class="md-form-help">
+                        Unique device identifier. Will be normalized for database storage.
+                    </div>
+                </div>
+
+                <div class="md-form-field">
+                    <label class="md-form-label" for="site_code">Site</label>
+                    <select class="md-form-select" id="site_code" name="site_code">
+                        <option value="">-- Select Site --</option>
+                        {% for site in sites %}
+                        <option value="{{ site.code }}"
+                                {% if device and device.site_code == site.code %}selected{% endif %}>
+                            {{ site.code }} - {{ site.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div class="md-form-help">
+                        Assign device to a specific site/location
+                    </div>
+                </div>
+
+                <div class="md-form-field">
+                    <label class="md-form-label" for="management_ip">Management IP Address</label>
+                    <input type="text"
+                           class="md-form-input"
+                           id="management_ip"
+                           name="management_ip"
+                           value="{{ device.management_ip if device else '' }}"
+                           placeholder="10.0.0.1">
+                    <div class="md-form-help">
+                        IPv4 address for device management
+                    </div>
+                </div>
+
+                <div class="md-form-field">
+                    <label class="md-form-label" for="role_id">Device Role</label>
+                    <select class="md-form-select" id="role_id" name="role_id">
+                        <option value="">-- Select Role --</option>
+                        {% for role in roles %}
+                        <option value="{{ role.id }}"
+                                {% if device and device.role_id == role.id %}selected{% endif %}>
+                            {{ role.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div class="md-form-help">
+                        Functional role (e.g., Core, Distribution, Access)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hardware Information -->
+        <div class="form-section">
+            <div class="form-section-header">
+                <i data-lucide="cpu" size="20"></i>
+                <h3>Hardware Information</h3>
+            </div>
+            <div class="form-section-content">
+                <div class="md-form-field">
+                    <label class="md-form-label" for="vendor_id">Vendor</label>
+                    <select class="md-form-select" id="vendor_id" name="vendor_id">
+                        <option value="">-- Select Vendor --</option>
+                        {% for vendor in vendors %}
+                        <option value="{{ vendor.id }}"
+                                {% if device and device.vendor_id == vendor.id %}selected{% endif %}>
+                            {{ vendor.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div class="md-form-help">
+                        Device manufacturer
+                    </div>
+                </div>
+
+                <div class="md-form-field">
+                    <label class="md-form-label" for="model">Model</label>
+                    <input type="text"
+                           class="md-form-input"
+                           id="model"
+                           name="model"
+                           value="{{ device.model if device else '' }}"
+                           placeholder="e.g., Catalyst 9300, Nexus 9000">
+                    <div class="md-form-help">
+                        Device model number or series
+                    </div>
+                </div>
+
+                <div class="md-form-field">
+                    <label class="md-form-label" for="os_version">OS Version</label>
+                    <input type="text"
+                           class="md-form-input"
+                           id="os_version"
+                           name="os_version"
+                           value="{{ device.os_version if device else '' }}"
+                           placeholder="e.g., 16.9.5, 9.3(7)">
+                    <div class="md-form-help">
+                        Operating system version
+                    </div>
+                </div>
+
+                <div class="md-form-field">
+                    <label class="md-form-label" for="device_type_id">Device Type</label>
+                    <select class="md-form-select" id="device_type_id" name="device_type_id">
+                        <option value="">-- Select Type --</option>
+                        {% for type in device_types %}
+                        <option value="{{ type.id }}"
+                                {% if device and device.device_type_id == type.id %}selected{% endif %}>
+                            {{ type.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div class="md-form-help">
+                        Device type for automation (determines driver selection)
+                    </div>
+                </div>
+
+                <div class="md-form-field">
+                    <label class="md-form-label" for="processor_id">Processor ID</label>
+                    <input type="text"
+                           class="md-form-input"
+                           id="processor_id"
+                           name="processor_id"
+                           value="{{ device.processor_id if device else '' }}"
+                           placeholder="Optional processor/CPU ID">
+                    <div class="md-form-help">
+                        Processor identifier (if available)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="form-actions">
+        <div class="form-actions-buttons">
+            <a href="{% if device %}{{ url_for('assets.device_detail', device_id=device.id) }}{% else %}{{ url_for('assets.devices') }}{% endif %}"
+               class="md-button md-button-outlined">
+                <i data-lucide="x" size="16"></i>
+                Cancel&nbsp;
+            </a>
+            <button type="submit" class="md-button md-button-filled">
+                <i data-lucide="save" size="16"></i>
+                {% if device %}Update Device{% else %}Create Device{% endif %}&nbsp;&nbsp;&nbsp;
+            </button>
+        </div>
+    </div>
+</form>
+
+{% if device %}
+<!-- Danger Zone -->
+<div class="danger-zone">
+    <div class="danger-zone-header">
+        <i data-lucide="alert-triangle" size="20"></i>
+        <h3>Danger Zone</h3>
+    </div>
+    <div class="danger-zone-content">
+        <div class="danger-zone-text">
+            <h4>Delete Device</h4>
+            <p>
+                Permanently remove this device and all associated data (captures, fingerprints, etc.)
+            </p>
+        </div>
+        <button type="button"
+                class="md-button md-button-filled"
+                style="background: var(--md-error); color: var(--md-on-error);"
+                onclick="document.getElementById('deleteModal').classList.add('open')">
+            <i data-lucide="trash-2" size="16"></i>
+            Delete Device&nbsp;&nbsp;
+        </button>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="md-modal" id="deleteModal">
+    <div class="md-modal-content">
+        <div class="md-modal-header">
+            <h2 class="md-modal-title" style="color: var(--md-error); display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="alert-triangle" size="20"></i>
+                Confirm Deletion
+            </h2>
+            <button class="md-icon-button" onclick="document.getElementById('deleteModal').classList.remove('open')">
+                <i data-lucide="x" size="20"></i>
+            </button>
+        </div>
+        <div class="md-modal-body">
+            <p class="md-body-large"><strong>Delete device "{{ device.name }}"?</strong></p>
+
+            <div style="background: var(--md-warning-container); color: var(--md-on-warning-container); padding: 16px; border-radius: var(--md-shape-corner-small); margin: 16px 0;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <i data-lucide="alert-triangle" size="16"></i>
+                    <strong>This will permanently delete:</strong>
+                </div>
+                <ul style="margin: 8px 0 0 24px; padding: 0; font: var(--md-typescale-body-medium);">
+                    <li>Device record: <strong>{{ device.name }}</strong></li>
+                    <li>All serial numbers</li>
+                    <li>Stack member information</li>
+                    <li>Hardware components</li>
+                    <li>Current and archived captures</li>
+                    <li>Fingerprint history</li>
+                </ul>
+            </div>
+
+            <p class="md-body-large" style="color: var(--md-error); margin-top: 16px;"><strong>This action cannot be undone!</strong></p>
+        </div>
+        <div class="md-modal-footer">
+            <button class="md-button md-button-text" onclick="document.getElementById('deleteModal').classList.remove('open')">
+                Cancel
+            </button>
+            <form method="POST" action="{{ url_for('assets.device_delete', device_id=device.id) }}" style="display: inline;">
+                <input type="hidden" name="confirm" value="yes">
+                <button type="submit" class="md-button md-button-filled" style="background: var(--md-error); color: var(--md-on-error);">
+                    <i data-lucide="trash-2" size="16"></i>
+                    Delete Permanently
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+// Close modal on background click
+document.getElementById('deleteModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        this.classList.remove('open');
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    const form = document.getElementById('device-form');
+    const nameInput = document.getElementById('name');
+    const ipInput = document.getElementById('management_ip');
+
+    // Form validation
+    form.addEventListener('submit', function(e) {
+        // Validate device name
+        if (!nameInput.value.trim()) {
+            e.preventDefault();
+            alert('Device name is required');
+            nameInput.focus();
+            return false;
+        }
+
+        // Validate IP address format if provided
+        if (ipInput.value.trim()) {
+            const ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+            if (!ipPattern.test(ipInput.value)) {
+                e.preventDefault();
+                alert('Invalid IP address format. Expected format: xxx.xxx.xxx.xxx');
+                ipInput.focus();
+                return false;
+            }
+
+            // Check each octet is 0-255
+            const octets = ipInput.value.split('.');
+            for (let octet of octets) {
+                const num = parseInt(octet);
+                if (num < 0 || num > 255) {
+                    e.preventDefault();
+                    alert('IP address octets must be between 0 and 255');
+                    ipInput.focus();
+                    return false;
+                }
+            }
+        }
+    });
+
+    // Auto-format device name (visual feedback only)
+    nameInput.addEventListener('input', function() {
+        const normalized = this.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+        if (normalized !== this.value.toLowerCase()) {
+            this.style.borderColor = 'var(--md-warning)';
+        } else {
+            this.style.borderColor = 'var(--md-outline)';
+        }
+    });
+
+    // IP address validation visual feedback
+    ipInput.addEventListener('blur', function() {
+        if (this.value.trim()) {
+            const ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+            if (!ipPattern.test(this.value)) {
+                this.style.borderColor = 'var(--md-error)';
+            } else {
+                this.style.borderColor = 'var(--md-success)';
+            }
+        } else {
+            this.style.borderColor = 'var(--md-outline)';
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,29 @@
+# Cisco IOS Capture Jobs
+# Generated: 2025-10-16T06:37:32.046800
+# Jobs: 25
+
+job_301_cisco-ios_arp.json
+job_305_cisco-ios_authentication.json
+job_309_cisco-ios_authorization.json
+job_313_cisco-ios_bgp-neighbor.json
+job_317_cisco-ios_bgp-summary.json
+job_321_cisco-ios_bgp-table.json
+job_325_cisco-ios_bgp-table-detail.json
+job_329_cisco-ios_configs.json
+job_333_cisco-ios_console.json
+job_337_cisco-ios_int-status.json
+job_341_cisco-ios_interface-status.json
+job_345_cisco-ios_inventory.json
+job_349_cisco-ios_ip_ssh.json
+job_353_cisco-ios_lldp.json
+job_357_cisco-ios_lldp-detail.json
+job_361_cisco-ios_mac.json
+job_365_cisco-ios_ntp_status.json
+job_369_cisco-ios_ospf-neighbor.json
+job_373_cisco-ios_port-channel.json
+job_377_cisco-ios_radius.json
+job_381_cisco-ios_routes.json
+job_385_cisco-ios_snmp_server.json
+job_389_cisco-ios_syslog.json
+job_393_cisco-ios_tacacs.json
+job_397_cisco-ios_version.json

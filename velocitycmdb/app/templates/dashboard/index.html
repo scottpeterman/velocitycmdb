@@ -1,0 +1,415 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Network Asset Management{% endblock %}
+
+{% block head_extra %}
+<style>
+    /* Dashboard Specific Styles - Flat Material Design */
+    .dashboard-header {
+        margin-bottom: 32px;
+    }
+
+    /* Stats Cards - Ultra flat design */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 24px;
+        margin-bottom: 32px;
+    }
+
+    .stats-card-content {
+        padding: 24px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .stats-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: var(--md-shape-corner-small);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        border: 1px solid var(--md-outline-variant);
+        background: transparent;
+        color: var(--md-on-surface-variant);
+    }
+
+    .stats-info {
+        flex: 1;
+    }
+
+    .stats-card-footer {
+        padding: 16px 24px;
+        background: var(--md-surface-variant);
+        border-top: 1px solid var(--md-outline-variant);
+    }
+
+    /* Content Grid - Properly centered */
+    .content-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        margin-bottom: 32px;
+        width: 100%;
+        max-width: none;
+    }
+
+    @media (max-width: 1024px) {
+        .content-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Data Cards */
+    .data-card-header {
+        padding: 24px 24px 16px;
+        border-bottom: 1px solid var(--md-outline-variant);
+        background: var(--md-surface-container);
+    }
+
+    .data-card-content {
+        padding: 24px;
+    }
+
+    /* Device List */
+    .device-list {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .device-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--md-outline-variant);
+        transition: background-color var(--md-motion-duration-short2) var(--md-motion-easing-standard);
+    }
+
+    .device-item:hover {
+        background: var(--md-surface-container);
+    }
+
+    .device-item:last-child {
+        border-bottom: none;
+    }
+
+    .device-info {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex: 1;
+    }
+
+    .device-icon {
+        width: 40px;
+        height: 40px;
+        background: var(--md-primary-container);
+        color: var(--md-on-primary-container);
+        border-radius: var(--md-shape-corner-small);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .device-details {
+        flex: 1;
+    }
+
+    /* Empty States */
+    .empty-state {
+        text-align: center;
+        padding: 48px 24px;
+        color: var(--md-on-surface-variant);
+    }
+
+    .empty-state-icon {
+        margin-bottom: 16px;
+        opacity: 0.6;
+    }
+
+    /* Recent Devices */
+    .recent-devices-card {
+        grid-column: 1 / -1;
+    }
+
+    /* Dashboard container for proper centering */
+    .dashboard-container {
+        width: 100%;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1 class="md-headline-large md-primary md-flex md-align-center" style="gap: 16px; margin: 0 0 8px 0;">
+            <i data-lucide="gauge"></i>
+            Network Dashboard
+        </h1>
+        <p class="md-body-large" style="color: var(--md-on-surface-variant); margin: 0;">Overview of network infrastructure and assets</p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="md-card outlined">
+            <div class="stats-card-content">
+                <div class="stats-icon">
+                    <i data-lucide="building" size="20"></i>
+                </div>
+                <div class="stats-info">
+                    <div class="md-headline-medium" style="margin: 0 0 4px 0; font-weight: 500;">{{ site_count }}</div>
+                    <div class="md-body-medium" style="color: var(--md-on-surface-variant); margin: 0;">Sites</div>
+                </div>
+            </div>
+            <div class="stats-card-footer">
+                <button class="md-button md-button-text" onclick="showComingSoon('Sites')">
+                    <i data-lucide="eye" size="16"></i>
+                    View Sites
+                </button>
+            </div>
+        </div>
+
+        <div class="md-card outlined">
+            <div class="stats-card-content">
+                <div class="stats-icon">
+                    <i data-lucide="server" size="20"></i>
+                </div>
+                <div class="stats-info">
+                    <div class="md-headline-medium stats-number" style="margin: 0 0 4px 0; font-weight: 500;">{{ device_count }}</div>
+                    <div class="md-body-medium" style="color: var(--md-on-surface-variant); margin: 0;">Devices</div>
+                </div>
+            </div>
+            <div class="stats-card-footer">
+                <a href="{{ url_for('assets.devices') }}" class="md-button md-button-text">
+                    <i data-lucide="list" size="16"></i>
+                    View Devices
+                </a>
+            </div>
+        </div>
+
+        <div class="md-card outlined">
+            <div class="stats-card-content">
+                <div class="stats-icon">
+                    <i data-lucide="layers" size="20"></i>
+                </div>
+                <div class="stats-info">
+                    <div class="md-headline-medium stats-number" style="margin: 0 0 4px 0; font-weight: 500;">{{ stack_count }}</div>
+                    <div class="md-body-medium" style="color: var(--md-on-surface-variant); margin: 0;">Stacks</div>
+                </div>
+            </div>
+            <div class="stats-card-footer">
+                <button class="md-button md-button-text" onclick="showComingSoon('Stacks')">
+                    <i data-lucide="box" size="16"></i>
+                    View Stacks
+                </button>
+            </div>
+        </div>
+
+        <div class="md-card outlined">
+            <div class="stats-card-content">
+                <div class="stats-icon">
+                    <i data-lucide="cpu" size="20"></i>
+                </div>
+                <div class="stats-info">
+                    <div class="md-headline-medium stats-number" style="margin: 0 0 4px 0; font-weight: 500;">{{ component_count }}</div>
+                    <div class="md-body-medium" style="color: var(--md-on-surface-variant); margin: 0;">Components</div>
+                </div>
+            </div>
+            <div class="stats-card-footer">
+                <a href="{{ url_for('components.index') }}" class="md-button md-button-text">
+                    <i data-lucide="search" size="16"></i>
+                    Browse
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Grid -->
+    <div class="content-grid">
+        <!-- Vendor Breakdown -->
+        <div class="md-card outlined">
+            <div class="data-card-header">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <h2 class="md-title-large md-flex md-align-center" style="gap: 12px; margin: 0;">
+                        <i data-lucide="factory" size="20"></i>
+                        Top Vendors
+                    </h2>
+                    <button class="md-button md-button-text" onclick="showComingSoon('Vendor Details')">
+                        View All
+                        <i data-lucide="arrow-right" size="14"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="data-card-content">
+                {% if top_vendors %}
+                    <!-- Vendor List -->
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        {% for vendor in top_vendors %}
+                        <div style="display: flex; align-items: center; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--md-outline-variant);">
+                            <span style="min-width: 140px; font: var(--md-typescale-body-large); color: var(--md-on-surface); font-weight: 500;">
+                                {{ vendor.name }}
+                            </span>
+                            <div style="flex: 1; height: 20px; background: var(--md-surface-container); border-radius: 10px; overflow: hidden;">
+                                <div style="height: 100%; background: var(--md-primary); width: {{ (vendor.count / top_vendors[0].count * 100) if top_vendors[0].count > 0 else 0 }}%; transition: width 0.3s;"></div>
+                            </div>
+                            <span style="min-width: 50px; text-align: right; font: var(--md-typescale-label-medium); color: var(--md-on-surface-variant); font-weight: 500;">
+                                {{ vendor.count }}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div style="display: flex; gap: 8px; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--md-outline-variant);">
+                        <a href="{{ url_for('assets.devices', vendor=top_vendors[0].name) }}" class="md-button md-button-outlined" style="flex: 1; justify-content: center;">
+                            <i data-lucide="filter" size="14"></i>
+                            Filter by Vendor
+                        </a>
+                        <button class="md-button md-button-outlined" onclick="showComingSoon('Vendor Analytics')" style="flex: 1; justify-content: center;">
+                            <i data-lucide="bar-chart" size="14"></i>
+                            Analytics
+                        </button>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i data-lucide="info" size="48"></i>
+                        </div>
+                        <p class="md-body-large" style="margin: 0;">No vendor data available</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Component Inventory Widget -->
+        {% if component_stats %}
+        <div class="md-card outlined">
+            <div class="data-card-header">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <h2 class="md-title-large md-flex md-align-center" style="gap: 12px; margin: 0;">
+                        <i data-lucide="cpu" size="20"></i>
+                        Component Inventory
+                    </h2>
+                    <a href="{{ url_for('components.index') }}" class="md-button md-button-text">
+                        View All
+                        <i data-lucide="arrow-right" size="14"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="data-card-content">
+                <!-- Summary Stats -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--md-outline-variant);">
+                    <div style="text-align: center;">
+                        <div style="font: var(--md-typescale-display-small); color: var(--md-on-surface); font-weight: 500; line-height: 1;">
+                            {{ "{:,}".format(component_stats.total) }}
+                        </div>
+                        <div style="font: var(--md-typescale-body-small); color: var(--md-on-surface-variant); margin-top: 4px;">
+                            Total
+                        </div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font: var(--md-typescale-display-small); color: var(--md-success); font-weight: 500; line-height: 1;">
+                            {{ "{:,}".format(component_stats.with_serials) }}
+                        </div>
+                        <div style="font: var(--md-typescale-body-small); color: var(--md-on-surface-variant); margin-top: 4px;">
+                            Serials
+                        </div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font: var(--md-typescale-display-small); color: var(--md-tertiary); font-weight: 500; line-height: 1;">
+                            {{ component_stats.types_count }}
+                        </div>
+                        <div style="font: var(--md-typescale-body-small); color: var(--md-on-surface-variant); margin-top: 4px;">
+                            Types
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Component Distribution -->
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    {% for type_stat in component_stats.by_type[:5] %}
+                    <div style="display: flex; align-items: center; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--md-outline-variant);">
+                        <span style="min-width: 90px; font: var(--md-typescale-body-large); color: var(--md-on-surface); text-transform: capitalize; font-weight: 500;">
+                            {{ type_stat.type or 'Unknown' }}
+                        </span>
+                        <div style="flex: 1; height: 20px; background: var(--md-surface-container); border-radius: 10px; overflow: hidden;">
+                            <div style="height: 100%; background: var(--md-primary); width: {{ (type_stat.count / component_stats.total * 100)|round }}%; transition: width 0.3s;"></div>
+                        </div>
+                        <span style="min-width: 50px; text-align: right; font: var(--md-typescale-label-medium); color: var(--md-on-surface-variant); font-weight: 500;">
+                            {{ type_stat.count }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Quick Actions -->
+                <div style="display: flex; gap: 8px; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--md-outline-variant);">
+                    <a href="{{ url_for('components.index', type='transceiver') }}" class="md-button md-button-outlined" style="flex: 1; justify-content: center;">
+                        <i data-lucide="activity" size="14"></i>
+                        Transceivers
+                    </a>
+                    <a href="{{ url_for('components.index', type='psu') }}" class="md-button md-button-outlined" style="flex: 1; justify-content: center;">
+                        <i data-lucide="zap" size="14"></i>
+                        Power
+                    </a>
+                    <a href="{{ url_for('components.index', has_serial='no') }}" class="md-button md-button-outlined" style="flex: 1; justify-content: center;">
+                        <i data-lucide="alert-circle" size="14"></i>
+                        No Serial
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Recent Devices -->
+    <div class="md-card outlined recent-devices-card">
+        <div class="data-card-header">
+            <h2 class="md-title-large md-flex md-align-center" style="gap: 12px; margin: 0;">
+                <i data-lucide="clock" size="20"></i>
+                Recent Devices
+            </h2>
+        </div>
+        {% if recent_devices %}
+            <div class="device-list">
+                {% for device in recent_devices %}
+                <div class="device-item">
+                    <div class="device-info">
+                        <div class="device-icon">
+                            <i data-lucide="server" size="20"></i>
+                        </div>
+                        <div class="device-details">
+                            <div class="md-body-large" style="font-weight: 500; margin: 0 0 4px 0;">{{ device.name }}</div>
+                            <div class="md-body-medium" style="color: var(--md-on-surface-variant); margin: 0;">
+                                {{ device.site_code }} • {{ device.vendor }} • {{ device.model or 'Unknown Model' }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="md-body-small" style="color: var(--md-on-surface-variant); text-align: right;">{{ device.timestamp or 'Unknown' }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i data-lucide="info" size="48"></i>
+                </div>
+                <p class="md-body-large" style="margin: 0;">No recent devices found</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Initialize Lucide icons for dynamic content
+    lucide.createIcons();
+</script>
+{% endblock %}

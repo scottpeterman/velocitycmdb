@@ -1,0 +1,213 @@
+{
+  "usa-leaf-1": {
+    "node_details": {
+      "ip": "172.16.10.21",
+      "platform": "IOSv",
+      "hop_distance": 0
+    },
+    "peers": {
+      "usa-spine-2": {
+        "ip": "172.16.1.6",
+        "platform": "vEOS-lab",
+        "connections": [
+          [
+            "Gi0/0",
+            "Eth5"
+          ]
+        ]
+      },
+      "usa-spine-1": {
+        "ip": "172.16.0.2",
+        "platform": "Arista",
+        "connections": [
+          [
+            "Gi0/1",
+            "Eth3"
+          ]
+        ]
+      }
+    }
+  },
+  "usa-spine-2": {
+    "node_details": {
+      "ip": "172.16.1.6",
+      "platform": "vEOS-lab",
+      "hop_distance": 1
+    },
+    "peers": {
+      "usa-rtr-1.lab.local": {
+        "ip": "172.16.1.5",
+        "platform": "Cisco",
+        "connections": [
+          [
+            "Eth1",
+            "Gi0/2"
+          ],
+          [
+            "Eth6",
+            "Gi0/1"
+          ]
+        ]
+      },
+      "usa-spine-1": {
+        "ip": "172.16.0.2",
+        "platform": "Arista",
+        "connections": [
+          [
+            "Eth2",
+            "Eth2"
+          ]
+        ]
+      },
+      "usa-leaf-3.lab.local": {
+        "ip": "172.16.10.23",
+        "platform": "Cisco",
+        "connections": [
+          [
+            "Eth3",
+            "Gi0/0"
+          ]
+        ]
+      },
+      "usa-leaf-2.lab.local": {
+        "ip": "172.16.10.22",
+        "platform": "Cisco",
+        "connections": [
+          [
+            "Eth4",
+            "Gi0/0"
+          ]
+        ]
+      },
+      "usa-leaf-1.lab.local": {
+        "ip": "172.16.10.21",
+        "platform": "Cisco",
+        "connections": [
+          [
+            "Eth5",
+            "Gi0/0"
+          ]
+        ]
+      },
+      "usa-leaf-1": {
+        "ip": "172.16.10.21",
+        "platform": "IOSv",
+        "connections": [
+          [
+            "Eth5",
+            "Gi0/0"
+          ]
+        ]
+      }
+    }
+  },
+  "usa-spine-1": {
+    "node_details": {
+      "ip": "172.16.0.2",
+      "platform": "Arista",
+      "hop_distance": 1
+    },
+    "peers": {
+      "usa-leaf-1": {
+        "ip": "172.16.10.21",
+        "platform": "IOSv",
+        "connections": [
+          [
+            "Eth3",
+            "Gi0/1"
+          ]
+        ]
+      },
+      "usa-spine-2": {
+        "ip": "172.16.1.6",
+        "platform": "vEOS-lab",
+        "connections": [
+          [
+            "Eth2",
+            "Eth2"
+          ]
+        ]
+      }
+    }
+  },
+  "usa-rtr-1.lab.local": {
+    "node_details": {
+      "ip": "172.16.1.5",
+      "platform": "Cisco",
+      "hop_distance": 2
+    },
+    "peers": {
+      "usa-spine-2": {
+        "ip": "172.16.1.6",
+        "platform": "vEOS-lab",
+        "connections": [
+          [
+            "Gi0/2",
+            "Eth1"
+          ],
+          [
+            "Gi0/1",
+            "Eth6"
+          ]
+        ]
+      }
+    }
+  },
+  "usa-leaf-3.lab.local": {
+    "node_details": {
+      "ip": "172.16.10.23",
+      "platform": "Cisco",
+      "hop_distance": 2
+    },
+    "peers": {
+      "usa-spine-2": {
+        "ip": "172.16.1.6",
+        "platform": "vEOS-lab",
+        "connections": [
+          [
+            "Gi0/0",
+            "Eth3"
+          ]
+        ]
+      }
+    }
+  },
+  "usa-leaf-2.lab.local": {
+    "node_details": {
+      "ip": "172.16.10.22",
+      "platform": "Cisco",
+      "hop_distance": 2
+    },
+    "peers": {
+      "usa-spine-2": {
+        "ip": "172.16.1.6",
+        "platform": "vEOS-lab",
+        "connections": [
+          [
+            "Gi0/0",
+            "Eth4"
+          ]
+        ]
+      }
+    }
+  },
+  "usa-leaf-1.lab.local": {
+    "node_details": {
+      "ip": "172.16.10.21",
+      "platform": "Cisco",
+      "hop_distance": 2
+    },
+    "peers": {
+      "usa-spine-2": {
+        "ip": "172.16.1.6",
+        "platform": "vEOS-lab",
+        "connections": [
+          [
+            "Gi0/0",
+            "Eth5"
+          ]
+        ]
+      }
+    }
+  }
+}

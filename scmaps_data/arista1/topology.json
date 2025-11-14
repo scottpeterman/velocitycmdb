@@ -1,0 +1,410 @@
+{
+  "eng-leaf-1": {
+    "node_details": {
+      "ip": "172.16.11.41",
+      "platform": "IOSv"
+    },
+    "peers": {
+      "eng-spine-2": {
+        "ip": "172.16.2.6",
+        "platform": "vEOS-lab",
+        "connections": [
+          [
+            "Gi0/1",
+            "1"
+          ]
+        ]
+      },
+      "eng-spine-1": {
+        "ip": "172.16.2.2",
+        "platform": "vEOS-lab",
+        "connections": [
+          [
+            "Gi0/0",
+            "1"
+          ]
+        ]
+      }
+    }
+  },
+  "eng-spine-2": {
+    "node_details": {
+      "ip": "172.16.2.6",
+      "platform": "vEOS-lab"
+    },
+    "peers": {
+      "eng-rtr-1": {
+        "ip": "172.16.2.5",
+        "platform": "IOSv",
+        "connections": [
+          [
+            "Eth1",
+            "Gi0/3"
+          ]
+        ]
+      },
+      "eng-spine-1": {
+        "ip": "172.16.2.2",
+        "platform": "vEOS-lab",
+        "connections": [
+          [
+            "Eth2",
+            "Eth2"
+          ]
+        ]
+      },
+      "eng-leaf-1": {
+        "ip": "172.16.11.41",
+        "platform": "IOSv",
+        "connections": [
+          [
+            "Eth5",
+            "Gi0/1"
+          ]
+        ]
+      }
+    }
+  },
+  "eng-spine-1": {
+    "node_details": {
+      "ip": "172.16.2.2",
+      "platform": "vEOS-lab"
+    },
+    "peers": {
+      "eng-rtr-1": {
+        "ip": "172.16.2.1",
+        "platform": "IOSv",
+        "connections": [
+          [
+            "Eth1",
+            "Gi0/2"
+          ]
+        ]
+      },
+      "eng-spine-2": {
+        "ip": "172.16.2.6",
+        "platform": "vEOS-lab",
+        "connections": [
+          [
+            "Eth2",
+            "Eth2"
+          ]
+        ]
+      },
+      "eng-leaf-1": {
+        "ip": "172.16.11.41",
+        "platform": "IOSv",
+        "connections": [
+          [
+            "Eth3",
+            "Gi0/0"
+          ]
+        ]
+      }
+    }
+  },
+  "eng-rtr-1": {
+    "node_details": {
+      "ip": "172.16.2.5",
+      "platform": "IOSv"
+    },
+    "peers": {
+      "": {
+        "ip": "172.16.128.5",
+        "platform": "",
+        "connections": [
+          [
+            "Gi0/0",
+            "Gi0/3"
+          ],
+          [
+            "Gi0/1",
+            "Eth1/2"
+          ]
+        ]
+      },
+      "eng-spine-2": {
+        "ip": "172.16.2.6",
+        "platform": "vEOS-lab",
+        "connections": [
+          [
+            "Gi0/3",
+            "1"
+          ]
+        ]
+      },
+      "usa-rtr-1": {
+        "ip": "172.16.128.5",
+        "platform": "IOSv",
+        "connections": [
+          [
+            "Gi0/0",
+            "Gi0/3"
+          ]
+        ]
+      },
+      "eng-spine-1": {
+        "ip": "172.16.2.2",
+        "platform": "vEOS-lab",
+        "connections": [
+          [
+            "Gi0/2",
+            "1"
+          ]
+        ]
+      }
+    }
+  },
+  "usa-rtr-1": {
+    "node_details": {
+      "ip": "172.16.128.5",
+      "platform": "IOSv"
+    },
+    "peers": {
+      "": {
+        "ip": "172.16.128.6",
+        "platform": "",
+        "connections": [
+          [
+            "Gi0/3",
+            "Gi0/0"
+          ],
+          [
+            "Gi0/0",
+            "Eth1/1"
+          ]
+        ]
+      },
+      "usa-spine-2": {
+        "ip": "172.16.1.6",
+        "platform": "vEOS-lab",
+        "connections": [
+          [
+            "Gi0/2",
+            "1"
+          ]
+        ]
+      },
+      "usa-spine-1": {
+        "ip": "172.16.0.2",
+        "platform": "vEOS-lab",
+        "connections": [
+          [
+            "Gi0/1",
+            "1"
+          ]
+        ]
+      },
+      "eng-rtr-1": {
+        "ip": "172.16.128.6",
+        "platform": "IOSv",
+        "connections": [
+          [
+            "Gi0/3",
+            "Gi0/0"
+          ]
+        ]
+      }
+    }
+  },
+  "usa-spine-2": {
+    "node_details": {
+      "ip": "172.16.1.6",
+      "platform": "vEOS-lab"
+    },
+    "peers": {
+      "usa-rtr-1": {
+        "ip": "172.16.1.5",
+        "platform": "IOSv",
+        "connections": [
+          [
+            "Eth1",
+            "Gi0/2"
+          ]
+        ]
+      },
+      "usa-spine-1": {
+        "ip": "172.16.0.2",
+        "platform": "vEOS-lab",
+        "connections": [
+          [
+            "Eth2",
+            "Eth2"
+          ]
+        ]
+      },
+      "usa-leaf-3": {
+        "ip": "172.16.10.23",
+        "platform": "IOSv",
+        "connections": [
+          [
+            "Eth3",
+            "Gi0/0"
+          ]
+        ]
+      },
+      "usa-leaf-2": {
+        "ip": "172.16.111.12",
+        "platform": "IOSv",
+        "connections": [
+          [
+            "Eth4",
+            "Gi0/0"
+          ]
+        ]
+      },
+      "usa-leaf-1": {
+        "ip": "172.16.111.11",
+        "platform": "IOSv",
+        "connections": [
+          [
+            "Eth5",
+            "Gi0/0"
+          ]
+        ]
+      }
+    }
+  },
+  "usa-spine-1": {
+    "node_details": {
+      "ip": "172.16.0.2",
+      "platform": "vEOS-lab"
+    },
+    "peers": {
+      "usa-rtr-1": {
+        "ip": "172.16.0.1",
+        "platform": "IOSv",
+        "connections": [
+          [
+            "Eth1",
+            "Gi0/1"
+          ]
+        ]
+      },
+      "usa-spine-2": {
+        "ip": "172.16.1.6",
+        "platform": "vEOS-lab",
+        "connections": [
+          [
+            "Eth2",
+            "Eth2"
+          ]
+        ]
+      },
+      "usa-leaf-1": {
+        "ip": "172.16.111.11",
+        "platform": "IOSv",
+        "connections": [
+          [
+            "Eth3",
+            "Gi0/1"
+          ]
+        ]
+      },
+      "usa-leaf-2": {
+        "ip": "172.16.111.12",
+        "platform": "IOSv",
+        "connections": [
+          [
+            "Eth4",
+            "Gi0/1"
+          ]
+        ]
+      },
+      "usa-leaf-3": {
+        "ip": "172.16.10.23",
+        "platform": "IOSv",
+        "connections": [
+          [
+            "Eth5",
+            "Gi0/1"
+          ]
+        ]
+      }
+    }
+  },
+  "usa-leaf-3": {
+    "node_details": {
+      "ip": "172.16.10.23",
+      "platform": "IOSv"
+    },
+    "peers": {
+      "usa-spine-2": {
+        "ip": "172.16.1.6",
+        "platform": "vEOS-lab",
+        "connections": [
+          [
+            "Gi0/0",
+            "3"
+          ]
+        ]
+      },
+      "usa-spine-1": {
+        "ip": "172.16.0.2",
+        "platform": "vEOS-lab",
+        "connections": [
+          [
+            "Gi0/1",
+            "3"
+          ]
+        ]
+      }
+    }
+  },
+  "usa-leaf-2": {
+    "node_details": {
+      "ip": "172.16.111.12",
+      "platform": "IOSv"
+    },
+    "peers": {
+      "usa-spine-2": {
+        "ip": "172.16.1.6",
+        "platform": "vEOS-lab",
+        "connections": [
+          [
+            "Gi0/0",
+            "2"
+          ]
+        ]
+      },
+      "usa-spine-1": {
+        "ip": "172.16.0.2",
+        "platform": "vEOS-lab",
+        "connections": [
+          [
+            "Gi0/1",
+            "2"
+          ]
+        ]
+      }
+    }
+  },
+  "usa-leaf-1": {
+    "node_details": {
+      "ip": "172.16.111.11",
+      "platform": "IOSv"
+    },
+    "peers": {
+      "usa-spine-2": {
+        "ip": "172.16.1.6",
+        "platform": "vEOS-lab",
+        "connections": [
+          [
+            "Gi0/0",
+            "1"
+          ]
+        ]
+      },
+      "usa-spine-1": {
+        "ip": "172.16.0.2",
+        "platform": "vEOS-lab",
+        "connections": [
+          [
+            "Gi0/1",
+            "1"
+          ]
+        ]
+      }
+    }
+  }
+}

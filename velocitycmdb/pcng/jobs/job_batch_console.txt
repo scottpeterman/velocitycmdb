@@ -1,0 +1,8 @@
+# console Capture Jobs (All Vendors)
+# Generated: 2025-10-16T06:37:32.048616
+# Jobs: 4
+
+job_332_arista_console.json
+job_333_cisco-ios_console.json
+job_334_cisco-nxos_console.json
+job_335_juniper_console.json

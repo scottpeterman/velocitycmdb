@@ -1,0 +1,23 @@
+[
+  {
+    "LOCAL_INTERFACE": "Gi0/3",
+    "NEIGHBOR_INTERFACE": "Ethernet1",
+    "NEIGHBOR_NAME": "eng-spine-2",
+    "NEIGHBOR_DESCRIPTION": "Arista Networks EOS version 4.33.1F running on an Arista vEOS-lab",
+    "MGMT_ADDRESS": "172.16.2.6"
+  },
+  {
+    "LOCAL_INTERFACE": "Gi0/0",
+    "NEIGHBOR_INTERFACE": "Gi0/3",
+    "NEIGHBOR_NAME": "usa-rtr-1.lab.local",
+    "NEIGHBOR_DESCRIPTION": "Cisco IOS Software, IOSv Software (VIOS-ADVENTERPRISEK9-M), Version 15.6(2)T, RELEASE SOFTWARE (fc2)",
+    "MGMT_ADDRESS": "172.16.128.5"
+  },
+  {
+    "LOCAL_INTERFACE": "Gi0/2",
+    "NEIGHBOR_INTERFACE": "Ethernet1",
+    "NEIGHBOR_NAME": "eng-spine-1",
+    "NEIGHBOR_DESCRIPTION": "Arista Networks EOS version 4.33.1F running on an Arista vEOS-lab",
+    "MGMT_ADDRESS": "172.16.2.2"
+  }
+]

@@ -1,0 +1,515 @@
+{% extends "base.html" %}
+{% block title %}Secure Cartography - Network Topology{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('scmaps.static', filename='css/modal-styles.css') }}">
+
+<!-- Top Bar -->
+<div class="top-bar">
+    <button class="hamburger-btn" id="hamburger-btn" aria-label="Toggle sidebar">
+        <i data-lucide="menu"></i>
+    </button>
+
+    <div class="top-bar-title">
+        <h1>Secure Cartography</h1>
+    </div>
+
+    <div class="top-bar-controls">
+        <div class="control-group">
+            <label>Layout:</label>
+            <select id="layout-select">
+                <option value="breadthfirst">Breadth-First</option>
+                <option value="cose">COSE</option>
+                <option value="circle">Circle</option>
+                <option value="grid">Grid</option>
+                <option value="concentric">Concentric</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Left Sidebar -->
+<div class="sidebar" id="sidebar">
+    <!-- Maps Section -->
+    <div class="sidebar-section">
+        <div class="sidebar-header">
+            <i data-lucide="folder"></i>
+            <span>MAPS</span>
+        </div>
+        <div class="sidebar-content">
+            <label class="sidebar-label">Network Map:</label>
+            <select id="map-select" class="sidebar-select">
+                <option value="">Select a network map...</option>
+            </select>
+
+            <button class="sidebar-btn" id="upload-map-btn">
+                <i data-lucide="upload"></i>
+                <span>Upload</span>
+            </button>
+            <button class="sidebar-btn" id="export-map-btn">
+                <i data-lucide="download"></i>
+                <span>Export JSON</span>
+            </button>
+            <button class="sidebar-btn" id="copy-map-btn">
+                <i data-lucide="copy"></i>
+                <span>Copy</span>
+            </button>
+            <button class="sidebar-btn" id="manage-maps-btn">
+                <i data-lucide="folder-open"></i>
+                <span>Manage</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Edit Section -->
+    <div class="sidebar-section">
+        <div class="sidebar-header">
+            <i data-lucide="edit"></i>
+            <span>EDIT</span>
+        </div>
+        <div class="sidebar-content">
+            <button class="sidebar-btn" id="create-node-btn">
+                <i data-lucide="plus-circle"></i>
+                <span>Create Device</span>
+            </button>
+            <button class="sidebar-btn" id="create-edge-btn">
+                <i data-lucide="git-branch"></i>
+                <span>Create Link</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- View Section -->
+    <div class="sidebar-section">
+        <div class="sidebar-header">
+            <i data-lucide="eye"></i>
+            <span>VIEW</span>
+        </div>
+        <div class="sidebar-content">
+            <button class="sidebar-btn" id="fit-view-btn">
+                <i data-lucide="maximize"></i>
+                <span>Fit to View</span>
+            </button>
+            <button class="sidebar-btn" id="reset-layout-btn">
+                <i data-lucide="refresh-cw"></i>
+                <span>Reset Layout</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Export Section -->
+    <div class="sidebar-section">
+        <div class="sidebar-header">
+            <i data-lucide="download"></i>
+            <span>EXPORT</span>
+        </div>
+        <div class="sidebar-content">
+            <button class="sidebar-btn" id="export-png-btn">
+                <i data-lucide="image"></i>
+                <span>Export PNG</span>
+            </button>
+            <button class="sidebar-btn" id="export-graphml-btn">
+                <i data-lucide="file-code"></i>
+                <span>Export GraphML</span>
+            </button>
+            <button class="sidebar-btn" id="export-drawio-btn">
+                <i data-lucide="file-text"></i>
+                <span>Export DrawIO</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Save Section -->
+    <div class="sidebar-section">
+        <div class="sidebar-header">
+            <i data-lucide="save"></i>
+            <span>SAVE</span>
+        </div>
+        <div class="sidebar-content">
+            <button class="sidebar-btn sidebar-btn-primary" id="save-layout-btn">
+                <i data-lucide="save"></i>
+                <span>Save Layout</span>
+            </button>
+            <button class="sidebar-btn sidebar-btn-primary" id="save-changes-btn" style="display: none;">
+                <i data-lucide="save"></i>
+                <span>Save Changes</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Section -->
+    <div class="sidebar-section">
+        <div class="sidebar-header">
+            <i data-lucide="bar-chart"></i>
+            <span>STATISTICS</span>
+        </div>
+        <div class="sidebar-content">
+            <div class="stat-row">
+                <span class="stat-label">Devices:</span>
+                <span class="stat-value" id="stat-devices">0</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Connections:</span>
+                <span class="stat-value" id="stat-connections">0</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Layout:</span>
+                <span class="stat-value" id="stat-layout">-</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Graph Container -->
+<div id="cy" class="graph-container"></div>
+
+<!-- Info Panel (for node/edge details) -->
+<div id="info-panel" class="info-panel">
+    <div id="info-content" class="info-content">
+        <!-- Content populated dynamically by graph.js -->
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loading" class="loading-overlay hidden">
+    <div class="loading-spinner">
+        <i data-lucide="loader-2"></i>
+        <p>Loading...</p>
+    </div>
+</div>
+
+<!-- Include Cytoscape.js from CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
+
+<!-- Load scmaps JS modules -->
+<script src="{{ url_for('scmaps.static', filename='js/api.js') }}"></script>
+<script src="{{ url_for('scmaps.static', filename='js/ui.js') }}"></script>
+<script src="{{ url_for('scmaps.static', filename='js/theme.js') }}"></script>
+<script src="{{ url_for('scmaps.static', filename='js/graph.js') }}"></script>
+<script src="{{ url_for('scmaps.static', filename='js/layout.js') }}"></script>
+<script src="{{ url_for('scmaps.static', filename='js/file-manager.js') }}"></script>
+<script src="{{ url_for('scmaps.static', filename='js/export-enhanced.js') }}"></script>
+<script src="{{ url_for('scmaps.static', filename='js/sidebar.js') }}"></script>
+<script src="{{ url_for('scmaps.static', filename='js/app.js') }}"></script>
+
+<style>
+/* Layout */
+.top-bar {
+    position: fixed;
+    top: 64px;
+    left: 280px;
+    right: 0;
+    height: 56px;
+    background: var(--md-surface-container);
+    border-bottom: 1px solid var(--md-outline-variant);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 16px;
+    z-index: 999;
+}
+
+.hamburger-btn {
+    display: none;
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    color: var(--md-on-surface);
+}
+
+.top-bar-title h1 {
+    font: var(--md-typescale-title-large);
+    color: var(--md-on-surface);
+    margin: 0;
+}
+
+.top-bar-controls {
+    margin-left: auto;
+    display: flex;
+    gap: 16px;
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.control-group label {
+    font: var(--md-typescale-label-medium);
+    color: var(--md-on-surface);
+}
+
+.control-group select {
+    padding: 8px 12px;
+    border: 1px solid var(--md-outline);
+    border-radius: var(--md-shape-corner-small);
+    background: var(--md-surface);
+    color: var(--md-on-surface);
+    font: var(--md-typescale-body-small);
+}
+
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 64px;
+    width: 280px;
+    height: calc(100vh - 64px);
+    background: var(--md-surface);
+    border-right: 1px solid var(--md-outline-variant);
+    overflow-y: auto;
+    z-index: 998;
+    transition: transform 0.3s ease;
+}
+
+.sidebar.collapsed {
+    transform: translateX(-280px);
+}
+
+.sidebar-section {
+    border-bottom: 1px solid var(--md-outline-variant);
+    padding: 16px;
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font: var(--md-typescale-title-small);
+    color: var(--md-on-surface);
+    margin-bottom: 12px;
+}
+
+.sidebar-label {
+    display: block;
+    font: var(--md-typescale-label-medium);
+    color: var(--md-on-surface);
+    margin-bottom: 8px;
+}
+
+.sidebar-select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--md-outline);
+    border-radius: var(--md-shape-corner-small);
+    background: var(--md-surface);
+    color: var(--md-on-surface);
+    font: var(--md-typescale-body-medium);
+    margin-bottom: 12px;
+}
+
+.sidebar-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    background: var(--md-surface-container);
+    border: 1px solid var(--md-outline-variant);
+    border-radius: var(--md-shape-corner-small);
+    color: var(--md-on-surface);
+    font: var(--md-typescale-label-large);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.sidebar-btn:hover {
+    background: var(--md-surface-container-high);
+    border-color: var(--md-outline);
+}
+
+.sidebar-btn-primary {
+    background: var(--md-primary-container);
+    color: var(--md-on-primary-container);
+    border-color: var(--md-primary);
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--md-outline-variant);
+}
+
+.stat-row:last-child {
+    border-bottom: none;
+}
+
+.stat-label {
+    font: var(--md-typescale-body-small);
+    color: var(--md-on-surface-variant);
+}
+
+.stat-value {
+    font: var(--md-typescale-title-medium);
+    color: var(--md-on-surface);
+    font-weight: 500;
+}
+
+.graph-container {
+    position: fixed;
+    top: 120px;
+    left: 280px;
+    right: 0;
+    bottom: 0;
+    background: var(--md-surface-container-low);
+}
+
+/* Info Panel Styles */
+.info-panel {
+    position: fixed;
+    top: 120px;
+    right: 0;
+    width: 320px;
+    max-height: calc(100vh - 140px);
+    background: var(--md-surface-container);
+    border-left: 1px solid var(--md-outline-variant);
+    border-radius: var(--md-shape-corner-large) 0 0 var(--md-shape-corner-large);
+    box-shadow: var(--md-elevation-2);
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.info-panel.active {
+    transform: translateX(0);
+}
+
+.info-content {
+    color: var(--md-on-surface);
+}
+
+.info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--md-outline-variant);
+}
+
+.info-header h4 {
+    font: var(--md-typescale-title-medium);
+    margin: 0;
+    color: var(--md-on-surface);
+}
+
+.info-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.icon-btn {
+    background: var(--md-surface-container-high);
+    border: 1px solid var(--md-outline);
+    border-radius: var(--md-shape-corner-small);
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+.icon-btn:hover {
+    background: var(--md-primary-container);
+    border-color: var(--md-primary);
+}
+
+.info-item {
+    margin-bottom: 12px;
+    padding: 8px 0;
+}
+
+.info-item strong {
+    display: block;
+    font: var(--md-typescale-label-medium);
+    color: var(--md-on-surface-variant);
+    margin-bottom: 4px;
+}
+
+.info-value {
+    font: var(--md-typescale-body-large);
+    color: var(--md-on-surface);
+    word-break: break-word;
+}
+
+.sidebar.collapsed ~ .graph-container {
+    left: 0;
+}
+
+.sidebar.collapsed ~ .top-bar {
+    left: 0;
+}
+
+.sidebar.collapsed ~ .top-bar .hamburger-btn {
+    display: block;
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.loading-overlay.hidden {
+    display: none;
+}
+
+.loading-spinner {
+    text-align: center;
+    color: white;
+}
+
+.loading-spinner i {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@media (max-width: 1024px) {
+    .sidebar {
+        transform: translateX(-280px);
+    }
+
+    .sidebar.mobile-visible {
+        transform: translateX(0);
+    }
+
+    .top-bar {
+        left: 0;
+    }
+
+    .top-bar .hamburger-btn {
+        display: block;
+    }
+
+    .graph-container {
+        left: 0;
+    }
+
+    .info-panel {
+        width: 100%;
+        max-width: 320px;
+        top: 120px;
+    }
+}
+</style>
+
+<script>
+// Initialize Lucide icons
+lucide.createIcons();
+</script>
+{% endblock %}

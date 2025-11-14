@@ -1,0 +1,66 @@
+# VelocityCMDB Configuration File
+# Generated automatically - customize as needed
+#
+# Authentication Methods:
+#   - database: Local SQLite database (recommended for small teams)
+#   - local: OS-level authentication (Windows/Linux)
+#   - ldap: LDAP/Active Directory (enterprise)
+#
+# Multiple methods can be enabled simultaneously
+
+authentication:
+  default_method: database
+  use_ssh_fallback: true
+  ssh_host: localhost
+
+  # Database Authentication (Default)
+  database:
+    enabled: true
+    path: ~/.velocitycmdb/data/users.db
+
+  # Local OS Authentication
+  local:
+    enabled: true
+    domain_required: false
+    use_computer_name_as_domain: true
+
+  # LDAP/Active Directory Authentication
+  ldap:
+    enabled: false
+    server: null
+    port: 389
+    use_ssl: false
+    base_dn: null
+    user_dn_template: null
+    search_groups: false
+    group_base_dn: null
+    group_filter: "(&(objectClass=group)(member={user_dn}))"
+    timeout: 10
+    max_retries: 3
+
+# Flask Settings
+flask:
+  secret_key: null  # Auto-generated if not provided
+  session_timeout_minutes: 120
+
+# Server Settings
+server:
+  host: 0.0.0.0
+  port: 8086
+  debug: false
+
+# Logging Configuration
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: null
+
+# SecureCartography Maps Directory
+scmaps:
+  data_dir: ~/.velocitycmdb/discovery/maps
+
+# Getting Started:
+# 1. Run: velocitycmdb init
+# 2. Run: velocitycmdb create-admin
+# 3. Run: velocitycmdb run
+# 4. Login with admin/admin (change password after first login)

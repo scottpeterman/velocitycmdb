@@ -1,0 +1,55 @@
+{
+  "cdp": {},
+  "lldp": {
+    "usa-rtr-1": {
+      "ip": "172.16.0.1",
+      "platform": "ios",
+      "connections": [
+        [
+          "Ethernet6",
+          "Gi0/1"
+        ]
+      ]
+    },
+    "usa-spine-1": {
+      "ip": "172.16.0.2",
+      "platform": "eos",
+      "connections": [
+        [
+          "Ethernet2",
+          "Ethernet2"
+        ]
+      ]
+    },
+    "usa-leaf-3": {
+      "ip": "172.16.10.23",
+      "platform": "ios",
+      "connections": [
+        [
+          "Ethernet3",
+          "Gi0/0"
+        ]
+      ]
+    },
+    "usa-leaf-2": {
+      "ip": "172.16.10.22",
+      "platform": "ios",
+      "connections": [
+        [
+          "Ethernet4",
+          "Gi0/0"
+        ]
+      ]
+    },
+    "usa-leaf-1": {
+      "ip": "172.16.10.21",
+      "platform": "ios",
+      "connections": [
+        [
+          "Ethernet5",
+          "Gi0/0"
+        ]
+      ]
+    }
+  }
+}

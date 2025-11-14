@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block title %}{% if action == 'create' %}Create User{% else %}Edit User{% endif %} - Admin - Anguis{% endblock %}
+
+{% block content %}
+<div style="padding: 32px;">
+    <!-- Header -->
+    <div style="margin-bottom: 32px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1 style="font: var(--md-typescale-headline-large); margin: 0 0 8px 0; display: flex; align-items: center; gap: 12px;">
+                <i data-lucide="{% if action == 'create' %}user-plus{% else %}user-cog{% endif %}" size="32"></i>
+                {% if action == 'create' %}Create New User{% else %}Edit User: {{ user.username }}{% endif %}
+            </h1>
+            <p style="font: var(--md-typescale-body-large); color: var(--md-on-surface-variant); margin: 0;">
+                {% if action == 'create' %}Add a new user account{% else %}Modify user account settings{% endif %}
+            </p>
+        </div>
+        <a href="{{ url_for('admin.users_list') }}" class="md-button md-button-outlined">
+            <i data-lucide="arrow-left" size="18"></i>
+            Back to Users
+        </a>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="md-card" style="margin-bottom: 20px; border-left: 4px solid {% if category == 'error' %}var(--md-error){% elif category == 'success' %}#4caf50{% else %}var(--md-primary){% endif %};">
+                <div class="md-card-content">
+                    {{ message }}
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div style="display: grid; grid-template-columns: 1fr; gap: 20px; max-width: 800px;">
+        <!-- User Details Form -->
+        <div class="md-card">
+            <div class="md-card-header">
+                <h5 style="margin: 0; font: var(--md-typescale-title-large);">User Details</h5>
+            </div>
+            <div class="md-card-content">
+                <form method="POST" style="display: flex; flex-direction: column; gap: 24px;">
+                    <!-- Username -->
+                    <div class="md-textfield-wrapper">
+                        <label for="username" class="md-textfield-label">Username *</label>
+                        <input type="text"
+                               id="username"
+                               name="username"
+                               class="md-textfield"
+                               value="{% if action == 'edit' %}{{ user.username }}{% endif %}"
+                               {% if action == 'edit' %}readonly{% endif %}
+                               required
+                               autocomplete="off">
+                        <p class="md-textfield-helper">Unique username for login (can include @ for domain users)</p>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="md-textfield-wrapper">
+                        <label for="email" class="md-textfield-label">Email</label>
+                        <input type="email"
+                               id="email"
+                               name="email"
+                               class="md-textfield"
+                               value="{% if action == 'edit' %}{{ user.email }}{% endif %}"
+                               >
+                        <p class="md-textfield-helper">User's email address (optional)</p>
+                    </div>
+
+                    <!-- Display Name -->
+                    <div class="md-textfield-wrapper">
+                        <label for="display_name" class="md-textfield-label">Display Name</label>
+                        <input type="text"
+                               id="display_name"
+                               name="display_name"
+                               class="md-textfield"
+                               value="{% if action == 'edit' %}{{ user.display_name }}{% endif %}">
+                        <p class="md-textfield-helper">Full name or display name (optional)</p>
+                    </div>
+
+                    {% if action == 'create' %}
+                    <!-- Auth Backend (Create only) -->
+                    <div class="md-textfield-wrapper">
+                        <label for="auth_backend" class="md-textfield-label">Authentication Backend *</label>
+                        <select id="auth_backend"
+                                name="auth_backend"
+                                class="md-textfield"
+                                required
+                                onchange="togglePasswordFields()">
+                            <option value="database">Database (Local Password)</option>
+                            <option value="ldap">LDAP (External Auth)</option>
+                            <option value="local">Local OS (External Auth)</option>
+                        </select>
+                        <p class="md-textfield-helper">How this user will authenticate</p>
+                    </div>
+
+                    <!-- Password (Database auth only) -->
+                    <div id="password-fields">
+                        <div class="md-textfield-wrapper">
+                            <label for="password" class="md-textfield-label">Password *</label>
+                            <input type="password"
+                                   id="password"
+                                   name="password"
+                                   class="md-textfield"
+                                   minlength="8">
+                            <p class="md-textfield-helper">Minimum 8 characters (only for database auth)</p>
+                        </div>
+
+                        <div class="md-textfield-wrapper" style="margin-top: 24px;">
+                            <label for="password_confirm" class="md-textfield-label">Confirm Password *</label>
+                            <input type="password"
+                                   id="password_confirm"
+                                   name="password_confirm"
+                                   class="md-textfield"
+                                   minlength="8">
+                            <p class="md-textfield-helper">Re-enter password to confirm</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Groups -->
+                    <div class="md-textfield-wrapper">
+                        <label for="groups" class="md-textfield-label">Groups</label>
+                        <input type="text"
+                               id="groups"
+                               name="groups"
+                               class="md-textfield"
+                               value="{% if action == 'edit' %}{{ user.groups_str }}{% endif %}"
+                               placeholder="admin, users, operators">
+                        <p class="md-textfield-helper">Comma-separated list of groups (e.g., admin, users, operators)</p>
+                    </div>
+
+                    <!-- Checkboxes -->
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <label style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+                            <input type="checkbox"
+                                   id="is_admin"
+                                   name="is_admin"
+                                   {% if action == 'edit' and user.is_admin %}checked{% endif %}
+                                   style="width: 20px; height: 20px; cursor: pointer;">
+                            <div>
+                                <strong style="font: var(--md-typescale-body-large);">Administrator</strong>
+                                <p style="font: var(--md-typescale-body-small); color: var(--md-on-surface-variant); margin: 4px 0 0 0;">
+                                    Grant full administrative privileges
+                                </p>
+                            </div>
+                        </label>
+
+                        {% if action == 'edit' %}
+                        <label style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+                            <input type="checkbox"
+                                   id="is_active"
+                                   name="is_active"
+                                   {% if user.is_active %}checked{% endif %}
+                                   style="width: 20px; height: 20px; cursor: pointer;">
+                            <div>
+                                <strong style="font: var(--md-typescale-body-large);">Active</strong>
+                                <p style="font: var(--md-typescale-body-small); color: var(--md-on-surface-variant); margin: 4px 0 0 0;">
+                                    Allow user to log in
+                                </p>
+                            </div>
+                        </label>
+                        {% endif %}
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div style="display: flex; gap: 12px; padding-top: 16px; border-top: 1px solid var(--md-outline-variant);">
+                        <button type="submit" class="md-button md-button-filled">
+                            <i data-lucide="save" size="18"></i>
+                            {% if action == 'create' %}Create User{% else %}Save Changes{% endif %}
+                        </button>
+                        <a href="{{ url_for('admin.users_list') }}" class="md-button md-button-outlined">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if action == 'edit' and user.auth_backend == 'database' %}
+        <!-- Change Password (Edit only, database users only) -->
+        <div class="md-card">
+            <div class="md-card-header">
+                <h5 style="margin: 0; font: var(--md-typescale-title-large);">Change Password</h5>
+            </div>
+            <div class="md-card-content">
+                <form method="POST" action="{{ url_for('admin.users_change_password', username=user.username) }}" style="display: flex; flex-direction: column; gap: 24px;">
+                    <div class="md-textfield-wrapper">
+                        <label for="new_password" class="md-textfield-label">New Password *</label>
+                        <input type="password"
+                               id="new_password"
+                               name="new_password"
+                               class="md-textfield"
+                               required
+                               minlength="8">
+                        <p class="md-textfield-helper">Minimum 8 characters</p>
+                    </div>
+
+                    <div class="md-textfield-wrapper">
+                        <label for="confirm_password" class="md-textfield-label">Confirm Password *</label>
+                        <input type="password"
+                               id="confirm_password"
+                               name="confirm_password"
+                               class="md-textfield"
+                               required
+                               minlength="8">
+                        <p class="md-textfield-helper">Re-enter password to confirm</p>
+                    </div>
+
+                    <button type="submit" class="md-button md-button-filled">
+                        <i data-lucide="key" size="18"></i>
+                        Update Password
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if action == 'edit' %}
+        <!-- User Info -->
+        <div class="md-card">
+            <div class="md-card-header">
+                <h5 style="margin: 0; font: var(--md-typescale-title-large);">Account Information</h5>
+            </div>
+            <div class="md-card-content">
+                <table style="width: 100%; font: var(--md-typescale-body-medium);">
+                    <tr>
+                        <td style="padding: 8px 0; color: var(--md-on-surface-variant);">Auth Backend:</td>
+                        <td style="padding: 8px 0;">
+                            <span class="md-badge" style="background: {% if user.auth_backend == 'database' %}#4caf50{% elif user.auth_backend == 'ldap' %}#2196f3{% else %}#ff9800{% endif %};">
+                                {{ user.auth_backend }}
+                            </span>
+                            {% if user.auth_backend != 'database' %}
+                            <span style="color: var(--md-on-surface-variant); font-size: 0.875rem; margin-left: 8px;">
+                                (Authenticates externally, password managed by {{ user.auth_backend|upper }})
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: var(--md-on-surface-variant);">Created:</td>
+                        <td style="padding: 8px 0;">{{ user.created_at[:19] if user.created_at else 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: var(--md-on-surface-variant);">Last Updated:</td>
+                        <td style="padding: 8px 0;">{{ user.updated_at[:19] if user.updated_at else 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: var(--md-on-surface-variant);">Last Login:</td>
+                        <td style="padding: 8px 0;">{{ user.last_login[:19] if user.last_login else 'Never' }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    {% if action == 'create' %}
+    // Toggle password fields based on auth backend
+    function togglePasswordFields() {
+        const authBackend = document.getElementById('auth_backend').value;
+        const passwordFields = document.getElementById('password-fields');
+        const passwordInput = document.getElementById('password');
+        const confirmInput = document.getElementById('password_confirm');
+
+        if (authBackend === 'database') {
+            passwordFields.style.display = 'block';
+            passwordInput.required = true;
+            confirmInput.required = true;
+        } else {
+            passwordFields.style.display = 'none';
+            passwordInput.required = false;
+            confirmInput.required = false;
+            passwordInput.value = '';
+            confirmInput.value = '';
+        }
+    }
+
+    // Initialize on page load
+    togglePasswordFields();
+
+    // Password confirmation validation
+    const passwordForm = document.querySelector('form');
+    passwordForm.addEventListener('submit', function(e) {
+        const authBackend = document.getElementById('auth_backend').value;
+
+        if (authBackend === 'database') {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('password_confirm').value;
+
+            if (password !== confirmPassword) {
+                e.preventDefault();
+                alert('Passwords do not match!');
+                return false;
+            }
+        }
+    });
+    {% endif %}
+</script>
+{% endblock %}

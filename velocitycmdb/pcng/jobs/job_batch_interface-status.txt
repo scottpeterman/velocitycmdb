@@ -1,0 +1,8 @@
+# interface-status Capture Jobs (All Vendors)
+# Generated: 2025-10-16T06:37:32.048849
+# Jobs: 4
+
+job_340_arista_interface-status.json
+job_341_cisco-ios_interface-status.json
+job_342_cisco-nxos_interface-status.json
+job_343_juniper_interface-status.json

@@ -1,0 +1,8 @@
+# version Capture Jobs (All Vendors)
+# Generated: 2025-10-16T06:37:32.050473
+# Jobs: 4
+
+job_396_arista_version.json
+job_397_cisco-ios_version.json
+job_398_cisco-nxos_version.json
+job_399_juniper_version.json

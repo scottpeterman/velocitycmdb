@@ -1,0 +1,8 @@
+# bgp-table Capture Jobs (All Vendors)
+# Generated: 2025-10-16T06:37:32.048207
+# Jobs: 4
+
+job_320_arista_bgp-table.json
+job_321_cisco-ios_bgp-table.json
+job_322_cisco-nxos_bgp-table.json
+job_323_juniper_bgp-table.json

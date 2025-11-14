@@ -1,0 +1,8 @@
+# authorization Capture Jobs (All Vendors)
+# Generated: 2025-10-16T06:37:32.047695
+# Jobs: 4
+
+job_308_arista_authorization.json
+job_309_cisco-ios_authorization.json
+job_310_cisco-nxos_authorization.json
+job_311_juniper_authorization.json

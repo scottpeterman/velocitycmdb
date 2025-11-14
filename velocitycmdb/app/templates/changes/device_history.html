@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Change History - {{ device.name }} - Network Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Change History</h1>
+    <p class="page-description">{{ device.name }} - All configuration changes</p>
+</div>
+
+<!-- Device Info -->
+<div class="md-card">
+    <div class="card-content">
+        <div class="info-grid">
+            <div class="info-item">
+                <strong>Device:</strong> {{ device.name }}
+            </div>
+            <div class="info-item">
+                <strong>Site:</strong> {{ device.site_code or 'Unknown' }}
+            </div>
+            <div class="info-item">
+                <strong>Vendor:</strong> {{ device.vendor_id }}
+            </div>
+            <div class="info-item">
+                <strong>Model:</strong> {{ device.model or 'Unknown' }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Changes Table -->
+<div class="md-card" style="margin-top: 24px;">
+    <div class="card-header">
+        <h2>Changes ({{ changes|length }})</h2>
+    </div>
+    <div class="card-content">
+        {% if changes %}
+        <div class="md-table-container">
+            <table class="md-table">
+                <thead>
+                    <tr>
+                        <th>Detected</th>
+                        <th>Type</th>
+                        <th>Changes</th>
+                        <th>Severity</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for change in changes %}
+                    <tr>
+                        <td>{{ change.detected_at[:19] }}</td>
+                        <td><span class="badge">{{ change.capture_type }}</span></td>
+                        <td>
+                            <span style="color: var(--md-success)">+{{ change.lines_added }}</span> /
+                            <span style="color: var(--md-error)">-{{ change.lines_removed }}</span>
+                        </td>
+                        <td>
+                            <span class="severity-badge severity-{{ change.severity }}">
+                                {{ change.severity }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('changes.view_diff', change_id=change.id) }}"
+                               class="md-button-text">View Diff</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i data-lucide="check-circle" size="48"></i>
+            <h3>No Changes</h3>
+            <p>No configuration changes detected for this device</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.severity-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.severity-critical {
+    background: var(--md-error-container);
+    color: var(--md-on-error-container);
+}
+
+.severity-moderate {
+    background: var(--md-warning-container);
+    color: var(--md-on-warning-container);
+}
+
+.severity-minor {
+    background: var(--md-surface-container-high);
+    color: var(--md-on-surface);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--md-on-surface-variant);
+}
+
+.empty-state i {
+    color: var(--md-success);
+    margin-bottom: 16px;
+}
+</style>
+
+<script>
+lucide.createIcons();
+</script>
+{% endblock %}

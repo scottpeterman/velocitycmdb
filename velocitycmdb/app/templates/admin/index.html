@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Anguis{% endblock %}
+
+{% block content %}
+<div style="padding: 32px;">
+    <!-- Header -->
+    <div style="margin-bottom: 32px;">
+        <h1 style="font: var(--md-typescale-headline-large); margin: 0 0 8px 0; display: flex; align-items: center; gap: 12px;">
+            <i data-lucide="settings" size="32"></i>
+            Admin Dashboard
+        </h1>
+        <p style="font: var(--md-typescale-body-large); color: var(--md-on-surface-variant); margin: 0;">
+            System administration and user management
+        </p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 32px;">
+        <div class="md-card" style="border-left: 4px solid var(--md-primary);">
+            <div class="md-card-content">
+                <h5 style="font: var(--md-typescale-title-medium); margin: 0 0 12px 0; color: var(--md-primary);">Total Users</h5>
+                <p style="font: var(--md-typescale-display-medium); margin: 0;">{{ stats.total_users }}</p>
+            </div>
+        </div>
+        <div class="md-card" style="border-left: 4px solid #4caf50;">
+            <div class="md-card-content">
+                <h5 style="font: var(--md-typescale-title-medium); margin: 0 0 12px 0; color: #4caf50;">Active Users</h5>
+                <p style="font: var(--md-typescale-display-medium); margin: 0;">{{ stats.active_users }}</p>
+            </div>
+        </div>
+        <div class="md-card" style="border-left: 4px solid #ff9800;">
+            <div class="md-card-content">
+                <h5 style="font: var(--md-typescale-title-medium); margin: 0 0 12px 0; color: #ff9800;">Admin Users</h5>
+                <p style="font: var(--md-typescale-display-medium); margin: 0;">{{ stats.admin_users }}</p>
+            </div>
+        </div>
+        <div class="md-card" style="border-left: 4px solid #2196f3;">
+            <div class="md-card-content">
+                <h5 style="font: var(--md-typescale-title-medium); margin: 0 0 12px 0; color: #2196f3;">External Users</h5>
+                <p style="font: var(--md-typescale-display-medium); margin: 0;">{{ stats.external_users }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Menu -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 32px;">
+        <div class="md-card">
+            <div class="md-card-content" style="text-align: center;">
+                <div style="width: 64px; height: 64px; margin: 0 auto 16px; background: var(--md-primary-container); border-radius: var(--md-shape-corner-medium); display: flex; align-items: center; justify-content: center; color: var(--md-primary);">
+                    <i data-lucide="users" size="32"></i>
+                </div>
+                <h5 style="font: var(--md-typescale-title-large); margin: 0 0 8px 0;">User Management</h5>
+                <p style="font: var(--md-typescale-body-medium); color: var(--md-on-surface-variant); margin: 0 0 20px 0;">Create, edit, and manage user accounts</p>
+                <a href="{{ url_for('admin.users_list') }}" class="md-button md-button-filled">
+                    <i data-lucide="users" size="18"></i>
+                    Manage Users
+                </a>
+            </div>
+        </div>
+
+        <div class="md-card">
+            <div class="md-card-content" style="text-align: center;">
+                <div style="width: 64px; height: 64px; margin: 0 auto 16px; background: var(--md-secondary-container); border-radius: var(--md-shape-corner-medium); display: flex; align-items: center; justify-content: center; color: var(--md-secondary);">
+                    <i data-lucide="file-code" size="32"></i>
+                </div>
+                <h5 style="font: var(--md-typescale-title-large); margin: 0 0 8px 0;">Configuration</h5>
+                <p style="font: var(--md-typescale-body-medium); color: var(--md-on-surface-variant); margin: 0 0 20px 0;">View and edit system settings</p>
+                <a href="{{ url_for('admin.config_view') }}" class="md-button md-button-filled">
+                    <i data-lucide="file-text" size="18"></i>
+                    View Config
+                </a>
+            </div>
+        </div>
+
+        <div class="md-card">
+            <div class="md-card-content" style="text-align: center;">
+                <div style="width: 64px; height: 64px; margin: 0 auto 16px; background: var(--md-tertiary-container); border-radius: var(--md-shape-corner-medium); display: flex; align-items: center; justify-content: center; color: var(--md-tertiary);">
+                    <i data-lucide="shield" size="32"></i>
+                </div>
+                <h5 style="font: var(--md-typescale-title-large); margin: 0 0 8px 0;">Authentication</h5>
+                <p style="font: var(--md-typescale-body-medium); color: var(--md-on-surface-variant); margin: 0 0 20px 0;">Configure authentication methods</p>
+                <a href="{{ url_for('admin.auth_settings') }}" class="md-button md-button-filled">
+                    <i data-lucide="key" size="18"></i>
+                    Auth Settings
+                </a>
+            </div>
+        </div>
+
+        <div class="md-card">
+            <div class="md-card-content" style="text-align: center;">
+                <div style="width: 64px; height: 64px; margin: 0 auto 16px; background: var(--md-error-container); border-radius: var(--md-shape-corner-medium); display: flex; align-items: center; justify-content: center; color: var(--md-error);">
+                    <i data-lucide="activity" size="32"></i>
+                </div>
+                <h5 style="font: var(--md-typescale-title-large); margin: 0 0 8px 0;">System Status</h5>
+                <p style="font: var(--md-typescale-body-medium); color: var(--md-on-surface-variant); margin: 0 0 20px 0;">Monitor system health and statistics</p>
+                <a href="{{ url_for('admin.system_status') }}" class="md-button md-button-filled">
+                    <i data-lucide="bar-chart-2" size="18"></i>
+                    View Status
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Logins -->
+    {% if stats.recent_logins %}
+    <div class="md-card">
+        <div class="md-card-header">
+            <h5 style="margin: 0; font: var(--md-typescale-title-large);">Recent Logins</h5>
+        </div>
+        <div class="md-card-content" style="padding: 0;">
+            <table class="md-table">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Display Name</th>
+                        <th>Auth Backend</th>
+                        <th>Last Login</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in stats.recent_logins[:10] %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('admin.users_edit', username=user.username) }}" style="color: var(--md-primary); text-decoration: none;">
+                                {{ user.username }}
+                            </a>
+                        </td>
+                        <td>{{ user.display_name }}</td>
+                        <td>
+                            <span class="md-badge">{{ user.auth_backend }}</span>
+                        </td>
+                        <td>
+                            {% if user.last_login %}
+                                {{ user.last_login[:19] }}
+                            {% else %}
+                                <span style="color: var(--md-on-surface-variant);">Never</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.is_admin %}
+                                <span class="md-badge" style="background: var(--md-error-container); color: var(--md-on-error-container);">Admin</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

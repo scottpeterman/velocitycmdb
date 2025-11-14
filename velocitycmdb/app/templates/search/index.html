@@ -1,0 +1,921 @@
+{% extends "base.html" %}
+
+{% block title %}Universal Search - Anguis NMS{% endblock %}
+
+{% block head_extra %}
+<style>
+    .search-hero {
+        text-align: center;
+        padding: 60px 20px;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .search-hero h1 {
+        font: var(--md-typescale-display-medium);
+        color: var(--md-on-background);
+        margin-bottom: 12px;
+    }
+
+    .search-hero p {
+        font: var(--md-typescale-body-large);
+        color: var(--md-on-surface-variant);
+        margin-bottom: 32px;
+    }
+
+    .search-box {
+        position: relative;
+        max-width: 700px;
+        margin: 0 auto 24px;
+    }
+
+    .search-input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+        background: var(--md-surface-container-high);
+        border: 2px solid var(--md-outline);
+        border-radius: var(--md-shape-corner-large);
+        padding: 16px 20px;
+        transition: all 0.2s;
+    }
+
+    .search-input-wrapper:focus-within {
+        border-color: var(--md-primary);
+        box-shadow: 0 0 0 3px rgba(var(--md-primary-rgb), 0.1);
+    }
+
+    .search-input {
+        flex: 1;
+        border: none;
+        background: transparent;
+        font: var(--md-typescale-title-medium);
+        color: var(--md-on-surface);
+        outline: none;
+        padding: 0 12px;
+    }
+
+    .search-input::placeholder {
+        color: var(--md-on-surface-variant);
+        opacity: 0.6;
+    }
+
+    .search-icon {
+        color: var(--md-primary);
+    }
+
+    .clear-button {
+        background: none;
+        border: none;
+        color: var(--md-on-surface-variant);
+        cursor: pointer;
+        padding: 8px;
+        border-radius: var(--md-shape-corner-small);
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .clear-button:hover {
+        background: var(--md-surface-container);
+    }
+
+    .search-input:not(:placeholder-shown) ~ .clear-button {
+        display: flex;
+    }
+
+    .search-button {
+        background: var(--md-primary);
+        color: var(--md-on-primary);
+        border: none;
+        padding: 10px 20px;
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-label-large);
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+        margin-left: 8px;
+        white-space: nowrap;
+    }
+
+    .search-button:hover {
+        background: var(--md-primary-dark);
+        box-shadow: var(--md-elevation-2);
+    }
+
+    .search-button:active {
+        transform: scale(0.98);
+    }
+
+    .search-suggestions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+        margin-top: 16px;
+    }
+
+    .suggestion-chip {
+        padding: 6px 16px;
+        background: var(--md-surface-container);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-full);
+        font: var(--md-typescale-body-small);
+        color: var(--md-on-surface);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .suggestion-chip:hover {
+        background: var(--md-primary-container);
+        border-color: var(--md-primary);
+        color: var(--md-on-primary-container);
+    }
+
+    .loading-indicator {
+        text-align: center;
+        padding: 40px;
+        display: none;
+    }
+
+    .loading-indicator.active {
+        display: block;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        margin: 0 auto 16px;
+        border: 4px solid var(--md-surface-variant);
+        border-top: 4px solid var(--md-primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .results-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: none;
+    }
+
+    .results-container.active {
+        display: block;
+    }
+
+    .result-section {
+        margin-bottom: 32px;
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid var(--md-outline-variant);
+    }
+
+    .section-header h2 {
+        font: var(--md-typescale-title-large);
+        color: var(--md-on-surface);
+        margin: 0;
+    }
+
+    .result-count {
+        background: var(--md-primary-container);
+        color: var(--md-on-primary-container);
+        padding: 4px 12px;
+        border-radius: var(--md-shape-corner-full);
+        font: var(--md-typescale-label-medium);
+        font-weight: 600;
+    }
+
+    .result-grid {
+        display: grid;
+        gap: 16px;
+    }
+
+    .result-card {
+        background: var(--md-surface-container);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        padding: 20px;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+    .result-card:hover {
+        border-color: var(--md-primary);
+        box-shadow: var(--md-elevation-2);
+        transform: translateY(-2px);
+    }
+
+    .result-card-header {
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+
+    .result-title {
+        font: var(--md-typescale-title-medium);
+        color: var(--md-on-surface);
+        margin: 0 0 4px 0;
+    }
+
+    .result-subtitle {
+        font: var(--md-typescale-body-small);
+        color: var(--md-on-surface-variant);
+    }
+
+    .result-badges {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+    }
+
+    .badge {
+        padding: 4px 10px;
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-label-small);
+        font-weight: 500;
+    }
+
+    .badge-primary {
+        background: var(--md-primary-container);
+        color: var(--md-on-primary-container);
+    }
+
+    .badge-secondary {
+        background: var(--md-secondary-container);
+        color: var(--md-on-secondary-container);
+    }
+
+    .badge-tertiary {
+        background: var(--md-tertiary-container);
+        color: var(--md-on-tertiary-container);
+    }
+
+    .result-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--md-outline-variant);
+    }
+
+    .detail-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font: var(--md-typescale-body-small);
+        color: var(--md-on-surface-variant);
+    }
+
+    .detail-label {
+        font-weight: 500;
+        color: var(--md-on-surface);
+    }
+
+    .no-results {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+    .no-results-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 20px;
+        color: var(--md-on-surface-variant);
+        opacity: 0.3;
+    }
+
+    .no-results h3 {
+        font: var(--md-typescale-headline-medium);
+        color: var(--md-on-surface);
+        margin-bottom: 8px;
+    }
+
+    .no-results p {
+        font: var(--md-typescale-body-large);
+        color: var(--md-on-surface-variant);
+    }
+
+    .search-tips {
+        max-width: 700px;
+        margin: 40px auto 0;
+        padding: 24px;
+        background: var(--md-surface-container);
+        border-radius: var(--md-shape-corner-medium);
+        border: 1px solid var(--md-outline-variant);
+    }
+
+    .tips-title {
+        font: var(--md-typescale-title-medium);
+        color: var(--md-on-surface);
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .tips-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+    }
+
+    .tip-item {
+        display: flex;
+        align-items: start;
+        gap: 12px;
+    }
+
+    .tip-icon {
+        color: var(--md-primary);
+        margin-top: 2px;
+    }
+
+    .tip-content {
+        flex: 1;
+    }
+
+    .tip-label {
+        font: var(--md-typescale-label-medium);
+        font-weight: 600;
+        color: var(--md-on-surface);
+        margin-bottom: 4px;
+    }
+
+    .tip-example {
+        font: var(--md-typescale-body-small);
+        color: var(--md-on-surface-variant);
+        font-family: 'Courier New', monospace;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="search-hero">
+    <h1>Universal Search</h1>
+    <p>Search by IP, MAC, serial, hostname, model, component, or any text across your entire network</p>
+
+    <div class="search-box">
+        <div class="search-input-wrapper">
+            <i data-lucide="search" size="24" class="search-icon"></i>
+            <input
+                type="text"
+                id="search-input"
+                class="search-input"
+                placeholder="10.2.5.17, aa:bb:cc:dd:ee:ff, JAE135678, rt-01..."
+                autocomplete="off"
+            >
+            <button type="button" class="clear-button" id="clear-button">
+                <i data-lucide="x" size="18"></i>
+            </button>
+            <button type="button" class="search-button" id="search-button">
+                <i data-lucide="search" size="18"></i>
+                Search
+            </button>
+        </div>
+
+        <div class="search-suggestions">
+            <div class="suggestion-chip" data-query="10.252.5.17">Try an IP</div>
+            <div class="suggestion-chip" data-query="DCS-7280CR2A-60">Try a model</div>
+            <div class="suggestion-chip" data-query="Q28-CWDM4">Try a component</div>
+            <div class="suggestion-chip" data-query="router bgp">Search configs</div>
+        </div>
+    </div>
+</div>
+
+<div class="loading-indicator" id="loading">
+    <div class="spinner"></div>
+    <p>Searching across devices, components, ARP tables, and captures...</p>
+</div>
+
+<div class="results-container" id="results-container">
+    <!-- Results will be injected here -->
+</div>
+
+<div class="search-tips">
+    <div class="tips-title">
+        <i data-lucide="lightbulb" size="20"></i>
+        What can you search?
+    </div>
+    <div class="tips-grid">
+        <div class="tip-item">
+            <i data-lucide="network" size="16" class="tip-icon"></i>
+            <div class="tip-content">
+                <div class="tip-label">IP Address</div>
+                <div class="tip-example">10.2.5.17</div>
+            </div>
+        </div>
+        <div class="tip-item">
+            <i data-lucide="wifi" size="16" class="tip-icon"></i>
+            <div class="tip-content">
+                <div class="tip-label">MAC Address</div>
+                <div class="tip-example">aa:bb:cc:dd:ee:ff</div>
+            </div>
+        </div>
+        <div class="tip-item">
+            <i data-lucide="hash" size="16" class="tip-icon"></i>
+            <div class="tip-content">
+                <div class="tip-label">Serial Number</div>
+                <div class="tip-example">JAE1XVF45678</div>
+            </div>
+        </div>
+        <div class="tip-item">
+            <i data-lucide="server" size="16" class="tip-icon"></i>
+            <div class="tip-content">
+                <div class="tip-label">Hostname</div>
+                <div class="tip-example">rtr02-01</div>
+            </div>
+        </div>
+        <div class="tip-item">
+            <i data-lucide="box" size="16" class="tip-icon"></i>
+            <div class="tip-content">
+                <div class="tip-label">Device Model</div>
+                <div class="tip-example">DCS-7280CR2A</div>
+            </div>
+        </div>
+        <div class="tip-item">
+            <i data-lucide="cpu" size="16" class="tip-icon"></i>
+            <div class="tip-content">
+                <div class="tip-label">Component</div>
+                <div class="tip-example">Q28-CWDM4</div>
+            </div>
+        </div>
+        <div class="tip-item">
+            <i data-lucide="file-text" size="16" class="tip-icon"></i>
+            <div class="tip-content">
+                <div class="tip-label">Config Text</div>
+                <div class="tip-example">router bgp</div>
+            </div>
+        </div>
+        <div class="tip-item">
+            <i data-lucide="zap" size="16" class="tip-icon"></i>
+            <div class="tip-content">
+                <div class="tip-label">Anything!</div>
+                <div class="tip-example">Just type...</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search-input');
+    const clearButton = document.getElementById('clear-button');
+    const searchButton = document.getElementById('search-button');
+    const loading = document.getElementById('loading');
+    const resultsContainer = document.getElementById('results-container');
+
+    let currentRequest = null;
+    let lastQuery = '';
+
+    // Focus on search input
+    searchInput.focus();
+
+    // Clear button
+    clearButton.addEventListener('click', function() {
+        searchInput.value = '';
+        searchInput.focus();
+        resultsContainer.classList.remove('active');
+        lastQuery = '';
+
+        // Cancel any pending requests
+        if (currentRequest) {
+            currentRequest.abort();
+            currentRequest = null;
+        }
+    });
+
+    // Search button click
+    searchButton.addEventListener('click', function() {
+        const query = searchInput.value.trim();
+        if (query.length >= 2) {
+            performSearch(query);
+        }
+    });
+
+    // Suggestion chips
+    document.querySelectorAll('.suggestion-chip').forEach(chip => {
+        chip.addEventListener('click', function() {
+            const query = this.dataset.query;
+            searchInput.value = query;
+            performSearch(query);
+        });
+    });
+
+    // Search on Enter key
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            const query = this.value.trim();
+            if (query.length >= 2) {
+                performSearch(query);
+            }
+        }
+    });
+
+    function performSearch(query) {
+        // Don't search if query hasn't changed
+        if (query === lastQuery) {
+            return;
+        }
+
+        // Cancel previous request if still pending
+        if (currentRequest) {
+            currentRequest.abort();
+        }
+
+        lastQuery = query;
+        loading.classList.add('active');
+        resultsContainer.classList.remove('active');
+
+        // Create AbortController for this request
+        const controller = new AbortController();
+        currentRequest = controller;
+
+        fetch(`/search/api/search?q=${encodeURIComponent(query)}`, {
+            signal: controller.signal
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Only process if this is still the current request
+                if (currentRequest === controller) {
+                    loading.classList.remove('active');
+                    displayResults(data);
+                    currentRequest = null;
+                }
+            })
+            .catch(error => {
+                // Only show error if not aborted
+                if (error.name !== 'AbortError') {
+                    loading.classList.remove('active');
+                    console.error('Search error:', error);
+                    showError('Search failed. Please try again.');
+                    currentRequest = null;
+                }
+            });
+    }
+
+    // Helper function to deduplicate arrays by ID
+    function deduplicateById(array) {
+        const seen = new Set();
+        return array.filter(item => {
+            if (seen.has(item.id)) {
+                return false;
+            }
+            seen.add(item.id);
+            return true;
+        });
+    }
+
+    function displayResults(data) {
+        console.log('=== SEARCH RESULTS DEBUG ===');
+        console.log('Full data object:', data);
+
+        resultsContainer.innerHTML = '';
+        resultsContainer.classList.add('active');
+
+        const results = data.results || {};
+
+        // Deduplicate and combine results
+        const allDevices = deduplicateById([
+            ...(results.devices || []),
+            ...(results.ip_devices || []),
+            ...(results.serial_devices || []),
+            ...(results.general_devices || [])
+        ]);
+
+        const allComponents = deduplicateById([
+            ...(results.components || []),
+            ...(results.serial_components || []),
+            ...(results.general_components || [])
+        ]);
+
+        const allArpEntries = deduplicateById([
+            ...(results.ip_arp_entries || []),
+            ...(results.mac_arp_entries || [])
+        ]);
+
+        const allCaptures = deduplicateById([
+            ...(results.device_captures || []),
+            ...(results.ip_config_mentions || []),
+            ...(results.mac_config_mentions || []),
+            ...(results.general_captures || [])
+        ]);
+
+        const allStackMembers = deduplicateById(results.serial_stack_members || []);
+        const allNotes = deduplicateById(results.general_notes || []);
+
+        // Count total after deduplication
+        const totalResults = allDevices.length + allComponents.length + allArpEntries.length +
+                            allCaptures.length + allStackMembers.length + allNotes.length;
+
+        console.log('Total results after deduplication:', totalResults);
+
+        if (totalResults === 0) {
+            resultsContainer.innerHTML = `
+                <div class="no-results">
+                    <i data-lucide="search-x" size="80" class="no-results-icon"></i>
+                    <h3>No results found</h3>
+                    <p>Try a different search term or check the examples above</p>
+                </div>
+            `;
+            lucide.createIcons();
+            return;
+        }
+
+        // Display results in logical order
+        if (allDevices.length > 0) {
+            displayDeviceResults(allDevices);
+        }
+
+        if (allComponents.length > 0) {
+            displayComponentResults(allComponents);
+        }
+
+        if (allArpEntries.length > 0) {
+            displayARPResults(allArpEntries);
+        }
+
+        if (allCaptures.length > 0) {
+            displayCaptureResults(allCaptures);
+        }
+
+        if (allStackMembers.length > 0) {
+            displayStackMemberResults(allStackMembers);
+        }
+
+        if (allNotes.length > 0) {
+            displayNotesResults(allNotes);
+        }
+
+        lucide.createIcons();
+    }
+
+    function displayDeviceResults(devices) {
+        let html = '<div class="result-section">';
+        html += '<div class="section-header">';
+        html += '<i data-lucide="server" size="24"></i>';
+        html += '<h2>Devices</h2>';
+        html += `<span class="result-count">${devices.length} found</span>`;
+        html += '</div>';
+        html += '<div class="result-grid">';
+
+        devices.forEach(device => {
+            html += `
+                <div class="result-card" onclick="window.location.href='/assets/devices/${device.id}'">
+                    <div class="result-card-header">
+                        <div>
+                            <h3 class="result-title">${device.name}</h3>
+                            <div class="result-subtitle">${device.site_name || 'Unknown Site'}</div>
+                        </div>
+                    </div>
+                    <div class="result-badges">
+                        <span class="badge badge-primary">${device.vendor_name || 'Unknown'}</span>
+                        ${device.model ? `<span class="badge badge-secondary">${device.model}</span>` : ''}
+                    </div>
+                    <div class="result-details">
+                        ${device.management_ip ? `
+                        <div class="detail-item">
+                            <i data-lucide="network" size="14"></i>
+                            <span>${device.management_ip}</span>
+                        </div>
+                        ` : ''}
+                        ${device.os_version ? `
+                        <div class="detail-item">
+                            <i data-lucide="package" size="14"></i>
+                            <span>${device.os_version}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div></div>';
+        resultsContainer.innerHTML += html;
+    }
+
+    function displayComponentResults(components) {
+        let html = '<div class="result-section">';
+        html += '<div class="section-header">';
+        html += '<i data-lucide="cpu" size="24"></i>';
+        html += '<h2>Components</h2>';
+        html += `<span class="result-count">${components.length} found</span>`;
+        html += '</div>';
+        html += '<div class="result-grid">';
+
+        components.forEach(comp => {
+            html += `
+                <div class="result-card" onclick="window.location.href='/assets/devices/${comp.device_id}'">
+                    <h3 class="result-title">${comp.name}</h3>
+                    <div class="result-subtitle">${comp.device_name}</div>
+                    <div class="result-badges">
+                        <span class="badge badge-primary">${comp.type || 'Unknown'}</span>
+                        ${comp.vendor_name ? `<span class="badge badge-secondary">${comp.vendor_name}</span>` : ''}
+                    </div>
+                    <div class="result-details">
+                        ${comp.description ? `
+                        <div class="detail-item">
+                            <span>${comp.description}</span>
+                        </div>
+                        ` : ''}
+                        ${comp.serial ? `
+                        <div class="detail-item">
+                            <span class="detail-label">S/N:</span>
+                            <span>${comp.serial}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div></div>';
+        resultsContainer.innerHTML += html;
+    }
+
+    function displayARPResults(arpEntries) {
+        let html = '<div class="result-section">';
+        html += '<div class="section-header">';
+        html += '<i data-lucide="wifi" size="24"></i>';
+        html += '<h2>ARP Table Entries</h2>';
+        html += `<span class="result-count">${arpEntries.length} entries</span>`;
+        html += '</div>';
+        html += '<div class="result-grid">';
+
+        const byHostname = {};
+        arpEntries.forEach(entry => {
+            if (!byHostname[entry.hostname]) {
+                byHostname[entry.hostname] = [];
+            }
+            byHostname[entry.hostname].push(entry);
+        });
+
+        Object.entries(byHostname).forEach(([hostname, entries]) => {
+            html += `
+                <div class="result-card">
+                    <h3 class="result-title">${hostname}</h3>
+                    <div class="result-subtitle">${entries[0].vendor || 'Unknown Vendor'}</div>
+                    <div class="result-badges">
+                        <span class="badge badge-tertiary">${entries.length} entries</span>
+                    </div>
+            `;
+
+            entries.slice(0, 5).forEach(entry => {
+                html += `
+                    <div class="detail-item" style="margin-top: 8px;">
+                        <i data-lucide="network" size="14"></i>
+                        <span>${entry.ip_address}</span>
+                        <span class="result-subtitle">${entry.mac_address} on ${entry.interface_name || 'unknown'}</span>
+                    </div>
+                `;
+            });
+
+            if (entries.length > 5) {
+                html += `<div class="result-subtitle" style="margin-top: 8px;">...and ${entries.length - 5} more</div>`;
+            }
+
+            html += '</div>';
+        });
+
+        html += '</div></div>';
+        resultsContainer.innerHTML += html;
+    }
+
+    function displayCaptureResults(captures) {
+        let html = '<div class="result-section">';
+        html += '<div class="section-header">';
+        html += '<i data-lucide="file-text" size="24"></i>';
+        html += '<h2>Capture Mentions</h2>';
+        html += `<span class="result-count">${captures.length} found</span>`;
+        html += '</div>';
+        html += '<div class="result-grid">';
+
+        captures.forEach(cap => {
+            // Determine the best link target
+            // If we have device_id, link to device detail page
+            // The device detail page will show all captures for that device
+            const linkUrl = cap.device_id ? `/assets/devices/${cap.device_id}` : '#';
+
+            html += `
+                <div class="result-card" onclick="window.location.href='${linkUrl}'">
+                    <h3 class="result-title">${cap.device_name}</h3>
+                    <div class="result-badges">
+                        <span class="badge badge-primary">${cap.capture_type}</span>
+                    </div>
+                    <div class="result-details">
+                        <div class="detail-item">
+                            <i data-lucide="clock" size="14"></i>
+                            <span>${new Date(cap.captured_at).toLocaleString()}</span>
+                        </div>
+                        ${cap.management_ip ? `
+                        <div class="detail-item">
+                            <i data-lucide="network" size="14"></i>
+                            <span>${cap.management_ip}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div></div>';
+        resultsContainer.innerHTML += html;
+    }
+
+    function displayStackMemberResults(stackMembers) {
+        let html = '<div class="result-section">';
+        html += '<div class="section-header">';
+        html += '<i data-lucide="layers" size="24"></i>';
+        html += '<h2>Stack Members</h2>';
+        html += `<span class="result-count">${stackMembers.length} found</span>`;
+        html += '</div>';
+        html += '<div class="result-grid">';
+
+        stackMembers.forEach(member => {
+            html += `
+                <div class="result-card" onclick="window.location.href='/assets/devices/${member.device_id}'">
+                    <h3 class="result-title">Member ${member.member_number || 'Unknown'}</h3>
+                    <div class="result-subtitle">${member.device_name}</div>
+                    <div class="result-badges">
+                        ${member.role ? `<span class="badge badge-primary">${member.role}</span>` : ''}
+                        ${member.model ? `<span class="badge badge-secondary">${member.model}</span>` : ''}
+                    </div>
+                    <div class="result-details">
+                        ${member.serial ? `
+                        <div class="detail-item">
+                            <span class="detail-label">S/N:</span>
+                            <span>${member.serial}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div></div>';
+        resultsContainer.innerHTML += html;
+    }
+
+    function displayNotesResults(notes) {
+        let html = '<div class="result-section">';
+        html += '<div class="section-header">';
+        html += '<i data-lucide="sticky-note" size="24"></i>';
+        html += '<h2>Notes</h2>';
+        html += `<span class="result-count">${notes.length} found</span>`;
+        html += '</div>';
+        html += '<div class="result-grid">';
+
+        notes.forEach(note => {
+            html += `
+                <div class="result-card" onclick="window.location.href='/notes/view/${note.id}'">
+                    <h3 class="result-title">${note.title || 'Untitled Note'}</h3>
+                    <div class="result-details">
+                        <div class="detail-item">
+                            <i data-lucide="clock" size="14"></i>
+                            <span>${new Date(note.created_at).toLocaleString()}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div></div>';
+        resultsContainer.innerHTML += html;
+    }
+
+    function showError(message) {
+        resultsContainer.innerHTML = `
+            <div class="no-results">
+                <i data-lucide="alert-circle" size="80" class="no-results-icon"></i>
+                <h3>Error</h3>
+                <p>${message}</p>
+            </div>
+        `;
+        resultsContainer.classList.add('active');
+        lucide.createIcons();
+    }
+});
+</script>
+{% endblock %}

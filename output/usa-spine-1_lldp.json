@@ -1,0 +1,16 @@
+[
+  {
+    "LOCAL_INTERFACE": "Gi0/0",
+    "NEIGHBOR_INTERFACE": "Ethernet4",
+    "NEIGHBOR_NAME": "usa-spine-2",
+    "NEIGHBOR_DESCRIPTION": "Arista Networks EOS version 4.33.1F running on an Arista vEOS-lab",
+    "MGMT_ADDRESS": "172.16.1.6"
+  },
+  {
+    "LOCAL_INTERFACE": "Gi0/1",
+    "NEIGHBOR_INTERFACE": "Ethernet4",
+    "NEIGHBOR_NAME": "usa-spine-1",
+    "NEIGHBOR_DESCRIPTION": "Arista Networks EOS version 4.33.1F running on an Arista vEOS-lab",
+    "MGMT_ADDRESS": "172.16.0.2"
+  }
+]

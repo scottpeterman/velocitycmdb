@@ -1,0 +1,1238 @@
+{% extends "base.html" %}
+{% block title %}Maintenance Utilities - VelocityCMDB{% endblock %}
+
+{% block content %}
+
+<!-- Include SocketIO -->
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+<div class="page-header">
+    <div class="page-title">
+        <i data-lucide="wrench"></i>
+        <div>
+            <h1>Maintenance Utilities</h1>
+            <p>Administrative tools for operations and maintenance</p>
+        </div>
+    </div>
+    <div class="page-actions">
+        <a href="{{ url_for('admin.index') }}" class="md-button md-button-text">
+            <i data-lucide="arrow-left"></i>
+            Back to Admin
+        </a>
+    </div>
+</div>
+
+<!-- Warning Banner -->
+<div class="alert alert-warning">
+    <i data-lucide="alert-triangle"></i>
+    <div>
+        <strong>Caution:</strong> Some of these operations modify database structure and data.
+        Create a backup before performing maintenance operations.
+    </div>
+</div>
+
+<!-- Progress Modal (WebSocket updates) -->
+<div id="progress-modal" class="modal-overlay" style="display: none;">
+    <div class="progress-dialog">
+        <div class="progress-header">
+            <h3 id="progress-title">Processing...</h3>
+        </div>
+        <div class="progress-body">
+            <div class="progress-message" id="progress-message">Starting operation...</div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+            </div>
+            <div class="progress-percentage" id="progress-percentage">0%</div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions Row -->
+<div class="maintenance-grid">
+    <!-- Backup Operations -->
+    <div class="maintenance-card">
+        <div class="card-header">
+            <i data-lucide="save"></i>
+            <h3>Backup Operations</h3>
+        </div>
+        <div class="card-body">
+            <p>Create compressed backups of databases and artifacts</p>
+
+            <div class="operation-group">
+                <button class="md-button md-button-filled" onclick="createBackup('full')">
+                    <i data-lucide="package"></i>
+                    Full Backup
+                </button>
+                <button class="md-button md-button-outlined" onclick="createBackup('metadata')">
+                    <i data-lucide="database"></i>
+                    Metadata Only
+                </button>
+            </div>
+
+            <div class="backup-info">
+                <small>Last backup: <span id="last-backup">Never</span></small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Restore/Validate -->
+<!--    <div class="maintenance-card">-->
+<!--        <div class="card-header">-->
+<!--            <i data-lucide="upload"></i>-->
+<!--            <h3>Restore & Validate</h3>-->
+<!--        </div>-->
+<!--        <div class="card-body">-->
+<!--            <p>Inspect and validate backup archives</p>-->
+
+<!--            <div class="operation-group">-->
+<!--                <label class="file-upload-btn md-button md-button-outlined">-->
+<!--                    <i data-lucide="file-search"></i>-->
+<!--                    Inspect Backup-->
+<!--                    <input type="file" id="backup-file" accept=".tar.gz,.zip" style="display: none;">-->
+<!--                </label>-->
+<!--            </div>-->
+
+<!--            <div id="backup-inspect-results" style="display: none; margin-top: 12px;">-->
+<!--                <pre id="backup-manifest" class="code-block"></pre>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
+
+    <!-- Search Indexes -->
+    <div class="maintenance-card">
+        <div class="card-header">
+            <i data-lucide="search"></i>
+            <h3>Search Indexes</h3>
+        </div>
+        <div class="card-body">
+            <p>Rebuild full-text search indexes (FTS5)</p>
+
+            <div class="index-status" id="index-status">
+                <div class="status-item">
+                    <span>Assets Index:</span>
+                    <span class="badge badge-success">Healthy</span>
+                </div>
+                <div class="status-item">
+                    <span>Notes Index:</span>
+                    <span class="badge badge-success">Healthy</span>
+                </div>
+                <div class="status-item">
+                    <span>Captures Index:</span>
+                    <span class="badge badge-success">Healthy</span>
+                </div>
+            </div>
+
+            <button class="md-button md-button-outlined" onclick="rebuildIndexes()">
+                <i data-lucide="refresh-cw"></i>
+                Rebuild All Indexes
+            </button>
+        </div>
+    </div>
+
+    <!-- Component Processing -->
+    <div class="maintenance-card">
+        <div class="card-header">
+            <i data-lucide="cpu"></i>
+            <h3>Component Processing</h3>
+        </div>
+        <div class="card-body">
+            <p>Parse inventory captures and extract hardware components</p>
+
+            <div class="operation-group">
+                <button class="md-button md-button-outlined" onclick="reclassifyComponents()">
+                    <i data-lucide="refresh-cw"></i>
+                    Reclassify Components
+                </button>
+                <button class="md-button md-button-text" onclick="showComponentStats()">
+                    <i data-lucide="bar-chart"></i>
+                    View Statistics
+                </button>
+            </div>
+
+            <div id="component-stats" style="display: none; margin-top: 12px;">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <label>Total Components:</label>
+                        <span id="total-components">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <label>With Serials:</label>
+                        <span id="components-with-serials">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <label>Coverage:</label>
+                        <span id="serial-coverage">0%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ARP Database -->
+    <div class="maintenance-card">
+        <div class="card-header">
+            <i data-lucide="network"></i>
+            <h3>ARP Database</h3>
+        </div>
+        <div class="card-body">
+            <p>Parse and populate ARP/MAC address database</p>
+
+            <div class="operation-group">
+                <button class="md-button md-button-outlined" onclick="loadArpData()">
+                    <i data-lucide="upload"></i>
+                    Load ARP Captures
+                </button>
+                <button class="md-button md-button-text" onclick="showArpStats()">
+                    <i data-lucide="info"></i>
+                    View Statistics
+                </button>
+            </div>
+
+            <div id="arp-stats" style="display: none; margin-top: 12px;">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <label>Total Entries:</label>
+                        <span id="arp-entries">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <label>Unique MACs:</label>
+                        <span id="unique-macs">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <label>Last Updated:</label>
+                        <span id="arp-updated">Never</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manual Capture Load -->
+    <div class="maintenance-card">
+        <div class="card-header">
+            <i data-lucide="file-text"></i>
+            <h3>Capture Data</h3>
+        </div>
+        <div class="card-body">
+            <p>Manually load CLI captures into database</p>
+
+            <div class="capture-options" style="display:none;">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="load-configs" checked>
+                    <span>Configurations</span>
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="load-inventory" checked>
+                    <span>Inventory</span>
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="load-routes">
+                    <span>Routes</span>
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="load-mac">
+                    <span>MAC Tables</span>
+                </label>
+            </div>
+
+            <button class="md-button md-button-outlined" onclick="loadCaptureData()">
+                <i data-lucide="download"></i>
+                Load Capture Data
+            </button>
+        </div>
+    </div>
+
+    <!-- Topology Generation -->
+    <!-- Add this card to velocitycmdb/app/templates/admin/maintenance.html -->
+<!-- Place it after the "Capture Data" card -->
+
+<!-- Topology Generation -->
+<div class="maintenance-card">
+    <div class="card-header">
+        <i data-lucide="git-branch"></i>
+        <h3>Topology Generation</h3>
+    </div>
+    <div class="card-body">
+        <p>Generate network topology map from LLDP data starting from a root device</p>
+
+        <!-- Root Device Search -->
+        <div class="form-group">
+            <label for="rootDevice">Root Device</label>
+            <input
+                type="text"
+                id="rootDevice"
+                class="form-select"
+                placeholder="Start typing device name..."
+                autocomplete="off">
+            <div id="deviceSuggestions" class="autocomplete-suggestions"></div>
+        </div>
+
+        <!-- Max Hops -->
+        <div class="form-group">
+            <label for="maxHops">Max Hops (1-10)</label>
+            <input
+                type="number"
+                id="maxHops"
+                class="form-select"
+                value="4"
+                min="1"
+                max="10">
+        </div>
+
+        <!-- Domain Suffix -->
+        <div class="form-group">
+            <label for="domainSuffix">Domain Suffix</label>
+            <input
+                type="text"
+                id="domainSuffix"
+                class="form-select"
+                value=""
+                placeholder=".example.com">
+        </div>
+
+        <!-- Advanced Filters (Collapsible) -->
+        <details class="advanced-filters">
+            <summary class="md-button md-button-text">
+                <i data-lucide="filter"></i>
+                Advanced Filters
+            </summary>
+            <div class="filter-content">
+                <div class="form-group">
+                    <label for="filterPlatform">Filter Platform (comma-separated)</label>
+                    <input
+                        type="text"
+                        id="filterPlatform"
+                        class="form-select"
+                        placeholder="e.g., sep,debian,ubuntu">
+                    <small>Exclude devices with these platforms</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="filterDevice">Filter Device (comma-separated)</label>
+                    <input
+                        type="text"
+                        id="filterDevice"
+                        class="form-select"
+                        placeholder="e.g., rft,sw,phone">
+                    <small>Exclude devices with these name patterns</small>
+                </div>
+            </div>
+        </details>
+
+        <!-- Generate Button -->
+        <button id="btnGenerateTopology" class="md-button md-button-filled">
+            <i data-lucide="map"></i>
+            Generate Topology
+        </button>
+
+
+    </div>
+</div>
+
+<style>
+/* Autocomplete suggestions styling */
+.autocomplete-suggestions {
+    position: absolute;
+    border: 1px solid var(--md-outline);
+    background: var(--md-surface-container);
+    max-height: 200px;
+    overflow-y: auto;
+    width: 100%;
+    z-index: 1000;
+    display: none;
+    border-radius: var(--md-shape-corner-small);
+    box-shadow: var(--md-elevation-2);
+    margin-top: 4px;
+}
+
+.autocomplete-suggestions.show {
+    display: block;
+}
+
+.suggestion-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--md-outline-variant);
+    color: var(--md-on-surface);
+    font: var(--md-typescale-body-medium);
+    transition: background-color var(--md-motion-duration-short2) var(--md-motion-easing-standard);
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover {
+    background: var(--md-surface-container-high);
+}
+
+.suggestion-item .device-name {
+    font-weight: 500;
+    color: var(--md-on-surface);
+}
+
+.suggestion-item .device-info {
+    font-size: 0.85em;
+    color: var(--md-on-surface-variant);
+    margin-top: 2px;
+}
+
+.file-list {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid var(--md-outline-variant);
+    border-radius: var(--md-shape-corner-small);
+    background: var(--md-surface);
+}
+
+.file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--md-outline-variant);
+    color: var(--md-on-surface);
+}
+
+.file-item:last-child {
+    border-bottom: none;
+}
+
+.file-item:hover {
+    background: var(--md-surface-container-high);
+}
+
+.file-name {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    color: var(--md-on-surface);
+}
+
+.file-meta {
+    font-size: 0.85em;
+    color: var(--md-on-surface-variant);
+}
+
+/* Form group for proper autocomplete positioning */
+.form-group {
+    position: relative;
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    font: var(--md-typescale-label-large);
+    color: var(--md-on-surface);
+    margin-bottom: 8px;
+}
+
+.form-group small {
+    display: block;
+    font: var(--md-typescale-body-small);
+    color: var(--md-on-surface-variant);
+    margin-top: 4px;
+}
+
+</style>
+
+<script>
+// Add to your maintenance.js or inline script
+
+// Device autocomplete
+let deviceSearchTimeout;
+const rootDeviceInput = document.getElementById('rootDevice');
+const deviceSuggestions = document.getElementById('deviceSuggestions');
+
+rootDeviceInput.addEventListener('input', function() {
+    clearTimeout(deviceSearchTimeout);
+    const query = this.value.trim();
+
+    if (query.length < 2) {
+        deviceSuggestions.classList.remove('show');
+        return;
+    }
+
+    deviceSearchTimeout = setTimeout(() => {
+        fetch(`/admin/maintenance/devices/search?q=${encodeURIComponent(query)}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.devices && data.devices.length > 0) {
+                    deviceSuggestions.innerHTML = data.devices.map(d => `
+                        <div class="suggestion-item" data-device="${d.name}">
+                            <div class="device-name">${d.name}</div>
+                            <div class="device-info">${d.ip} • ${d.model}</div>
+                        </div>
+                    `).join('');
+                    deviceSuggestions.classList.add('show');
+
+                    // Add click handlers
+                    deviceSuggestions.querySelectorAll('.suggestion-item').forEach(item => {
+                        item.addEventListener('click', function() {
+                            rootDeviceInput.value = this.dataset.device;
+                            deviceSuggestions.classList.remove('show');
+                        });
+                    });
+                } else {
+                    deviceSuggestions.classList.remove('show');
+                }
+            });
+    }, 300);
+});
+
+// Hide suggestions when clicking outside
+document.addEventListener('click', function(e) {
+    if (!rootDeviceInput.contains(e.target) && !deviceSuggestions.contains(e.target)) {
+        deviceSuggestions.classList.remove('show');
+    }
+});
+
+// Generate topology
+document.getElementById('btnGenerateTopology').addEventListener('click', function() {
+    const rootDevice = document.getElementById('rootDevice').value.trim();
+
+    if (!rootDevice) {
+        alert('Please enter a root device name');
+        return;
+    }
+
+    const maxHops = parseInt(document.getElementById('maxHops').value) || 4;
+    const domainSuffix = document.getElementById('domainSuffix').value.trim() || 'home.com';
+
+    // Parse filters
+    const filterPlatform = document.getElementById('filterPlatform').value
+        .split(',')
+        .map(s => s.trim())
+        .filter(s => s);
+
+    const filterDevice = document.getElementById('filterDevice').value
+        .split(',')
+        .map(s => s.trim())
+        .filter(s => s);
+
+    console.log('Emitting topology generation:', {
+        root_device: rootDevice,
+        max_hops: maxHops,
+        domain_suffix: domainSuffix,
+        filter_platform: filterPlatform,
+        filter_device: filterDevice
+    });
+
+    socket.emit('maintenance_generate_topology', {
+        root_device: rootDevice,
+        max_hops: maxHops,
+        domain_suffix: domainSuffix,
+        filter_platform: filterPlatform,
+        filter_device: filterDevice
+    });
+
+    // Add to operation log (assumes logMessage function exists)
+    if (typeof logMessage === 'function') {
+        logMessage(`Generating topology from ${rootDevice} (max ${maxHops} hops)...`);
+    }
+});
+
+// Handle topology completion
+socket.on('maintenance_complete', function(data) {
+    if (data.operation === 'topology') {
+        const message = `✓ Topology generated: ${data.device_count} devices, ${data.connection_count} connections\n` +
+                       `File: ${data.filename} (${data.size_kb} KB)`;
+
+        console.log('Topology complete:', data);
+
+        if (typeof logMessage === 'function') {
+            logMessage(message);
+            // Add download link
+            const downloadUrl = `/admin/maintenance/topology/download/${data.filename}`;
+            logMessage(`<a href="${downloadUrl}" class="btn btn-sm btn-success"><i class="fas fa-download"></i> Download</a>`);
+        }
+
+        // Refresh topology list
+        loadTopologyList();
+    }
+});
+
+// Load topology list
+function loadTopologyList() {
+    fetch('/admin/maintenance/topology/list')
+        .then(r => r.json())
+        .then(data => {
+            const list = document.getElementById('topologyList');
+
+            if (!data.topologies || data.topologies.length === 0) {
+                list.innerHTML = '<p class="text-muted">No topologies generated yet</p>';
+                return;
+            }
+
+            list.innerHTML = data.topologies.map(t => `
+                <div class="file-item">
+                    <div>
+                        <div class="file-name">${t.filename}</div>
+                        <div class="file-meta">${t.size_kb} KB • ${new Date(t.created).toLocaleString()}</div>
+                    </div>
+                    <a href="/admin/maintenance/topology/download/${t.filename}"
+                       class="btn btn-sm btn-primary">
+                        <i class="fas fa-download"></i>
+                    </a>
+                </div>
+            `).join('');
+        });
+}
+
+// Load topology list on page load
+loadTopologyList();
+</script>
+<!--    <div class="maintenance-card">-->
+<!--        <div class="card-header">-->
+<!--            <i data-lucide="git-branch"></i>-->
+<!--            <h3>Topology Generation</h3>-->
+<!--        </div>-->
+<!--        <div class="card-body">-->
+<!--            <p>Generate network map from LLDP/CDP data</p>-->
+
+<!--            <div class="operation-group">-->
+<!--                <select id="map-source" class="form-select">-->
+<!--                    <option value="lldp">LLDP Data</option>-->
+<!--                    <option value="cdp">CDP Data</option>-->
+<!--                    <option value="both">Both</option>-->
+<!--                </select>-->
+
+<!--                <button class="md-button md-button-outlined" onclick="generateTopology()">-->
+<!--                    <i data-lucide="map"></i>-->
+<!--                    Generate Map-->
+<!--                </button>-->
+<!--            </div>-->
+
+<!--            <div id="topology-status" style="display: none; margin-top: 12px;">-->
+<!--                <div class="alert alert-info">-->
+<!--                    <i data-lucide="info"></i>-->
+<!--                    <span id="topology-message">Processing...</span>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
+
+    <!-- Database Reset -->
+    <div class="maintenance-card danger-card">
+        <div class="card-header">
+            <i data-lucide="trash-2"></i>
+            <h3>Database Reset</h3>
+        </div>
+        <div class="card-body">
+            <p>Reset database to initial state (for testing/learning)</p>
+
+            <div class="alert alert-danger">
+                <i data-lucide="alert-triangle"></i>
+                <strong>Warning:</strong> This will delete ALL data!
+            </div>
+
+            <button class="md-button md-button-danger" onclick="confirmDatabaseReset()">
+                <i data-lucide="trash-2"></i>
+                Reset Database
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Operation Log -->
+<div class="operation-log-container">
+    <div class="log-header">
+        <h3>
+            <i data-lucide="terminal"></i>
+            Operation Log
+        </h3>
+        <button class="md-button md-button-text" onclick="clearLog()">
+            <i data-lucide="x"></i>
+            Clear
+        </button>
+    </div>
+    <div id="operation-log" class="log-content">
+        <div class="log-entry log-info">
+            <span class="log-timestamp">{{ now }}</span>
+            <span class="log-message">Maintenance panel loaded</span>
+        </div>
+    </div>
+</div>
+
+<style>
+.maintenance-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 20px;
+    margin-top: 24px;
+}
+
+.maintenance-card {
+    background: var(--md-surface-container);
+    border: 1px solid var(--md-outline-variant);
+    border-radius: var(--md-shape-corner-large);
+    padding: 20px;
+}
+
+.maintenance-card.danger-card {
+    border-color: var(--md-error);
+    background: rgba(var(--md-error-rgb), 0.05);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--md-outline-variant);
+}
+
+.card-header i {
+    color: var(--md-primary);
+    width: 24px;
+    height: 24px;
+}
+
+.card-header h3 {
+    margin: 0;
+    font: var(--md-typescale-title-medium);
+    color: var(--md-on-surface);
+}
+
+.card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.card-body > p {
+    color: var(--md-on-surface-variant);
+    font: var(--md-typescale-body-medium);
+    margin: 0;
+}
+
+.operation-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.alert {
+    display: flex;
+    align-items: start;
+    gap: 12px;
+    padding: 12px;
+    border-radius: var(--md-shape-corner-medium);
+    font: var(--md-typescale-body-small);
+}
+
+.alert-warning {
+    background: rgba(var(--md-warning-rgb), 0.1);
+    border: 1px solid var(--md-warning);
+    color: var(--md-on-surface);
+}
+
+.alert-danger {
+    background: rgba(var(--md-error-rgb), 0.1);
+    border: 1px solid var(--md-error);
+    color: var(--md-on-surface);
+}
+
+.alert-info {
+    background: rgba(var(--md-primary-rgb), 0.1);
+    border: 1px solid var(--md-primary);
+    color: var(--md-on-surface);
+}
+
+.alert i {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+}
+
+.index-status, .stats-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    background: var(--md-surface);
+    border-radius: var(--md-shape-corner-small);
+}
+
+.status-item, .stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font: var(--md-typescale-body-small);
+}
+
+.badge {
+    padding: 4px 8px;
+    border-radius: var(--md-shape-corner-extra-small);
+    font: var(--md-typescale-label-small);
+    font-weight: 600;
+}
+
+.badge-success {
+    background: var(--md-success-container);
+    color: var(--md-on-success-container);
+}
+
+.capture-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font: var(--md-typescale-body-medium);
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.form-select {
+    padding: 10px;
+    border: 1px solid var(--md-outline);
+    border-radius: var(--md-shape-corner-small);
+    background: var(--md-surface);
+    color: var(--md-on-surface);
+    font: var(--md-typescale-body-medium);
+}
+
+.backup-info {
+    padding: 8px;
+    background: var(--md-surface);
+    border-radius: var(--md-shape-corner-small);
+    font: var(--md-typescale-body-small);
+    color: var(--md-on-surface-variant);
+}
+
+.code-block {
+    background: var(--md-surface-variant);
+    padding: 12px;
+    border-radius: var(--md-shape-corner-small);
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    overflow-x: auto;
+    max-height: 300px;
+}
+
+.operation-log-container {
+    margin-top: 32px;
+    background: var(--md-surface-container);
+    border: 1px solid var(--md-outline-variant);
+    border-radius: var(--md-shape-corner-large);
+    overflow: hidden;
+}
+
+.log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: var(--md-surface-container-high);
+    border-bottom: 1px solid var(--md-outline-variant);
+}
+
+.log-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font: var(--md-typescale-title-small);
+}
+
+.log-content {
+    padding: 16px;
+    max-height: 400px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+}
+
+.log-entry {
+    display: flex;
+    gap: 12px;
+    padding: 8px;
+    border-left: 3px solid transparent;
+    margin-bottom: 4px;
+}
+
+.log-entry.log-info {
+    border-left-color: var(--md-primary);
+}
+
+.log-entry.log-success {
+    border-left-color: var(--md-success);
+}
+
+.log-entry.log-error {
+    border-left-color: var(--md-error);
+}
+
+.log-entry.log-warning {
+    border-left-color: var(--md-warning);
+}
+
+.log-timestamp {
+    color: var(--md-on-surface-variant);
+    white-space: nowrap;
+}
+
+.log-message {
+    color: var(--md-on-surface);
+}
+
+.md-button-danger {
+    background: var(--md-error);
+    color: var(--md-on-error);
+    border: none;
+}
+
+.md-button-danger:hover {
+    background: var(--md-error-container);
+    color: var(--md-on-error-container);
+}
+
+/* Progress Modal */
+.progress-dialog {
+    background: var(--md-surface-container);
+    border-radius: var(--md-shape-corner-extra-large);
+    padding: 32px;
+    min-width: 400px;
+    max-width: 500px;
+    box-shadow: var(--md-elevation-3);
+}
+
+.progress-header {
+    margin-bottom: 24px;
+}
+
+.progress-header h3 {
+    font: var(--md-typescale-headline-small);
+    color: var(--md-on-surface);
+    margin: 0;
+}
+
+.progress-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.progress-message {
+    font: var(--md-typescale-body-medium);
+    color: var(--md-on-surface-variant);
+    min-height: 24px;
+}
+
+.progress-bar-container {
+    width: 100%;
+    height: 8px;
+    background: var(--md-surface-variant);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: var(--md-primary);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.progress-percentage {
+    text-align: center;
+    font: var(--md-typescale-title-large);
+    color: var(--md-primary);
+    font-weight: 600;
+}
+</style>
+<script>
+// Initialize SocketIO
+const socket = io();
+
+// Progress modal management
+function showProgressModal(title) {
+    const modal = document.getElementById('progress-modal');
+    document.getElementById('progress-title').textContent = title;
+    document.getElementById('progress-message').textContent = 'Starting...';
+    document.getElementById('progress-bar').style.width = '0%';
+    document.getElementById('progress-percentage').textContent = '0%';
+    modal.style.display = 'flex';
+}
+
+function hideProgressModal() {
+    const modal = document.getElementById('progress-modal');
+    modal.style.display = 'none';
+}
+
+function updateProgress(stage, message, progress) {
+    document.getElementById('progress-message').textContent = message;
+    document.getElementById('progress-bar').style.width = progress + '%';
+    document.getElementById('progress-percentage').textContent = progress + '%';
+}
+
+// SocketIO event handlers
+socket.on('maintenance_progress', function(data) {
+    updateProgress(data.stage, data.message, data.progress);
+    logOperation(data.message, 'info');
+});
+
+// Replace the socket.on('maintenance_complete') handler in your maintenance.html with this:
+
+socket.on('maintenance_complete', function(data) {
+    hideProgressModal();
+
+    if (data.operation === 'backup' && data.success) {
+        // Show detailed backup information with full paths
+        let message = `Backup created: ${data.filename} (${data.size_mb} MB)`;
+
+        if (data.backup_path) {
+            message += `\nLocation: ${data.backup_path}`;
+        }
+
+        if (data.data_dir) {
+            message += `\nData directory: ${data.data_dir}`;
+        }
+
+        logOperation(message, 'success');
+        document.getElementById('last-backup').textContent = new Date().toLocaleString();
+
+        // Also show in console for easy copy/paste
+        console.log('✅ Backup Details:');
+        console.log(`  File: ${data.filename}`);
+        console.log(`  Size: ${data.size_mb} MB`);
+        console.log(`  Path: ${data.backup_path || 'Unknown'}`);
+        console.log(`  Data: ${data.data_dir || 'Unknown'}`);
+
+    } else if (data.operation === 'topology' && data.success) {
+        document.getElementById('topology-message').textContent =
+            `Generated map: ${data.map_name} (${data.device_count} devices, ${data.link_count} links)`;
+        logOperation(`Topology generated: ${data.map_name}`, 'success');
+    } else if (data.success) {
+        logOperation('Operation completed successfully', 'success');
+    } else {
+        logOperation('Operation failed: ' + data.error, 'error');
+        if (data.operation === 'topology') {
+            document.getElementById('topology-message').textContent = `Failed: ${data.error}`;
+        }
+    }
+});
+
+socket.on('maintenance_error', function(data) {
+    hideProgressModal();
+    logOperation('Error: ' + data.error, 'error');
+});
+
+socket.on('maintenance_reset_complete', function(data) {
+    hideProgressModal();
+    if (data.success) {
+        logOperation('Database reset complete', 'success');
+        alert('Database has been reset. The page will now reload.');
+        window.location.reload();
+    } else {
+        logOperation(`Database reset failed: ${data.error}`, 'error');
+    }
+});
+
+// Logging utility
+function logOperation(message, type = 'info') {
+    const log = document.getElementById('operation-log');
+    const timestamp = new Date().toLocaleTimeString();
+
+    const entry = document.createElement('div');
+    entry.className = `log-entry log-${type}`;
+    entry.innerHTML = `
+        <span class="log-timestamp">${timestamp}</span>
+        <span class="log-message">${message}</span>
+    `;
+
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
+}
+
+function clearLog() {
+    const log = document.getElementById('operation-log');
+    log.innerHTML = '';
+    logOperation('Log cleared', 'info');
+}
+
+// Backup Operations (WebSocket)
+function createBackup(type) {
+    logOperation(`Starting ${type} backup...`, 'info');
+    showProgressModal(`Creating ${type} Backup`);
+
+    const includeCaptures = type === 'full';
+
+    socket.emit('maintenance_backup', {
+        include_captures: includeCaptures
+    });
+}
+
+// Backup inspection (AJAX - no progress needed, quick operation)
+document.getElementById('backup-file')?.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    logOperation(`Inspecting backup: ${file.name}`, 'info');
+
+    const formData = new FormData();
+    formData.append('backup_file', file);
+
+    try {
+        const response = await fetch('/admin/maintenance/backup/inspect', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            document.getElementById('backup-inspect-results').style.display = 'block';
+            document.getElementById('backup-manifest').textContent =
+                JSON.stringify(result.manifest, null, 2);
+            logOperation('Backup inspection complete', 'success');
+        } else {
+            logOperation(`Inspection failed: ${result.error}`, 'error');
+        }
+    } catch (error) {
+        logOperation(`Inspection error: ${error.message}`, 'error');
+    }
+});
+
+// Rebuild search indexes (WebSocket)
+function rebuildIndexes() {
+    if (!confirm('Rebuild all search indexes? This may take several minutes.')) {
+        return;
+    }
+
+    logOperation('Rebuilding search indexes...', 'info');
+    showProgressModal('Rebuilding Search Indexes');
+
+    socket.emit('maintenance_rebuild_indexes', {});
+}
+
+// Component reclassification (WebSocket)
+function reclassifyComponents() {
+    if (!confirm('Reclassify all components? This will reparse inventory data.')) {
+        return;
+    }
+
+    logOperation('Reclassifying components...', 'info');
+    showProgressModal('Reclassifying Components');
+
+    socket.emit('maintenance_reclassify_components', {});
+}
+
+// Component stats (AJAX - quick)
+async function showComponentStats() {
+    const statsDiv = document.getElementById('component-stats');
+    statsDiv.style.display = statsDiv.style.display === 'none' ? 'block' : 'none';
+
+    if (statsDiv.style.display === 'block') {
+        try {
+            const response = await fetch('/admin/maintenance/components/stats');
+            const stats = await response.json();
+
+            document.getElementById('total-components').textContent = stats.total;
+            document.getElementById('components-with-serials').textContent = stats.with_serials;
+            document.getElementById('serial-coverage').textContent = stats.coverage + '%';
+        } catch (error) {
+            logOperation(`Failed to load component stats: ${error.message}`, 'error');
+        }
+    }
+}
+
+// ARP database operations (WebSocket)
+function loadArpData() {
+    logOperation('Loading ARP data from captures...', 'info');
+    showProgressModal('Loading ARP Data');
+
+    socket.emit('maintenance_load_arp', {});
+}
+
+// ARP stats (AJAX - quick)
+async function showArpStats() {
+    const statsDiv = document.getElementById('arp-stats');
+    statsDiv.style.display = statsDiv.style.display === 'none' ? 'block' : 'none';
+
+    if (statsDiv.style.display === 'block') {
+        try {
+            const response = await fetch('/admin/maintenance/arp/stats');
+            const stats = await response.json();
+
+            document.getElementById('arp-entries').textContent = stats.total_entries;
+            document.getElementById('unique-macs').textContent = stats.unique_macs;
+            document.getElementById('arp-updated').textContent = stats.last_updated || 'Never';
+        } catch (error) {
+            logOperation(`Failed to load ARP stats: ${error.message}`, 'error');
+        }
+    }
+}
+
+// Capture data loading (WebSocket)
+function loadCaptureData() {
+    const captureTypes = [];
+    if (document.getElementById('load-configs').checked) captureTypes.push('configs');
+    if (document.getElementById('load-inventory').checked) captureTypes.push('inventory');
+    if (document.getElementById('load-routes').checked) captureTypes.push('routes');
+    if (document.getElementById('load-mac').checked) captureTypes.push('mac');
+
+    if (captureTypes.length === 0) {
+        alert('Please select at least one capture type');
+        return;
+    }
+
+    logOperation(`Loading capture data: ${captureTypes.join(', ')}`, 'info');
+    showProgressModal('Loading Capture Data');
+
+    socket.emit('maintenance_load_captures', {
+        capture_types: captureTypes
+    });
+}
+
+// Topology generation (WebSocket)
+function generateTopology() {
+    const source = document.getElementById('map-source').value;
+
+    logOperation(`Generating topology from ${source} data...`, 'info');
+    showProgressModal('Generating Topology');
+    document.getElementById('topology-status').style.display = 'block';
+    document.getElementById('topology-message').textContent = 'Processing...';
+
+    socket.emit('maintenance_generate_topology', {
+        source: source
+    });
+}
+
+// Database reset (WebSocket)
+function confirmDatabaseReset() {
+    const confirmed = confirm(
+        'WARNING: This will delete ALL data and reset the database to initial state.\n\n' +
+        'This operation CANNOT be undone!\n\n' +
+        'Are you absolutely sure you want to continue?'
+    );
+
+    if (!confirmed) return;
+
+    const doubleConfirm = prompt('Type "RESET DATABASE" to confirm:');
+
+    if (doubleConfirm !== 'RESET DATABASE') {
+        alert('Reset cancelled - confirmation text did not match');
+        return;
+    }
+
+    logOperation('Resetting database...', 'warning');
+    showProgressModal('Resetting Database');
+
+    socket.emit('maintenance_reset_database', {});
+}
+
+// Initialize lucide icons
+lucide.createIcons();
+</script>
+{% endblock %}

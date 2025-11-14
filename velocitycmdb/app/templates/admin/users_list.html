@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}User Management - Admin - Anguis{% endblock %}
+
+{% block content %}
+<div style="padding: 32px;">
+    <!-- Header -->
+    <div style="margin-bottom: 32px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1 style="font: var(--md-typescale-headline-large); margin: 0 0 8px 0; display: flex; align-items: center; gap: 12px;">
+                <i data-lucide="users" size="32"></i>
+                User Management
+            </h1>
+            <p style="font: var(--md-typescale-body-large); color: var(--md-on-surface-variant); margin: 0;">
+                Manage user accounts and permissions
+            </p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <a href="{{ url_for('admin.index') }}" class="md-button md-button-outlined">
+                <i data-lucide="arrow-left" size="18"></i>
+                Back to Admin
+            </a>
+            <a href="{{ url_for('admin.users_create') }}" class="md-button md-button-filled">
+                <i data-lucide="user-plus" size="18"></i>
+                Create User
+            </a>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="md-card" style="margin-bottom: 20px; border-left: 4px solid {% if category == 'error' %}var(--md-error){% elif category == 'success' %}#4caf50{% else %}var(--md-primary){% endif %};">
+                <div class="md-card-content">
+                    {{ message }}
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Users Table -->
+    <div class="md-card">
+        <div class="md-card-header">
+            <h5 style="margin: 0; font: var(--md-typescale-title-large);">Users ({{ users|length }})</h5>
+        </div>
+        <div class="md-card-content" style="padding: 0;">
+            {% if users %}
+            <table class="md-table">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Display Name</th>
+                        <th>Email</th>
+                        <th>Groups</th>
+                        <th>Auth Backend</th>
+                        <th>Status</th>
+                        <th>Last Login</th>
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>
+                            <strong>{{ user.username }}</strong>
+                            {% if user.is_admin %}
+                                <span class="md-badge" style="background: var(--md-error-container); color: var(--md-on-error-container); margin-left: 8px;">Admin</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.display_name }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>
+                            {% if user.groups %}
+                                {% for group in user.groups %}
+                                    <span class="md-badge" style="margin-right: 4px;">{{ group }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span style="color: var(--md-on-surface-variant);">None</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="md-badge">{{ user.auth_backend }}</span>
+                        </td>
+                        <td>
+                            {% if user.is_active %}
+                                <span style="color: #4caf50; display: flex; align-items: center; gap: 4px;">
+                                    <i data-lucide="check-circle" size="16"></i>
+                                    Active
+                                </span>
+                            {% else %}
+                                <span style="color: var(--md-error); display: flex; align-items: center; gap: 4px;">
+                                    <i data-lucide="x-circle" size="16"></i>
+                                    Inactive
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.last_login %}
+                                {{ user.last_login[:19] }}
+                            {% else %}
+                                <span style="color: var(--md-on-surface-variant);">Never</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right;">
+                            <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                                <a href="{{ url_for('admin.users_edit', username=user.username) }}"
+                                   class="md-button md-button-text"
+                                   title="Edit user">
+                                    <i data-lucide="edit" size="18"></i>
+                                </a>
+                                {% if user.auth_backend == 'database' and user.username != session.username %}
+                                <form method="POST" action="{{ url_for('admin.users_delete', username=user.username) }}"
+                                      onsubmit="return confirm('Are you sure you want to delete user {{ user.username }}?');"
+                                      style="display: inline;">
+                                    <button type="submit" class="md-button md-button-text" style="color: var(--md-error);" title="Delete user">
+                                        <i data-lucide="trash-2" size="18"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div style="padding: 40px; text-align: center; color: var(--md-on-surface-variant);">
+                <i data-lucide="users" size="48" style="opacity: 0.5; margin-bottom: 16px;"></i>
+                <p style="font: var(--md-typescale-body-large); margin: 0;">No users found</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+</script>
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}{{ vendor }} - OS Versions{% endblock %}
+
+{% block content %}
+<div style="max-width: 1400px; margin: 0 auto;">
+    <!-- Header with back button -->
+    <div style="margin-bottom: 32px;">
+        <a href="{{ url_for('osversions.index') }}" class="md-button md-button-text" style="margin-bottom: 16px;">
+            <i data-lucide="arrow-left" size="16"></i>
+            Back to Overview
+        </a>
+        <h1 class="md-headline-large" style="display: flex; align-items: center; gap: 16px; margin: 0 0 8px 0;">
+            <i data-lucide="factory"></i>
+            {{ vendor }} OS Versions
+        </h1>
+        <p class="md-body-large" style="color: var(--md-on-surface-variant); margin: 0;">
+            Detailed version breakdown for {{ vendor }} devices
+        </p>
+    </div>
+
+    {% if error %}
+    <div class="md-card outlined" style="padding: 24px; background: var(--md-error-container); color: var(--md-on-error-container); margin-bottom: 24px;">
+        <strong>Error:</strong> {{ error }}
+    </div>
+    {% endif %}
+
+    {% for version_info in versions %}
+    <div class="md-card outlined" style="margin-bottom: 24px;">
+        <div style="padding: 24px; border-bottom: 1px solid var(--md-outline-variant); background: var(--md-surface-container-low);">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h2 class="md-title-large" style="margin: 0 0 8px 0;">
+                        <code style="font-size: 1.2em;">{{ version_info.os_version }}</code>
+                    </h2>
+                    <div class="md-body-medium" style="color: var(--md-on-surface-variant);">
+                        {{ version_info.device_count }} device{{ 's' if version_info.device_count != 1 else '' }}
+                        across {{ version_info.sites|length if version_info.sites else 0 }} site{{ 's' if (version_info.sites|length if version_info.sites else 0) != 1 else '' }}
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <span class="md-label-large" style="padding: 8px 16px; background: var(--md-primary-container); color: var(--md-on-primary-container); border-radius: 8px;">
+                        {{ version_info.device_count }} devices
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div style="padding: 24px;">
+            <!-- Sites -->
+            {% if version_info.sites %}
+            <div style="margin-bottom: 24px;">
+                <h3 class="md-title-medium" style="margin: 0 0 12px 0;">Sites</h3>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    {% for site in version_info.sites %}
+                    <span class="md-label-medium" style="padding: 6px 12px; background: var(--md-surface-container-high); border-radius: 6px;">
+                        {{ site }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Models -->
+            {% if version_info.models %}
+            <div style="margin-bottom: 24px;">
+                <h3 class="md-title-medium" style="margin: 0 0 12px 0;">Models</h3>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    {% for model in version_info.models %}
+                    <span class="md-label-medium" style="padding: 6px 12px; background: var(--md-tertiary-container); color: var(--md-on-tertiary-container); border-radius: 6px;">
+                        {{ model }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Device List -->
+            <div>
+                <h3 class="md-title-medium" style="margin: 0 0 12px 0;">Devices ({{ version_info.device_count }})</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px;">
+                    {% if version_info.devices %}
+                        {% for device in version_info.devices[:50] %}
+                        <div class="md-body-medium" style="padding: 8px 12px; background: var(--md-surface-container); border-radius: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            {{ device }}
+                        </div>
+                        {% endfor %}
+                        {% if version_info.devices|length > 50 %}
+                        <div class="md-body-small" style="padding: 8px 12px; color: var(--md-on-surface-variant); grid-column: 1 / -1;">
+                            ... and {{ version_info.devices|length - 50 }} more devices
+                        </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    {% if not versions %}
+    <div class="md-card outlined" style="padding: 48px; text-align: center;">
+        <div style="color: var(--md-on-surface-variant);">
+            <i data-lucide="info" size="48" style="opacity: 0.6; margin-bottom: 16px;"></i>
+            <p class="md-body-large" style="margin: 0;">No version data available for {{ vendor }}</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}

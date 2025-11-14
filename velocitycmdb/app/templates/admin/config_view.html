@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}System Configuration - Admin - Anguis{% endblock %}
+
+{% block content %}
+<div style="padding: 32px;">
+    <!-- Header -->
+    <div style="margin-bottom: 32px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1 style="font: var(--md-typescale-headline-large); margin: 0 0 8px 0; display: flex; align-items: center; gap: 12px;">
+                <i data-lucide="file-code" size="32"></i>
+                System Configuration
+            </h1>
+            <p style="font: var(--md-typescale-body-large); color: var(--md-on-surface-variant); margin: 0;">
+                View and manage system settings (config.yaml)
+            </p>
+            {% if config_path %}
+            <p style="font: var(--md-typescale-body-small); color: var(--md-on-surface-variant); margin: 4px 0 0 0; font-family: monospace;">
+                File: {{ config_path }}
+            </p>
+            {% endif %}
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <a href="{{ url_for('admin.index') }}" class="md-button md-button-outlined">
+                <i data-lucide="arrow-left" size="18"></i>
+                Back to Admin
+            </a>
+            <a href="{{ url_for('admin.config_edit') }}" class="md-button md-button-filled">
+                <i data-lucide="edit" size="18"></i>
+                Edit Config
+            </a>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="md-card" style="margin-bottom: 20px; border-left: 4px solid {% if category == 'error' %}var(--md-error){% elif category == 'success' %}#4caf50{% else %}var(--md-primary){% endif %};">
+                <div class="md-card-content">
+                    {{ message }}
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Configuration Display -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <!-- YAML Text -->
+        <div class="md-card">
+            <div class="md-card-header">
+                <h5 style="margin: 0; font: var(--md-typescale-title-large);">Raw Configuration (YAML)</h5>
+            </div>
+            <div class="md-card-content">
+                <pre style="background: var(--md-surface-container-high); padding: 20px; border-radius: var(--md-shape-corner-medium); overflow-x: auto; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.5; margin: 0;">{{ config_text }}</pre>
+            </div>
+        </div>
+
+        <!-- Structured View -->
+        <div class="md-card">
+            <div class="md-card-header">
+                <h5 style="margin: 0; font: var(--md-typescale-title-large);">Structured View</h5>
+            </div>
+            <div class="md-card-content">
+                {% if config_dict %}
+                <div id="config-tree"></div>
+                {% else %}
+                <p style="color: var(--md-on-surface-variant);">Unable to parse configuration</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    {% if config_dict %}
+    // Build structured view
+    function buildConfigTree(data, container, level = 0) {
+        const ul = document.createElement('ul');
+        ul.style.listStyle = 'none';
+        ul.style.padding = level === 0 ? '0' : '0 0 0 20px';
+        ul.style.margin = '0';
+
+        for (const [key, value] of Object.entries(data)) {
+            const li = document.createElement('li');
+            li.style.padding = '8px 0';
+
+            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                // Object - create expandable section
+                const keySpan = document.createElement('strong');
+                keySpan.textContent = key + ':';
+                keySpan.style.color = 'var(--md-primary)';
+                keySpan.style.cursor = 'pointer';
+                keySpan.style.display = 'flex';
+                keySpan.style.alignItems = 'center';
+                keySpan.style.gap = '8px';
+
+                const icon = document.createElement('i');
+                icon.setAttribute('data-lucide', 'chevron-down');
+                icon.setAttribute('size', '16');
+                keySpan.insertBefore(icon, keySpan.firstChild);
+
+                li.appendChild(keySpan);
+                const childContainer = document.createElement('div');
+                buildConfigTree(value, childContainer, level + 1);
+                li.appendChild(childContainer);
+
+                // Toggle functionality
+                keySpan.addEventListener('click', () => {
+                    const isHidden = childContainer.style.display === 'none';
+                    childContainer.style.display = isHidden ? 'block' : 'none';
+                    icon.setAttribute('data-lucide', isHidden ? 'chevron-down' : 'chevron-right');
+                    lucide.createIcons();
+                });
+
+            } else if (Array.isArray(value)) {
+                // Array
+                li.innerHTML = `<strong style="color: var(--md-primary);">${key}:</strong> <span style="color: var(--md-on-surface-variant);">[${value.join(', ')}]</span>`;
+            } else {
+                // Simple value
+                const valueColor = typeof value === 'boolean' ? '#ff9800' :
+                                  typeof value === 'number' ? '#2196f3' :
+                                  value === null ? 'var(--md-error)' :
+                                  'var(--md-on-surface)';
+                li.innerHTML = `<strong style="color: var(--md-primary);">${key}:</strong> <span style="color: ${valueColor};">${value === null ? 'null' : value}</span>`;
+            }
+
+            ul.appendChild(li);
+        }
+
+        container.appendChild(ul);
+    }
+
+    const configData = {{ config_dict | tojson }};
+    const treeContainer = document.getElementById('config-tree');
+    buildConfigTree(configData, treeContainer);
+
+    // Reinitialize icons after building tree
+    lucide.createIcons();
+    {% endif %}
+</script>
+{% endblock %}

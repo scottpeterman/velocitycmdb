@@ -1,0 +1,46 @@
+{
+  "version": "1.0",
+  "timestamp": "2025-10-16T06:37:32.036494",
+  "session_file": "sessions.yaml",
+  "vendor": {
+    "selected": "Cisco IOS",
+    "auto_paging": true
+  },
+  "credentials": {
+    "username": "network",
+    "credential_system": "Auto-detect from script",
+    "password_provided": false,
+    "enable_password_provided": false
+  },
+  "authentication": {
+    "use_keys": false,
+    "ssh_key_path": ""
+  },
+  "filters": {
+    "folder": "",
+    "name": "",
+    "vendor": "cisco",
+    "device_type": ""
+  },
+  "commands": {
+    "template": "Cisco IOS Command Template",
+    "command_text": "enable,terminal length 0,show running-config",
+    "output_directory": "configs"
+  },
+  "execution": {
+    "batch_script": "batch_spn.py (Multi-process)",
+    "max_workers": 12,
+    "verbose": false,
+    "dry_run": false
+  },
+  "fingerprint_options": {
+    "fingerprint_base": "./output/fingerprints"
+  },
+  "ui_state": {
+    "current_tab": 0
+  },
+  "legacy_info": {
+    "generated_by": "generate_capture_jobs.py",
+    "generation_timestamp": "2025-10-16T06:37:32.036494"
+  }
+}

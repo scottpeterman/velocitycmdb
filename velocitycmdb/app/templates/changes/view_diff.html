@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}View Diff - {{ change.device_name }} - Network Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Configuration Diff</h1>
+    <p class="page-description">
+        {{ change.device_name }} ({{ change.site_name or 'Unknown' }}) - {{ change.capture_type }}
+    </p>
+</div>
+
+<!-- Change Details -->
+<div class="md-card">
+    <div class="card-header">
+        <h2>Change Information</h2>
+    </div>
+    <div class="card-content">
+        <div class="info-grid">
+            <div class="info-item">
+                <strong>Detected:</strong>
+                {{ change.detected_at }}
+            </div>
+            <div class="info-item">
+                <strong>Severity:</strong>
+                <span class="severity-badge severity-{{ change.severity }}">
+                    {{ change.severity }}
+                </span>
+            </div>
+            <div class="info-item">
+                <strong>Lines Added:</strong>
+                <span style="color: var(--md-success)">+{{ change.lines_added }}</span>
+            </div>
+            <div class="info-item">
+                <strong>Lines Removed:</strong>
+                <span style="color: var(--md-error)">-{{ change.lines_removed }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Diff Content -->
+<div class="md-card" style="margin-top: 24px;">
+    <div class="card-header">
+        <h2>Unified Diff</h2>
+        <button class="md-button-text" onclick="copyDiff()">
+            <i data-lucide="copy" size="16"></i>
+            Copy
+        </button>
+    </div>
+    <div class="card-content">
+        <pre class="diff-content" id="diff-content">{{ diff_content }}</pre>
+    </div>
+</div>
+
+<style>
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.diff-content {
+    background: var(--md-surface-container);
+    padding: 16px;
+    border-radius: var(--md-shape-corner-small);
+    overflow-x: auto;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre;
+}
+
+.severity-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.severity-critical {
+    background: var(--md-error-container);
+    color: var(--md-on-error-container);
+}
+
+.severity-moderate {
+    background: var(--md-warning-container);
+    color: var(--md-on-warning-container);
+}
+
+.severity-minor {
+    background: var(--md-surface-container-high);
+    color: var(--md-on-surface);
+
+    /* Add to your view_diff.html or main CSS */
+.diff-content {
+    font-family: monospace;
+    white-space: pre-wrap;
+    line-height: 1.4;
+}
+
+.diff-content .added {
+    background-color: #e6ffed;
+    color: #22863a;
+}
+
+.diff-content .removed {
+    background-color: #ffeef0;
+    color: #cb2431;
+}
+}
+</style>
+
+<script>
+function copyDiff() {
+    const diffContent = document.getElementById('diff-content').textContent;
+    navigator.clipboard.writeText(diffContent).then(() => {
+        alert('Diff copied to clipboard');
+    });
+}
+
+lucide.createIcons();
+</script>
+{% endblock %}

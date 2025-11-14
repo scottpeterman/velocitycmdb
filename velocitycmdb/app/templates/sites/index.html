@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}Sites - Network Management{% endblock %}
+
+{% block head_extra %}
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 32px;
+    }
+
+    .stat-card {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        padding: 24px;
+        text-align: center;
+    }
+
+    .stat-value {
+        font: var(--md-typescale-display-medium);
+        color: var(--md-primary);
+        font-weight: 500;
+        margin-bottom: 8px;
+    }
+
+    .stat-label {
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-surface-variant);
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+    }
+
+    .sites-table-container {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        overflow: hidden;
+    }
+
+    .sites-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .sites-table thead {
+        background: var(--md-surface-container);
+        border-bottom: 1px solid var(--md-outline-variant);
+    }
+
+    .sites-table th {
+        padding: 16px;
+        text-align: left;
+        font: var(--md-typescale-title-small);
+        color: var(--md-on-surface);
+        font-weight: 500;
+    }
+
+    .sites-table td {
+        padding: 16px;
+        border-bottom: 1px solid var(--md-outline-variant);
+        font: var(--md-typescale-body-medium);
+    }
+
+    .sites-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .sites-table tbody tr:hover {
+        background: var(--md-surface-container-low);
+    }
+
+    .site-code {
+        font-family: 'Courier New', monospace;
+        background: var(--md-surface-container);
+        padding: 4px 8px;
+        border-radius: var(--md-shape-corner-small);
+        font-weight: 500;
+    }
+
+    .device-count-badge {
+        background: var(--md-primary-container);
+        color: var(--md-on-primary-container);
+        padding: 4px 12px;
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-label-medium);
+        font-weight: 500;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 48px 24px;
+        color: var(--md-on-surface-variant);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="page-header">
+    <h1 class="md-headline-large">Sites</h1>
+    <a href="{{ url_for('sites.create') }}" class="md-button md-button-filled">
+        <i data-lucide="plus" size="16"></i>
+        Create Site&nbsp;&nbsp;
+    </a>
+</div>
+
+<!-- Summary Stats -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.total_sites }}</div>
+        <div class="stat-label">Total Sites</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.total_devices or 0 }}</div>
+        <div class="stat-label">Total Devices</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ "%.1f"|format(stats.avg_devices_per_site or 0) }}</div>
+        <div class="stat-label">Avg Devices/Site</div>
+    </div>
+</div>
+
+<!-- Sites Table -->
+<div class="sites-table-container">
+    {% if sites %}
+    <table class="sites-table">
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Devices</th>
+                <th>Infrastructure</th>
+                <th>Vendors</th>
+                <th>Last Update</th>
+                <th style="text-align: right;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for site in sites %}
+            <tr>
+                <td>
+                    <span class="site-code">{{ site.code }}</span>
+                </td>
+                <td>
+                    <div style="font-weight: 500;">{{ site.site_name }}</div>
+                    {% if site.description %}
+                    <div style="font-size: 12px; color: var(--md-on-surface-variant); margin-top: 4px;">
+                        {{ site.description }}
+                    </div>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if site.total_devices > 0 %}
+                    <span class="device-count-badge">{{ site.total_devices }}</span>
+                    {% else %}
+                    <span style="color: var(--md-on-surface-variant);">0</span>
+                    {% endif %}
+                </td>
+                <td>{{ site.infrastructure_devices or 0 }}</td>
+                <td>{{ site.vendor_count or 0 }}</td>
+                <td>
+                    {% if site.last_device_update %}
+                    {{ site.last_device_update[:19] }}
+                    {% else %}
+                    <span style="color: var(--md-on-surface-variant);">Never</span>
+                    {% endif %}
+                </td>
+                <td style="text-align: right;">
+                    <div class="action-buttons">
+                        <a href="{{ url_for('sites.detail', code=site.code) }}"
+                           class="md-icon-button" title="View Details">
+                            <i data-lucide="eye" size="16"></i>
+                        </a>
+                        <a href="{{ url_for('sites.edit', code=site.code) }}"
+                           class="md-icon-button" title="Edit">
+                            <i data-lucide="edit" size="16"></i>
+                        </a>
+                        {% if site.total_devices == 0 %}
+                        <button onclick="confirmDelete('{{ site.code }}', '{{ site.site_name }}')"
+                                class="md-icon-button"
+                                style="color: var(--md-error);"
+                                title="Delete">
+                            <i data-lucide="trash-2" size="16"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <div style="margin-bottom: 16px;">
+            <i data-lucide="building" size="48"></i>
+        </div>
+        <h3>No sites configured</h3>
+        <p>Create your first site to organize network devices</p>
+        <a href="{{ url_for('sites.create') }}" class="md-button md-button-filled" style="margin-top: 16px;">
+            <i data-lucide="plus" size="16"></i>
+            Create Site
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="md-modal" id="deleteModal">
+    <div class="md-modal-content">
+        <div class="md-modal-header">
+            <h2 class="md-modal-title" style="color: var(--md-error);">
+                <i data-lucide="alert-triangle" size="20"></i>
+                Confirm Deletion
+            </h2>
+            <button class="md-icon-button" onclick="closeDeleteModal()">
+                <i data-lucide="x" size="20"></i>
+            </button>
+        </div>
+        <div class="md-modal-body">
+            <p class="md-body-large">Delete site "<strong id="deleteSiteName"></strong>"?</p>
+            <p class="md-body-medium" style="margin-top: 16px; color: var(--md-error);">
+                This action cannot be undone.
+            </p>
+        </div>
+        <div class="md-modal-footer">
+            <button class="md-button md-button-text" onclick="closeDeleteModal()">Cancel</button>
+            <form method="POST" id="deleteForm" style="display: inline;">
+                <button type="submit" class="md-button md-button-filled"
+                        style="background: var(--md-error); color: var(--md-on-error);">
+                    <i data-lucide="trash-2" size="16"></i>
+                    Delete Site
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(code, name) {
+    document.getElementById('deleteSiteName').textContent = name;
+    document.getElementById('deleteForm').action = `/sites/${code}/delete`;
+    document.getElementById('deleteModal').classList.add('open');
+    lucide.createIcons();
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('open');
+}
+
+document.getElementById('deleteModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeDeleteModal();
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    lucide.createIcons();
+});
+</script>
+{% endblock %}

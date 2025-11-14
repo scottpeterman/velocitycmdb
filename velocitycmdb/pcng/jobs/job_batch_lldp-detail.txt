@@ -1,0 +1,8 @@
+# lldp-detail Capture Jobs (All Vendors)
+# Generated: 2025-10-16T06:37:32.049293
+# Jobs: 4
+
+job_356_arista_lldp-detail.json
+job_357_cisco-ios_lldp-detail.json
+job_358_cisco-nxos_lldp-detail.json
+job_359_juniper_lldp-detail.json

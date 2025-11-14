@@ -1,0 +1,410 @@
+{% extends "base.html" %}
+
+{% block title %}Notes - Network Management{% endblock %}
+
+{% block head_extra %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    .filter-bar {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        padding: 16px;
+        margin-bottom: 24px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .search-box {
+        flex: 1;
+        min-width: 300px;
+        position: relative;
+    }
+
+    .search-box input {
+        width: 100%;
+        padding: 10px 40px 10px 16px;
+        border: 1px solid var(--md-outline);
+        border-radius: 24px;
+        font: var(--md-typescale-body-medium);
+        background: var(--md-surface-container);
+        color: var(--md-on-surface);
+    }
+
+    .search-box i {
+        position: absolute;
+        right: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--md-on-surface-variant);
+        pointer-events: none;
+    }
+
+    .notes-table-container {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        overflow: hidden;
+    }
+
+    .notes-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .notes-table thead {
+        background: var(--md-surface-container);
+        border-bottom: 2px solid var(--md-outline-variant);
+    }
+
+    .notes-table th {
+        padding: 16px;
+        text-align: left;
+        font: var(--md-typescale-title-small);
+        font-weight: 600;
+        color: var(--md-on-surface);
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+    }
+
+    .notes-table th:hover {
+        background: var(--md-surface-container-high);
+    }
+
+    .notes-table th .sort-icon {
+        margin-left: 4px;
+        opacity: 0.3;
+        transition: opacity 0.2s;
+    }
+
+    .notes-table th.sorted .sort-icon {
+        opacity: 1;
+    }
+
+    .notes-table tbody tr {
+        border-bottom: 1px solid var(--md-outline-variant);
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .notes-table tbody tr:hover {
+        background: var(--md-surface-container-low);
+    }
+
+    .notes-table td {
+        padding: 16px;
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-surface);
+    }
+
+    .note-title-cell {
+        font-weight: 500;
+        color: var(--md-primary);
+        max-width: 300px;
+    }
+
+    .note-preview-cell {
+        color: var(--md-on-surface-variant);
+        max-width: 400px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .note-type-badge {
+        padding: 4px 12px;
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-label-small);
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+    .note-type-site { background: var(--md-primary-container); color: var(--md-on-primary-container); }
+    .note-type-device { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
+    .note-type-kb { background: var(--md-tertiary-container); color: var(--md-on-tertiary-container); }
+    .note-type-incident { background: #ffeaa7; color: #2d3436; }
+    .note-type-maintenance { background: #74b9ff; color: #2d3436; }
+    .note-type-general { background: var(--md-surface-container-highest); color: var(--md-on-surface); }
+
+    .note-tags-cell {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+    }
+
+    .note-tag {
+        background: var(--md-surface-container-high);
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        color: var(--md-on-surface-variant);
+    }
+
+    .md-button {
+        padding: 10px 24px;
+        border-radius: 20px;
+        border: none;
+        cursor: pointer;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+    }
+
+    .md-button-filled {
+        background: var(--md-primary);
+        color: var(--md-on-primary);
+    }
+
+    .md-button-outlined {
+        background: transparent;
+        border: 1px solid var(--md-outline);
+        color: var(--md-on-surface);
+    }
+
+    .md-button:hover {
+        opacity: 0.9;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px;
+        background: var(--md-surface-container-low);
+        border-top: 1px solid var(--md-outline-variant);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 64px 24px;
+        color: var(--md-on-surface-variant);
+    }
+
+    .stats-bar {
+        display: flex;
+        gap: 24px;
+        margin-bottom: 16px;
+        font: var(--md-typescale-body-small);
+        color: var(--md-on-surface-variant);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 style="font: var(--md-typescale-headline-large); margin: 0 0 8px 0;">Notes</h1>
+        <div class="stats-bar">
+            <span><strong>{{ total }}</strong> total notes</span>
+        </div>
+    </div>
+    <a href="{{ url_for('notes.create') }}" class="md-button md-button-filled">
+        <i data-lucide="plus" size="16"></i>
+        Create Note
+    </a>
+</div>
+
+<div class="filter-bar">
+    <a href="{{ url_for('notes.index') }}"
+       class="md-button {% if not request.args.get('type') %}md-button-filled{% else %}md-button-outlined{% endif %}">
+        All Notes
+    </a>
+    <a href="{{ url_for('notes.index', type='site') }}"
+       class="md-button {% if request.args.get('type') == 'site' %}md-button-filled{% else %}md-button-outlined{% endif %}">
+        Site
+    </a>
+    <a href="{{ url_for('notes.index', type='device') }}"
+       class="md-button {% if request.args.get('type') == 'device' %}md-button-filled{% else %}md-button-outlined{% endif %}">
+        Device
+    </a>
+    <a href="{{ url_for('notes.index', type='kb') }}"
+       class="md-button {% if request.args.get('type') == 'kb' %}md-button-filled{% else %}md-button-outlined{% endif %}">
+        KB
+    </a>
+    <a href="{{ url_for('notes.index', type='incident') }}"
+       class="md-button {% if request.args.get('type') == 'incident' %}md-button-filled{% else %}md-button-outlined{% endif %}">
+        Incident
+    </a>
+    <a href="{{ url_for('notes.index', type='maintenance') }}"
+       class="md-button {% if request.args.get('type') == 'maintenance' %}md-button-filled{% else %}md-button-outlined{% endif %}">
+        Maintenance
+    </a>
+
+    <div style="flex: 1;"></div>
+
+    <form method="GET" action="{{ url_for('notes.search') }}" class="search-box">
+        <span>
+
+       </i><input type="text"
+               name="q"
+               placeholder="Search notes..."
+               value="{{ request.args.get('q', '') }}"
+               autocomplete="off">
+        </span>
+    </form>
+</div>
+
+{% if notes %}
+<div class="notes-table-container">
+    <table class="notes-table" id="notesTable">
+        <thead>
+            <tr>
+                <th data-sort="title">
+                    Title
+                    <i data-lucide="chevrons-up-down" size="14" class="sort-icon"></i>
+                </th>
+                <th data-sort="type">
+                    Type
+                    <i data-lucide="chevrons-up-down" size="14" class="sort-icon"></i>
+                </th>
+                <th data-sort="preview">Preview</th>
+                <th data-sort="tags">Tags</th>
+                <th data-sort="updated">
+                    Updated
+                    <i data-lucide="chevrons-up-down" size="14" class="sort-icon"></i>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for note in notes %}
+            <tr onclick="window.location='{{ url_for('notes.detail', note_id=note.id) }}'">
+                <td class="note-title-cell">{{ note.title }}</td>
+                <td>
+                    <span class="note-type-badge note-type-{{ note.note_type }}">
+                        {{ note.note_type|title }}
+                    </span>
+                </td>
+                <td class="note-preview-cell">
+                    {{ note.content|striptags|truncate(100) }}
+                </td>
+                <td>
+                    <div class="note-tags-cell">
+                        {% if note.tags %}
+                            {% set tags = note.tags|from_json %}
+                            {% for tag in tags[:3] %}
+                            <span class="note-tag">{{ tag }}</span>
+                            {% endfor %}
+                            {% if tags|length > 3 %}
+                            <span class="note-tag">+{{ tags|length - 3 }}</span>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </td>
+                <td style="white-space: nowrap;">{{ note.updated_at[:10] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if total > per_page %}
+    <div class="pagination">
+        <div>
+            Showing {{ ((page - 1) * per_page) + 1 }} - {{ [page * per_page, total]|min }} of {{ total }}
+        </div>
+        <div style="display: flex; gap: 8px;">
+            {% if page > 1 %}
+            <a href="{{ url_for('notes.index', page=page-1, per_page=per_page, type=request.args.get('type')) }}"
+               class="md-button md-button-outlined">
+                <i data-lucide="chevron-left" size="16"></i>
+                Previous
+            </a>
+            {% endif %}
+
+            {% if page * per_page < total %}
+            <a href="{{ url_for('notes.index', page=page+1, per_page=per_page, type=request.args.get('type')) }}"
+               class="md-button md-button-outlined">
+                Next
+                <i data-lucide="chevron-right" size="16"></i>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% else %}
+<div class="empty-state">
+    <i data-lucide="file-text" size="64" style="opacity: 0.3;"></i>
+    <h3 style="margin: 16px 0 8px 0;">No notes found</h3>
+    <p style="margin: 0 0 24px 0;">
+        {% if request.args.get('type') %}
+        No notes of type "{{ request.args.get('type') }}" yet.
+        {% else %}
+        Create your first note to get started.
+        {% endif %}
+    </p>
+    <a href="{{ url_for('notes.create') }}" class="md-button md-button-filled">
+        <i data-lucide="plus" size="16"></i>
+        Create Note
+    </a>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+
+    // Client-side table sorting
+    const table = document.getElementById('notesTable');
+    if (table) {
+        const headers = table.querySelectorAll('th[data-sort]');
+        let sortDirection = {};
+
+        headers.forEach(header => {
+            const column = header.dataset.sort;
+            sortDirection[column] = 'asc';
+
+            header.addEventListener('click', () => {
+                const tbody = table.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+
+                // Toggle sort direction
+                sortDirection[column] = sortDirection[column] === 'asc' ? 'desc' : 'asc';
+
+                // Remove sorted class from all headers
+                headers.forEach(h => h.classList.remove('sorted'));
+                header.classList.add('sorted');
+
+                // Sort rows
+                rows.sort((a, b) => {
+                    let aVal, bVal;
+                    const index = Array.from(header.parentElement.children).indexOf(header);
+
+                    if (column === 'type') {
+                        aVal = a.cells[index].textContent.trim().toLowerCase();
+                        bVal = b.cells[index].textContent.trim().toLowerCase();
+                    } else if (column === 'updated') {
+                        aVal = a.cells[index].textContent.trim();
+                        bVal = b.cells[index].textContent.trim();
+                    } else {
+                        aVal = a.cells[index].textContent.trim().toLowerCase();
+                        bVal = b.cells[index].textContent.trim().toLowerCase();
+                    }
+
+                    if (aVal < bVal) return sortDirection[column] === 'asc' ? -1 : 1;
+                    if (aVal > bVal) return sortDirection[column] === 'asc' ? 1 : -1;
+                    return 0;
+                });
+
+                // Reorder table
+                rows.forEach(row => tbody.appendChild(row));
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

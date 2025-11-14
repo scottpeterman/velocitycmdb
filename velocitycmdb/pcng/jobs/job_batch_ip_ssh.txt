@@ -1,0 +1,8 @@
+# ip_ssh Capture Jobs (All Vendors)
+# Generated: 2025-10-16T06:37:32.049075
+# Jobs: 4
+
+job_348_arista_ip_ssh.json
+job_349_cisco-ios_ip_ssh.json
+job_350_cisco-nxos_ip_ssh.json
+job_351_juniper_ip_ssh.json

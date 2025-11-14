@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - VelocityCMDB</title>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+    <!-- Theme CSS -->
+    <link rel="stylesheet" href="/static/css/themes.css">
+
+    <script>
+        // Load theme immediately to prevent flash
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            background: var(--md-background);
+        }
+
+        .login-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            height: 100vh;
+        }
+
+        /* Left Panel - Login Form */
+        .login-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--md-surface);
+            position: relative;
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .login-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--md-primary-container);
+            border-radius: var(--md-shape-corner-medium);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            color: var(--md-primary);
+        }
+
+        .login-title {
+            font: var(--md-typescale-headline-large);
+            margin: 0 0 8px 0;
+            font-weight: 500;
+            color: var(--md-on-surface);
+        }
+
+        .login-subtitle {
+            font: var(--md-typescale-body-large);
+            margin: 0;
+            color: var(--md-on-surface-variant);
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Domain field for Windows auth - hidden by default */
+        .domain-field {
+            display: none;
+        }
+
+        .domain-field.show {
+            display: block;
+        }
+
+        /* Password change fields - hidden by default */
+        .password-change-fields {
+            display: none;
+            gap: 24px;
+        }
+
+        .password-change-fields.show {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Checkbox styling */
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 0;
+        }
+
+        .checkbox-container input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: var(--md-primary);
+        }
+
+        .checkbox-container label {
+            font: var(--md-typescale-body-medium);
+            color: var(--md-on-surface);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .checkbox-helper {
+            font: var(--md-typescale-body-small);
+            color: var(--md-on-surface-variant);
+            margin-top: 4px;
+            padding-left: 32px;
+        }
+
+        .login-button {
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        .login-error {
+            background: var(--md-error-container);
+            color: var(--md-on-error-container);
+            padding: 12px 16px;
+            border-radius: var(--md-shape-corner-small);
+            font: var(--md-typescale-body-medium);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .login-success {
+            background: var(--md-tertiary-container);
+            color: var(--md-on-tertiary-container);
+            padding: 12px 16px;
+            border-radius: var(--md-shape-corner-small);
+            font: var(--md-typescale-body-medium);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* POC Disclaimer Banner */
+        .poc-disclaimer {
+            background: linear-gradient(135deg, rgba(255, 179, 0, 0.1) 0%, rgba(255, 152, 0, 0.1) 100%);
+            border: 1px solid rgba(255, 179, 0, 0.3);
+            border-left: 4px solid #ffb300;
+            padding: 16px;
+            border-radius: var(--md-shape-corner-medium);
+            margin-bottom: 24px;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .poc-disclaimer-icon {
+            flex-shrink: 0;
+            color: #ff8f00;
+            margin-top: 2px;
+        }
+
+        .poc-disclaimer-content {
+            flex: 1;
+        }
+
+        .poc-disclaimer-title {
+            font: var(--md-typescale-title-small);
+            font-weight: 600;
+            color: var(--md-on-surface);
+            margin: 0 0 6px 0;
+        }
+
+        .poc-disclaimer-text {
+            font: var(--md-typescale-body-small);
+            color: var(--md-on-surface-variant);
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        /* Dark theme POC disclaimer */
+        [data-theme="dark"] .poc-disclaimer {
+            background: linear-gradient(135deg, rgba(255, 179, 0, 0.15) 0%, rgba(255, 152, 0, 0.15) 100%);
+            border-color: rgba(255, 179, 0, 0.4);
+        }
+
+        /* Cyber theme POC disclaimer */
+        [data-theme="cyber"] .poc-disclaimer {
+            background: linear-gradient(135deg, rgba(0, 204, 255, 0.1) 0%, rgba(0, 153, 204, 0.1) 100%);
+            border: 1px solid rgba(0, 204, 255, 0.3);
+            border-left: 4px solid #00ccff;
+        }
+
+        [data-theme="cyber"] .poc-disclaimer-icon {
+            color: #00ccff;
+        }
+
+        [data-theme="cyber"] .poc-disclaimer {
+            animation: cyber-pulse-disclaimer 3s infinite;
+        }
+
+        @keyframes cyber-pulse-disclaimer {
+            0%, 100% {
+                box-shadow: 0 0 0 rgba(0, 204, 255, 0);
+            }
+            50% {
+                box-shadow: 0 0 15px rgba(0, 204, 255, 0.2);
+            }
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+        }
+
+        /* Right Panel - Splash Graphics */
+        .splash-panel {
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .splash-background {
+            position: absolute;
+            inset: 0;
+            transition: background-color var(--md-motion-duration-medium2) var(--md-motion-easing-standard);
+        }
+
+        .splash-content {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .splash-image {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity var(--md-motion-duration-medium4) var(--md-motion-easing-standard);
+        }
+
+        .splash-image.active {
+            opacity: 1;
+        }
+
+        .circuit-pattern {
+            position: absolute;
+            inset: 0;
+            opacity: 0.08;
+            background-image:
+                linear-gradient(90deg, var(--md-outline-variant) 1px, transparent 1px),
+                linear-gradient(var(--md-outline-variant) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+        }
+
+        /* Light theme styling */
+        [data-theme="light"] .splash-background {
+            background: linear-gradient(135deg, #fefcf8 0%, #f7f1e8 100%);
+        }
+
+        [data-theme="light"] .circuit-pattern {
+            background-image:
+                linear-gradient(90deg, #d4b896 1px, transparent 1px),
+                linear-gradient(#d4b896 1px, transparent 1px);
+            opacity: 0.12;
+        }
+
+        /* Dark theme styling */
+        [data-theme="dark"] .splash-background {
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+        }
+
+        [data-theme="dark"] .circuit-pattern {
+            background-image:
+                linear-gradient(90deg, #333333 1px, transparent 1px),
+                linear-gradient(#333333 1px, transparent 1px);
+            opacity: 0.15;
+        }
+
+        /* Cyber theme styling */
+        [data-theme="cyber"] .splash-background {
+            background: radial-gradient(ellipse at center, #001a1f 0%, #000510 100%);
+        }
+
+        [data-theme="cyber"] .circuit-pattern {
+            background-image:
+                linear-gradient(90deg, #00ccff 1px, transparent 1px),
+                linear-gradient(#00ccff 1px, transparent 1px);
+            opacity: 0.1;
+            animation: cyber-pulse-pattern 3s infinite;
+        }
+
+        @keyframes cyber-pulse-pattern {
+            0%, 100% { opacity: 0.08; }
+            50% { opacity: 0.15; }
+        }
+
+        /* Cyber theme enhancements for login panel */
+        [data-theme="cyber"] .login-icon {
+            box-shadow: 0 0 20px rgba(0, 204, 255, 0.3);
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 1024px) {
+            .login-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .splash-panel {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-layout">
+        <!-- Left Panel - Login Form -->
+        <div class="login-panel">
+            <!-- Theme toggle -->
+            <button class="md-button md-button-icon theme-toggle" id="theme-toggle" type="button">
+                <i data-lucide="sun" id="theme-icon" size="24"></i>
+            </button>
+
+            <div class="login-container">
+                <div class="login-header">
+                    <div class="login-icon">
+                        <i data-lucide="network" size="40"></i>
+                    </div>
+                    <h1 class="login-title">VelocityCMDB</h1>
+                    <p class="login-subtitle">Please sign in to continue</p>
+                </div>
+
+                <!-- POC Disclaimer -->
+                <div class="poc-disclaimer">
+                    <div class="poc-disclaimer-icon">
+                        <i data-lucide="flask-conical" size="20"></i>
+                    </div>
+                    <div class="poc-disclaimer-content">
+                        <div class="poc-disclaimer-title">Proof of Concept</div>
+                        <p class="poc-disclaimer-text">
+                            VelocityCMDB is under active development. While functional, it's not recommended for production environments. Features and APIs are subject to change. Use caution in security-critical environments.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Error messages from Flask flash -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="{% if category == 'success' %}login-success{% else %}login-error{% endif %}" role="alert">
+                                <i data-lucide="{% if category == 'success' %}check-circle{% else %}alert-circle{% endif %}" size="16"></i>
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form method="POST" class="login-form" id="login-form">
+                    <!-- Auth Method Selector - only show if multiple methods available -->
+                    {% if auth_info and auth_info.available_methods|length > 1 %}
+                    <div class="md-textfield md-textfield-outlined">
+                        <select
+                            class="md-textfield-input"
+                            id="auth_method"
+                            name="auth_method"
+                            required
+                        >
+                            {% for method in auth_info.available_methods %}
+                                <option value="{{ method }}" {% if method == auth_info.default_method %}selected{% endif %}>
+                                    {% if method == 'local' %}
+                                        Local Authentication
+                                    {% elif method == 'ldap' %}
+                                        LDAP / Active Directory
+                                    {% elif method == 'database' %}
+                                        Database Authentication
+                                    {% else %}
+                                        {{ method|title }}
+                                    {% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <label for="auth_method" class="md-textfield-label">Authentication Method</label>
+                    </div>
+                    {% else %}
+                    <input type="hidden" name="auth_method" id="auth_method" value="{{ auth_info.default_method if auth_info else 'local' }}">
+                    {% endif %}
+
+                    <div class="md-textfield md-textfield-outlined">
+                        <input
+                            type="text"
+                            class="md-textfield-input"
+                            id="username"
+                            name="username"
+                            placeholder=" "
+                            required
+                            autocomplete="username"
+                        >
+                        <label for="username" class="md-textfield-label">Username</label>
+                    </div>
+
+                    <div class="md-textfield md-textfield-outlined">
+                        <input
+                            type="password"
+                            class="md-textfield-input"
+                            id="password"
+                            name="password"
+                            placeholder=" "
+                            required
+                            autocomplete="current-password"
+                        >
+                        <label for="password" class="md-textfield-label">Password</label>
+                    </div>
+
+                    <!-- Domain field for Windows authentication - hidden by default -->
+                    {% if auth_info and auth_info.system_info.system == 'Windows' %}
+                    <div class="md-textfield md-textfield-outlined domain-field" id="domain-field">
+                        <input
+                            type="text"
+                            class="md-textfield-input"
+                            id="domain"
+                            name="domain"
+                            placeholder=" "
+                        >
+                        <label for="domain" class="md-textfield-label">Domain (optional)</label>
+                    </div>
+                    {% endif %}
+
+                    <!-- Password Change Checkbox (only for database auth) -->
+                    <div class="checkbox-container" id="password-change-container" style="display: none;">
+                        <input
+                            type="checkbox"
+                            id="change_password"
+                            name="change_password"
+                        >
+                        <label for="change_password">Change my password</label>
+                    </div>
+
+                    <!-- Password Change Fields (shown when checkbox is checked) -->
+                    <div class="password-change-fields" id="password-change-fields">
+                        <div class="md-textfield md-textfield-outlined">
+                            <input
+                                type="password"
+                                class="md-textfield-input"
+                                id="new_password"
+                                name="new_password"
+                                placeholder=" "
+                                autocomplete="new-password"
+                            >
+                            <label for="new_password" class="md-textfield-label">New Password</label>
+                        </div>
+
+                        <div class="md-textfield md-textfield-outlined">
+                            <input
+                                type="password"
+                                class="md-textfield-input"
+                                id="confirm_password"
+                                name="confirm_password"
+                                placeholder=" "
+                                autocomplete="new-password"
+                            >
+                            <label for="confirm_password" class="md-textfield-label">Confirm New Password</label>
+                        </div>
+
+                        <div class="checkbox-helper">
+                            Password must be at least 8 characters
+                        </div>
+                    </div>
+
+                    <button type="submit" class="md-button md-button-filled login-button" id="submit-button">
+                        <i data-lucide="log-in" size="18" id="submit-icon"></i>
+                        <span id="submit-text">Sign In</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Right Panel - Splash Graphics -->
+        <div class="splash-panel">
+            <div class="splash-background"></div>
+            <div class="circuit-pattern"></div>
+            <div class="splash-content">
+                <img
+                    id="splash-light"
+                    class="splash-image"
+                    src="{{ url_for('static', filename='images/velocitycmdb-logo-light.svg') }}"
+                    alt="Light Theme"
+                />
+                <img
+                    id="splash-dark"
+                    class="splash-image"
+                    src="{{ url_for('static', filename='images/velocitycmdb-logo-dark.svg') }}"
+                    alt="Dark Theme"
+                />
+                <img
+                    id="splash-cyber"
+                    class="splash-image"
+                    src="{{ url_for('static', filename='images/velocitycmdb-logo-cyber.svg') }}"
+                    alt="Cyber Theme"
+                />
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Theme handling
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const html = document.documentElement;
+
+        const splashImages = {
+            light: document.getElementById('splash-light'),
+            dark: document.getElementById('splash-dark'),
+            cyber: document.getElementById('splash-cyber')
+        };
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        html.setAttribute('data-theme', savedTheme);
+        updateTheme(savedTheme);
+
+        function updateTheme(theme) {
+            updateThemeIcon(theme);
+            updateSplashImage(theme);
+        }
+
+        function updateThemeIcon(theme) {
+            const iconName = theme === 'light' ? 'sun' : theme === 'dark' ? 'moon' : 'zap';
+            themeIcon.setAttribute('data-lucide', iconName);
+            lucide.createIcons();
+        }
+
+        function updateSplashImage(theme) {
+            Object.keys(splashImages).forEach(key => {
+                if (key === theme) {
+                    splashImages[key].classList.add('active');
+                } else {
+                    splashImages[key].classList.remove('active');
+                }
+            });
+        }
+
+        themeToggle.addEventListener('click', function() {
+            const currentTheme = html.getAttribute('data-theme');
+            const themes = ['light', 'dark', 'cyber'];
+            const currentIndex = themes.indexOf(currentTheme);
+            const nextTheme = themes[(currentIndex + 1) % themes.length];
+
+            html.setAttribute('data-theme', nextTheme);
+            localStorage.setItem('theme', nextTheme);
+            updateTheme(nextTheme);
+        });
+
+        // Auth method switching - show/hide domain field and password change option
+        const authMethodSelect = document.getElementById('auth_method');
+        const domainField = document.getElementById('domain-field');
+        const passwordChangeContainer = document.getElementById('password-change-container');
+        const passwordChangeCheckbox = document.getElementById('change_password');
+        const passwordChangeFields = document.getElementById('password-change-fields');
+        const submitButton = document.getElementById('submit-button');
+        const submitIcon = document.getElementById('submit-icon');
+        const submitText = document.getElementById('submit-text');
+
+        function updateAuthMethodUI() {
+            const selectedMethod = authMethodSelect ? authMethodSelect.value : '{{ auth_info.default_method if auth_info else "local" }}';
+
+            // Show/hide domain field for local auth on Windows
+            if (domainField) {
+                if (selectedMethod === 'local') {
+                    domainField.classList.add('show');
+                } else {
+                    domainField.classList.remove('show');
+                }
+            }
+
+            // Show/hide password change option (only for database auth)
+            if (passwordChangeContainer) {
+                if (selectedMethod === 'database') {
+                    passwordChangeContainer.style.display = 'flex';
+                } else {
+                    passwordChangeContainer.style.display = 'none';
+                    passwordChangeCheckbox.checked = false;
+                    passwordChangeFields.classList.remove('show');
+                }
+            }
+        }
+
+        // Load and set saved auth method
+        if (authMethodSelect) {
+            const savedAuthMethod = localStorage.getItem('auth_method');
+            if (savedAuthMethod) {
+                const options = Array.from(authMethodSelect.options);
+                const methodAvailable = options.some(opt => opt.value === savedAuthMethod);
+
+                if (methodAvailable) {
+                    authMethodSelect.value = savedAuthMethod;
+                }
+            }
+
+            authMethodSelect.addEventListener('change', function() {
+                localStorage.setItem('auth_method', this.value);
+                updateAuthMethodUI();
+            });
+        }
+
+        // Password change checkbox handler
+        if (passwordChangeCheckbox) {
+            passwordChangeCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    passwordChangeFields.classList.add('show');
+                    submitIcon.setAttribute('data-lucide', 'key');
+                    submitText.textContent = 'Change Password';
+
+                    // Make new password fields required
+                    document.getElementById('new_password').setAttribute('required', 'required');
+                    document.getElementById('confirm_password').setAttribute('required', 'required');
+                } else {
+                    passwordChangeFields.classList.remove('show');
+                    submitIcon.setAttribute('data-lucide', 'log-in');
+                    submitText.textContent = 'Sign In';
+
+                    // Remove required from new password fields
+                    document.getElementById('new_password').removeAttribute('required');
+                    document.getElementById('confirm_password').removeAttribute('required');
+                }
+                lucide.createIcons();
+            });
+        }
+
+        // Initialize UI on page load
+        updateAuthMethodUI();
+
+        // Auto-focus username field
+        document.addEventListener('DOMContentLoaded', function() {
+            const usernameField = document.getElementById('username');
+            if (usernameField) {
+                usernameField.focus();
+            }
+        });
+    </script>
+</body>
+</html>

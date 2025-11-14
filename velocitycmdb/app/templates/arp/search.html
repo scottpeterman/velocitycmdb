@@ -1,0 +1,235 @@
+<!-- app/templates/arp/search.html -->
+{% extends "base.html" %}
+
+{% block title %}ARP Search{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="md-headline-large">
+        <i data-lucide="search"></i>
+        ARP Table Search&nbsp;
+    </h1>
+    <p class="md-body-large" style="color: var(--md-on-surface-variant);">
+        Search MAC and IP addresses across network devices
+    </p>
+</div>
+
+<!-- Stats Card -->
+<div class="md-card" style="margin-bottom: 24px;">
+    <div class="md-card-content" style="padding: 20px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px;">
+            <div>
+                <div class="md-label-small" style="color: var(--md-on-surface-variant);">Devices</div>
+                <div class="md-headline-small" id="stat-devices">-</div>
+            </div>
+            <div>
+                <div class="md-label-small" style="color: var(--md-on-surface-variant);">Total Entries</div>
+                <div class="md-headline-small" id="stat-entries">-</div>
+            </div>
+            <div>
+                <div class="md-label-small" style="color: var(--md-on-surface-variant);">Unique MACs</div>
+                <div class="md-headline-small" id="stat-macs">-</div>
+            </div>
+            <div>
+                <div class="md-label-small" style="color: var(--md-on-surface-variant);">Last Capture</div>
+                <div class="md-headline-small" id="stat-latest">-</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search Section -->
+<div class="filter-section">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+        <div class="form-field">
+            <label for="mac-search">MAC Address&nbsp;&nbsp;</label>
+            <input type="text" id="mac-search"
+                   placeholder="aa:bb:cc:dd:ee:ff"
+                   style="padding: 12px; border: 1px solid var(--md-outline); border-radius: var(--md-shape-corner-small);">
+        </div>
+
+        <div class="form-field">
+            <label for="ip-search">IP Address&nbsp;&nbsp;</label>
+            <input type="text" id="ip-search"
+                   placeholder="192.168.1.100"
+                   style="padding: 12px; border: 1px solid var(--md-outline); border-radius: var(--md-shape-corner-small);">
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 12px; align-items: center;">
+        <button onclick="searchMAC()" class="md-button md-button-filled">
+            <i data-lucide="search" size="16"></i>
+            Search MAC&nbsp;&nbsp;
+        </button>
+        <button onclick="searchIP()" class="md-button md-button-filled">
+            <i data-lucide="search" size="16"></i>
+            Search IP&nbsp;
+        </button>
+        <label style="display: flex; align-items: center; gap: 8px; margin-left: 12px;">
+            <input type="checkbox" id="history-toggle">
+            <span class="md-body-medium">Show History</span>
+        </label>
+    </div>
+</div>
+
+<!-- Results Container -->
+<div id="results-container" style="display: none; margin-top: 24px;">
+    <div class="table-container">
+        <div class="table-header">
+            <h2 class="md-title-large">Search Results</h2>
+            <span id="result-count" class="md-body-small"></span>
+        </div>
+
+        <table class="md-table">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Device</th>
+                    <th>Context</th>
+                    <th>IP Address</th>
+                    <th>MAC Address</th>
+                    <th>Interface</th>
+                    <th>Type</th>
+                </tr>
+            </thead>
+            <tbody id="results-body">
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Empty State -->
+<div id="empty-state" class="empty-state">
+    <div class="empty-state-icon">
+        <i data-lucide="search" size="48"></i>
+    </div>
+    <p class="md-body-large">Enter a MAC or IP address to search</p>
+</div>
+
+<script>
+// Load stats on page load
+document.addEventListener('DOMContentLoaded', async function() {
+    lucide.createIcons();
+    loadStats();
+
+    // Enter key support
+    document.getElementById('mac-search').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') searchMAC();
+    });
+
+    document.getElementById('ip-search').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') searchIP();
+    });
+});
+
+async function loadStats() {
+    try {
+        const response = await fetch('/arp/api/stats');
+        const stats = await response.json();
+
+        document.getElementById('stat-devices').textContent = stats.total_devices || 0;
+        document.getElementById('stat-entries').textContent = stats.total_arp_entries || 0;
+        document.getElementById('stat-macs').textContent = stats.unique_macs || 0;
+
+        if (stats.latest_capture) {
+            const date = new Date(stats.latest_capture);
+            document.getElementById('stat-latest').textContent = date.toLocaleDateString();
+        } else {
+            document.getElementById('stat-latest').textContent = 'N/A';
+        }
+    } catch (error) {
+        console.error('Failed to load stats:', error);
+    }
+}
+
+async function searchMAC() {
+    const mac = document.getElementById('mac-search').value.trim();
+    if (!mac) {
+        alert('Please enter a MAC address');
+        return;
+    }
+
+    const history = document.getElementById('history-toggle').checked;
+    const url = `/arp/api/search/mac/${encodeURIComponent(mac)}?history=${history}`;
+
+    await performSearch(url, 'MAC', mac);
+}
+
+async function searchIP() {
+    const ip = document.getElementById('ip-search').value.trim();
+    if (!ip) {
+        alert('Please enter an IP address');
+        return;
+    }
+
+    const history = document.getElementById('history-toggle').checked;
+    const url = `/arp/api/search/ip/${encodeURIComponent(ip)}?history=${history}`;
+
+    await performSearch(url, 'IP', ip);
+}
+
+async function performSearch(url, type, query) {
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.success) {
+            displayResults(data.results, data.count, type, query);
+        } else {
+            alert(data.error || 'Search failed');
+        }
+    } catch (error) {
+        console.error('Search error:', error);
+        alert('Search failed');
+    }
+}
+
+function displayResults(results, count, type, query) {
+    const container = document.getElementById('results-container');
+    const emptyState = document.getElementById('empty-state');
+    const tbody = document.getElementById('results-body');
+    const countEl = document.getElementById('result-count');
+
+    if (count === 0) {
+        emptyState.style.display = 'block';
+        emptyState.innerHTML = `
+            <div class="empty-state-icon">
+                <i data-lucide="search-x" size="48"></i>
+            </div>
+            <p class="md-body-large">No results found for ${type}: ${query}</p>
+        `;
+        container.style.display = 'none';
+        lucide.createIcons();
+        return;
+    }
+
+    emptyState.style.display = 'none';
+    container.style.display = 'block';
+
+    countEl.textContent = `${count} ${count === 1 ? 'entry' : 'entries'} found`;
+    tbody.innerHTML = '';
+
+    results.forEach(result => {
+        const row = document.createElement('tr');
+        const timestamp = result.capture_timestamp ?
+            new Date(result.capture_timestamp).toLocaleString() : '-';
+
+        row.innerHTML = `
+            <td><span class="md-body-small">${timestamp}</span></td>
+            <td>
+                <div class="md-body-medium">${result.hostname || '-'}</div>
+                <div class="md-body-small" style="color: var(--md-on-surface-variant);">${result.vendor || ''}</div>
+            </td>
+            <td><span class="md-body-medium">${result.context_name || 'default'}</span></td>
+            <td><code style="background: var(--md-surface-container); padding: 2px 6px; border-radius: 2px;">${result.ip_address}</code></td>
+            <td><code style="background: var(--md-surface-container); padding: 2px 6px; border-radius: 2px;">${result.mac_address}</code></td>
+            <td><span class="md-body-small">${result.interface_name || '-'}</span></td>
+            <td><span class="md-badge">${result.entry_type || 'dynamic'}</span></td>
+        `;
+        tbody.appendChild(row);
+    });
+
+    lucide.createIcons();
+}
+</script>
+{% endblock %}
