@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block title %}Device Roles - Network Management{% endblock %}
+
+{% block head_extra %}
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 32px;
+    }
+
+    .stat-card {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        padding: 24px;
+        text-align: center;
+    }
+
+    .stat-value {
+        font: var(--md-typescale-display-medium);
+        color: var(--md-primary);
+        font-weight: 500;
+        margin-bottom: 8px;
+    }
+
+    .stat-label {
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-surface-variant);
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+    }
+
+    .roles-table-container {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        overflow: hidden;
+    }
+
+    .roles-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .roles-table thead {
+        background: var(--md-surface-container);
+        border-bottom: 1px solid var(--md-outline-variant);
+    }
+
+    .roles-table th {
+        padding: 16px;
+        text-align: left;
+        font: var(--md-typescale-title-small);
+        color: var(--md-on-surface);
+        font-weight: 500;
+    }
+
+    .roles-table td {
+        padding: 16px;
+        border-bottom: 1px solid var(--md-outline-variant);
+        font: var(--md-typescale-body-medium);
+    }
+
+    .roles-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .roles-table tbody tr:hover {
+        background: var(--md-surface-container-low);
+    }
+
+    .device-count-badge {
+        background: var(--md-primary-container);
+        color: var(--md-on-primary-container);
+        padding: 4px 12px;
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-label-medium);
+        font-weight: 500;
+    }
+
+    .badge-infrastructure {
+        background: var(--md-tertiary-container);
+        color: var(--md-on-tertiary-container);
+        padding: 4px 8px;
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-label-small);
+        font-weight: 500;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 48px 24px;
+        color: var(--md-on-surface-variant);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="page-header">
+    <h1 class="md-headline-large">Device Roles</h1>
+    <a href="{{ url_for('roles.create') }}" class="md-button md-button-filled">
+        <i data-lucide="plus" size="16"></i>
+        Create Role&nbsp;&nbsp;
+    </a>
+</div>
+
+<!-- Summary Stats -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.total_roles }}</div>
+        <div class="stat-label">Total Roles</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.roles_in_use or 0 }}</div>
+        <div class="stat-label">Roles in Use</div>
+    </div>
+</div>
+
+<!-- Roles Table -->
+<div class="roles-table-container">
+    {% if roles %}
+    <table class="roles-table">
+        <thead>
+            <tr>
+                <th>Role Name</th>
+                <th>Type</th>
+                <th>Port Range</th>
+                <th>Devices</th>
+                <th style="text-align: right;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for role in roles %}
+            <tr>
+                <td>
+                    <div style="font-weight: 500;">{{ role.name }}</div>
+                    {% if role.description %}
+                    <div style="font-size: 12px; color: var(--md-on-surface-variant); margin-top: 4px;">
+                        {{ role.description }}
+                    </div>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if role.is_infrastructure %}
+                    <span class="badge-infrastructure">Infrastructure</span>
+                    {% else %}
+                    <span style="color: var(--md-on-surface-variant);">Standard</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if role.port_count_min or role.port_count_max %}
+                        {{ role.port_count_min or '0' }} - {{ role.port_count_max or '∞' }} ports
+                    {% else %}
+                        <span style="color: var(--md-on-surface-variant);">Any</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if role.device_count > 0 %}
+                    <span class="device-count-badge">{{ role.device_count }}</span>
+                    {% else %}
+                    <span style="color: var(--md-on-surface-variant);">0</span>
+                    {% endif %}
+                </td>
+                <td style="text-align: right;">
+                    <div class="action-buttons">
+                        <a href="{{ url_for('roles.detail', role_id=role.id) }}"
+                           class="md-icon-button" title="View Details">
+                            <i data-lucide="eye" size="16"></i>
+                        </a>
+                        <a href="{{ url_for('roles.edit', role_id=role.id) }}"
+                           class="md-icon-button" title="Edit">
+                            <i data-lucide="edit" size="16"></i>
+                        </a>
+                        {% if role.device_count == 0 %}
+                        <button onclick="confirmDelete({{ role.id }}, '{{ role.name }}')"
+                                class="md-icon-button"
+                                style="color: var(--md-error);"
+                                title="Delete">
+                            <i data-lucide="trash-2" size="16"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <div style="margin-bottom: 16px;">
+            <i data-lucide="shield" size="48"></i>
+        </div>
+        <h3>No roles configured</h3>
+        <p>Create device roles to categorize network infrastructure</p>
+        <a href="{{ url_for('roles.create') }}" class="md-button md-button-filled" style="margin-top: 16px;">
+            <i data-lucide="plus" size="16"></i>
+            Create Role
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="md-modal" id="deleteModal">
+    <div class="md-modal-content">
+        <div class="md-modal-header">
+            <h2 class="md-modal-title" style="color: var(--md-error);">
+                <i data-lucide="alert-triangle" size="20"></i>
+                Confirm Deletion
+            </h2>
+            <button class="md-icon-button" onclick="closeDeleteModal()">
+                <i data-lucide="x" size="20"></i>
+            </button>
+        </div>
+        <div class="md-modal-body">
+            <p class="md-body-large">Delete role "<strong id="deleteRoleName"></strong>"?</p>
+            <p class="md-body-medium" style="margin-top: 16px; color: var(--md-error);">
+                This action cannot be undone.
+            </p>
+        </div>
+        <div class="md-modal-footer">
+            <button class="md-button md-button-text" onclick="closeDeleteModal()">Cancel</button>
+            <form method="POST" id="deleteForm" style="display: inline;">
+                <button type="submit" class="md-button md-button-filled"
+                        style="background: var(--md-error); color: var(--md-on-error);">
+                    <i data-lucide="trash-2" size="16"></i>
+                    Delete Role
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(id, name) {
+    document.getElementById('deleteRoleName').textContent = name;
+    document.getElementById('deleteForm').action = `/roles/${id}/delete`;
+    document.getElementById('deleteModal').classList.add('open');
+    lucide.createIcons();
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('open');
+}
+
+document.getElementById('deleteModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeDeleteModal();
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    lucide.createIcons();
+});
+</script>
+{% endblock %}

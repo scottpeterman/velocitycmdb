@@ -1,0 +1,1 @@
+python db_load_capture.py -v --db-path ../assets.db --captures-dir ./capture

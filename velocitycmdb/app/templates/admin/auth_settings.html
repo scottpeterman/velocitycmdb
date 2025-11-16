@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}Authentication Settings - Admin - Anguis{% endblock %}
+
+{% block content %}
+<div style="padding: 32px;">
+    <!-- Header -->
+    <div style="margin-bottom: 32px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1 style="font: var(--md-typescale-headline-large); margin: 0 0 8px 0; display: flex; align-items: center; gap: 12px;">
+                <i data-lucide="shield" size="32"></i>
+                Authentication Settings
+            </h1>
+            <p style="font: var(--md-typescale-body-large); color: var(--md-on-surface-variant); margin: 0;">
+                Configure authentication methods and view security settings
+            </p>
+        </div>
+        <a href="{{ url_for('admin.index') }}" class="md-button md-button-outlined">
+            <i data-lucide="arrow-left" size="18"></i>
+            Back to Admin
+        </a>
+    </div>
+
+    <!-- Available Methods -->
+    <div class="md-card" style="margin-bottom: 20px;">
+        <div class="md-card-header">
+            <h5 style="margin: 0; font: var(--md-typescale-title-large);">Available Authentication Methods</h5>
+        </div>
+        <div class="md-card-content">
+            {% if auth_info %}
+            <div style="display: grid; gap: 16px;">
+                {% for method, enabled in auth_info.items() %}
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px; background: var(--md-surface-container-high); border-radius: var(--md-shape-corner-medium);">
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <div style="width: 48px; height: 48px; background: {% if enabled %}var(--md-primary-container){% else %}var(--md-surface-container-highest){% endif %}; border-radius: var(--md-shape-corner-medium); display: flex; align-items: center; justify-content: center; color: {% if enabled %}var(--md-primary){% else %}var(--md-on-surface-variant){% endif %};">
+                            <i data-lucide="{% if method == 'database' %}database{% elif method == 'ldap' %}building{% elif method == 'saml' %}shield-check{% else %}key{% endif %}" size="24"></i>
+                        </div>
+                        <div>
+                            <strong style="font: var(--md-typescale-title-medium); display: block; text-transform: uppercase;">{{ method }}</strong>
+                            <span style="font: var(--md-typescale-body-small); color: var(--md-on-surface-variant);">
+                                {% if method == 'database' %}
+                                    Local database authentication with password hashing
+                                {% elif method == 'ldap' %}
+                                    LDAP/Active Directory integration
+                                {% elif method == 'saml' %}
+                                    SAML 2.0 single sign-on
+                                {% elif method == 'oauth' %}
+                                    OAuth 2.0 authentication
+                                {% else %}
+                                    {{ method|title }} authentication method
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <div>
+                        {% if enabled %}
+                            <span style="display: flex; align-items: center; gap: 8px; color: #4caf50; font: var(--md-typescale-label-large);">
+                                <i data-lucide="check-circle" size="20"></i>
+                                Enabled
+                            </span>
+                        {% else %}
+                            <span style="display: flex; align-items: center; gap: 8px; color: var(--md-on-surface-variant); font: var(--md-typescale-label-large);">
+                                <i data-lucide="x-circle" size="20"></i>
+                                Disabled
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="color: var(--md-on-surface-variant); text-align: center; padding: 20px;">
+                No authentication information available
+            </p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Security Settings -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+        <!-- Password Requirements -->
+        <div class="md-card">
+            <div class="md-card-header">
+                <h5 style="margin: 0; font: var(--md-typescale-title-large);">Password Requirements</h5>
+            </div>
+            <div class="md-card-content">
+                <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px;">
+                    <li style="display: flex; align-items: center; gap: 12px;">
+                        <i data-lucide="check" size="18" style="color: #4caf50;"></i>
+                        <span>Minimum 8 characters</span>
+                    </li>
+                    <li style="display: flex; align-items: center; gap: 12px;">
+                        <i data-lucide="check" size="18" style="color: #4caf50;"></i>
+                        <span>bcrypt password hashing</span>
+                    </li>
+                    <li style="display: flex; align-items: center; gap: 12px;">
+                        <i data-lucide="check" size="18" style="color: #4caf50;"></i>
+                        <span>Password confirmation required</span>
+                    </li>
+                    <li style="display: flex; align-items: center; gap: 12px;">
+                        <i data-lucide="info" size="18" style="color: var(--md-primary);"></i>
+                        <span>Admin can reset user passwords</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Session Security -->
+        <div class="md-card">
+            <div class="md-card-header">
+                <h5 style="margin: 0; font: var(--md-typescale-title-large);">Session Security</h5>
+            </div>
+            <div class="md-card-content">
+                <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px;">
+                    <li style="display: flex; align-items: center; gap: 12px;">
+                        <i data-lucide="check" size="18" style="color: #4caf50;"></i>
+                        <span>Secure session cookies</span>
+                    </li>
+                    <li style="display: flex; align-items: center; gap: 12px;">
+                        <i data-lucide="check" size="18" style="color: #4caf50;"></i>
+                        <span>CSRF protection enabled</span>
+                    </li>
+                    <li style="display: flex; align-items: center; gap: 12px;">
+                        <i data-lucide="check" size="18" style="color: #4caf50;"></i>
+                        <span>Login tracking</span>
+                    </li>
+                    <li style="display: flex; align-items: center; gap: 12px;">
+                        <i data-lucide="info" size="18" style="color: var(--md-primary);"></i>
+                        <span>Session timeout configurable</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- User Permissions -->
+        <div class="md-card">
+            <div class="md-card-header">
+                <h5 style="margin: 0; font: var(--md-typescale-title-large);">User Permissions</h5>
+            </div>
+            <div class="md-card-content">
+                <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px;">
+                    <li style="display: flex; align-items: center; gap: 12px;">
+                        <i data-lucide="check" size="18" style="color: #4caf50;"></i>
+                        <span>Role-based access control</span>
+                    </li>
+                    <li style="display: flex; align-items: center; gap: 12px;">
+                        <i data-lucide="check" size="18" style="color: #4caf50;"></i>
+                        <span>Group-based permissions</span>
+                    </li>
+                    <li style="display: flex; align-items: center; gap: 12px;">
+                        <i data-lucide="check" size="18" style="color: #4caf50;"></i>
+                        <span>Admin privilege escalation</span>
+                    </li>
+                    <li style="display: flex; align-items: center; gap: 12px;">
+                        <i data-lucide="info" size="18" style="color: var(--md-primary);"></i>
+                        <span>Account activation control</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuration Help -->
+    <div class="md-card" style="margin-top: 20px;">
+        <div class="md-card-header">
+            <h5 style="margin: 0; font: var(--md-typescale-title-large);">Configuration Guide</h5>
+        </div>
+        <div class="md-card-content">
+            <p style="font: var(--md-typescale-body-medium); margin: 0 0 16px 0;">
+                To enable or configure authentication methods, edit the <code style="background: var(--md-surface-container-high); padding: 2px 8px; border-radius: 4px;">config.yaml</code> file in the system configuration section.
+            </p>
+
+            <div style="background: var(--md-surface-container-high); padding: 20px; border-radius: var(--md-shape-corner-medium); margin-top: 16px;">
+                <strong style="display: block; margin-bottom: 12px; font: var(--md-typescale-title-medium);">Example Configuration:</strong>
+                <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto;">authentication:
+  database:
+    enabled: true
+  ldap:
+    enabled: false
+    server: ldap://ldap.example.com
+    bind_dn: cn=admin,dc=example,dc=com
+    user_base: ou=users,dc=example,dc=com
+  saml:
+    enabled: false
+    idp_metadata_url: https://idp.example.com/metadata
+    sp_entity_id: https://app.example.com
+  session:
+    timeout: 3600
+    secure_cookies: true</pre>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <a href="{{ url_for('admin.config_edit') }}" class="md-button md-button-filled">
+                    <i data-lucide="edit" size="18"></i>
+                    Edit Configuration
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+</script>
+{% endblock %}

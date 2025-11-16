@@ -1,0 +1,8 @@
+# port-channel Capture Jobs (All Vendors)
+# Generated: 2025-10-16T06:37:32.049742
+# Jobs: 4
+
+job_372_arista_port-channel.json
+job_373_cisco-ios_port-channel.json
+job_374_cisco-nxos_port-channel.json
+job_375_juniper_port-channel.json

@@ -1,0 +1,29 @@
+# Arista Capture Jobs
+# Generated: 2025-10-16T06:37:32.046676
+# Jobs: 25
+
+job_300_arista_arp.json
+job_304_arista_authentication.json
+job_308_arista_authorization.json
+job_312_arista_bgp-neighbor.json
+job_316_arista_bgp-summary.json
+job_320_arista_bgp-table.json
+job_324_arista_bgp-table-detail.json
+job_328_arista_configs.json
+job_332_arista_console.json
+job_336_arista_int-status.json
+job_340_arista_interface-status.json
+job_344_arista_inventory.json
+job_348_arista_ip_ssh.json
+job_352_arista_lldp.json
+job_356_arista_lldp-detail.json
+job_360_arista_mac.json
+job_364_arista_ntp_status.json
+job_368_arista_ospf-neighbor.json
+job_372_arista_port-channel.json
+job_376_arista_radius.json
+job_380_arista_routes.json
+job_384_arista_snmp_server.json
+job_388_arista_syslog.json
+job_392_arista_tacacs.json
+job_396_arista_version.json

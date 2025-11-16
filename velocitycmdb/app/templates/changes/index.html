@@ -1,0 +1,433 @@
+{% extends "base.html" %}
+
+{% block title %}Recent Changes - Network Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Recent Changes</h1>
+    <p class="page-description">Configuration and hardware changes detected across the network</p>
+</div>
+
+<!-- Summary Cards -->
+<div class="md-card-grid">
+    <div class="md-card">
+        <div class="card-content">
+            <div class="stat-item">
+                <div class="stat-value">{{ stats.total_changes }}</div>
+                <div class="stat-label">Total Changes</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="md-card">
+        <div class="card-content">
+            <div class="stat-item">
+                <div class="stat-value">{{ stats.devices_affected }}</div>
+                <div class="stat-label">Devices Affected</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="md-card">
+        <div class="card-content">
+            <div class="stat-item">
+                <div class="stat-value" style="color: var(--md-error)">{{ stats.critical_count }}</div>
+                <div class="stat-label">Critical</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="md-card">
+        <div class="card-content">
+            <div class="stat-item">
+                <div class="stat-value" style="color: var(--md-warning)">{{ stats.moderate_count }}</div>
+                <div class="stat-label">Moderate</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Changes by Site Chart -->
+{% if site_stats %}
+<div class="md-card" style="margin-top: 24px;">
+    <div class="card-header">
+        <h2>Changes by Site</h2>
+    </div>
+    <div class="card-content">
+        <canvas id="siteChart" style="max-height: 350px;"></canvas>
+    </div>
+</div>
+{% endif %}
+
+<!-- Filters -->
+<div class="md-card" style="margin-top: 24px;">
+    <div class="card-content">
+        <form method="get" class="filter-form">
+            <div class="form-row">
+                <div class="form-field">
+                    <label>Time Range</label>
+                    <select name="hours" class="form-select">
+                        <option value="24" {% if hours == 24 %}selected{% endif %}>Last 24 hours</option>
+                        <option value="72" {% if hours == 72 %}selected{% endif %}>Last 3 days</option>
+                        <option value="168" {% if hours == 168 %}selected{% endif %}>Last 7 days</option>
+                        <option value="720" {% if hours == 720 %}selected{% endif %}>Last 30 days</option>
+                        <option value="2160" {% if hours == 2160 %}selected{% endif %}>Last 90 days</option>
+                    </select>
+                </div>
+
+                <div class="form-field">
+                    <label>Capture Type</label>
+                    <select name="capture_type" class="form-select">
+                        <option value="">All Types</option>
+                        {% for type in available_capture_types %}
+                        <option value="{{ type }}" {% if capture_type_filter == type %}selected{% endif %}>
+                            {{ type }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-field">
+                    <label>Severity</label>
+                    <select name="severity" class="form-select">
+                        <option value="">All</option>
+                        <option value="critical" {% if severity_filter == 'critical' %}selected{% endif %}>Critical</option>
+                        <option value="moderate" {% if severity_filter == 'moderate' %}selected{% endif %}>Moderate</option>
+                        <option value="minor" {% if severity_filter == 'minor' %}selected{% endif %}>Minor</option>
+                    </select>
+                </div>
+
+                <div class="form-actions" style="align-self: flex-end;">
+                    <button type="submit" class="md-button">Apply Filters</button>
+                    <a href="{{ url_for('changes.index') }}" class="md-button-text">Clear</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Changes Table -->
+<div class="md-card" style="margin-top: 24px;">
+    <div class="card-header">
+        <h2>Changes ({{ changes|length }})</h2>
+    </div>
+    <div class="card-content">
+        {% if changes %}
+        <div class="md-table-container">
+            <table class="md-table">
+                <thead>
+                    <tr>
+                        <th>Detected</th>
+                        <th>Device</th>
+                        <th>Site</th>
+                        <th>Type</th>
+                        <th>Changes</th>
+                        <th>Severity</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for change in changes %}
+                    <tr>
+                        <td>
+                            <div style="font-size: 13px; line-height: 1.4;">
+                                <div style="font-weight: 500;">{{ change.detected_at[5:7] }}/{{ change.detected_at[8:10] }}/{{ change.detected_at[2:4] }}</div>
+                                <div style="color: var(--md-on-surface-variant); font-size: 12px;">{{ change.detected_at[11:16] }}</div>
+                            </div>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('changes.device_history', device_id=change.device_id) }}"
+                               class="link">{{ change.device_name }}</a>
+                        </td>
+                        <td>{{ change.site_name or 'Unknown' }}</td>
+                        <td><span class="badge badge-{{ change.capture_type|lower|replace(' ', '-') }}">{{ change.capture_type }}</span></td>
+                        <td>
+                            <span style="color: var(--md-success)">+{{ change.lines_added }}</span> /
+                            <span style="color: var(--md-error)">-{{ change.lines_removed }}</span>
+                        </td>
+                        <td>
+                            <span class="severity-badge severity-{{ change.severity }}">
+                                {{ change.severity }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <a href="{{ url_for('changes.view_diff', change_id=change.id) }}"
+                                   class="md-button-text">View Diff</a>
+                                <a href="/assets/devices/{{ change.device_id }}"
+                                   class="md-button-text">View Device</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i data-lucide="check-circle" size="48"></i>
+            <h3>No Changes Detected</h3>
+            <p>No configuration or hardware changes in the selected time range</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+/* Summary Cards Grid */
+.md-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 16px;
+}
+
+.stat-value {
+    font-size: 32px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: var(--md-on-surface-variant);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Severity Badges */
+.severity-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.severity-critical {
+    background: rgba(220, 38, 38, 0.2);
+    color: #ef4444;
+    border: 1px solid rgba(220, 38, 38, 0.3);
+}
+
+.severity-moderate {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.severity-minor {
+    background: rgba(107, 114, 128, 0.2);
+    color: #9ca3af;
+    border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+/* Type Badges */
+.badge {
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-block;
+}
+
+.badge-configs {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.badge-inventory {
+    background: rgba(168, 85, 247, 0.2);
+    color: #a855f7;
+    border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.badge-int-status,
+.badge-interface-status {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+/* Filters */
+.filter-form .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    gap: 16px;
+    align-items: end;
+}
+
+.form-field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--md-on-surface-variant);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-select {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--md-surface-container);
+    border: 1px solid var(--md-outline);
+    border-radius: 8px;
+    color: var(--md-on-surface);
+    font-size: 14px;
+}
+
+.form-select:focus {
+    outline: none;
+    border-color: var(--md-primary);
+}
+
+.form-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.md-button {
+    padding: 10px 20px;
+    background: var(--md-primary);
+    color: var(--md-on-primary);
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.md-button:hover {
+    opacity: 0.9;
+}
+
+.md-button-text {
+    padding: 8px 12px;
+    color: var(--md-primary);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 14px;
+    border-radius: 6px;
+}
+
+.md-button-text:hover {
+    background: rgba(59, 130, 246, 0.1);
+}
+
+/* Links */
+.link {
+    color: var(--md-primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.link:hover {
+    text-decoration: underline;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--md-on-surface-variant);
+}
+
+.empty-state i {
+    color: var(--md-success);
+    margin-bottom: 16px;
+}
+
+.empty-state h3 {
+    margin: 8px 0;
+    color: var(--md-on-surface);
+}
+
+/* Table improvements */
+.md-table tbody tr:hover {
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.md-table td {
+    vertical-align: middle;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+lucide.createIcons();
+
+// Chart.js for site changes visualization
+{% if site_stats %}
+const siteData = {{ site_stats|tojson }};
+
+if (siteData && siteData.length > 0) {
+    const ctx = document.getElementById('siteChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: siteData.map(s => s.site_name || 'Unknown'),
+            datasets: [{
+                label: 'Number of Changes',
+                data: siteData.map(s => s.change_count),
+                backgroundColor: 'rgba(103, 80, 164, 0.8)',
+                borderColor: 'rgb(103, 80, 164)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.parsed.y + ' change' + (context.parsed.y !== 1 ? 's' : '');
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1,
+                        precision: 0
+                    },
+                    title: {
+                        display: true,
+                        text: 'Number of Changes'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Site'
+                    }
+                }
+            }
+        }
+    });
+}
+{% endif %}
+</script>
+{% endblock %}

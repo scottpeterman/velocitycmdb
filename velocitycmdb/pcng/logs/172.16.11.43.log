@@ -1,0 +1,360 @@
+[2025-11-13 22:58:30.777] Connecting to 172.16.11.43:22...
+[2025-11-13 22:58:30.777] Connecting to 172.16.11.43:22...
+[2025-11-13 22:58:30.796] Connecting to 172.16.11.43:22...
+[2025-11-13 22:58:30.796] Connecting to 172.16.11.43:22...
+[2025-11-13 22:58:31.768] Connected to 172.16.11.43:22
+[2025-11-13 22:58:31.768] Creating shell stream with ANSI filtering
+[2025-11-13 22:58:31.809] Connected to 172.16.11.43:22
+[2025-11-13 22:58:31.820] Creating shell stream with ANSI filtering
+[2025-11-13 22:58:31.820] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-13 22:58:31.873] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-13 22:58:31.884] Connected to 172.16.11.43:22
+[2025-11-13 22:58:31.884] Creating shell stream with ANSI filtering
+[2025-11-13 22:58:31.948] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-13 22:58:31.968] Connected to 172.16.11.43:22
+[2025-11-13 22:58:31.968] Creating shell stream with ANSI filtering
+[2025-11-13 22:58:32.030] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-13 22:58:32.649] Connecting to 172.16.11.43:22...
+[2025-11-13 22:58:33.655] Connected to 172.16.11.43:22
+[2025-11-13 22:58:33.655] Creating shell stream with ANSI filtering
+[2025-11-13 22:58:33.719] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-13 22:58:33.832] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-13 22:58:33.832] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-13 22:58:33.832] Sending single newline to trigger prompt
+[2025-11-13 22:58:33.887] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-13 22:58:33.887] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-13 22:58:33.887] Sending single newline to trigger prompt
+[2025-11-13 22:58:33.950] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-13 22:58:33.950] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-13 22:58:33.953] Sending single newline to trigger prompt
+[2025-11-13 22:58:34.031] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-13 22:58:34.031] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-13 22:58:34.031] Sending single newline to trigger prompt
+[2025-11-13 22:58:35.728] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-13 22:58:35.728] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-13 22:58:35.728] Sending single newline to trigger prompt
+[2025-11-13 22:58:39.850] Detected prompt: 'eng-leaf-3#'
+[2025-11-13 22:58:39.850] Expect prompt set to: 'eng-leaf-3#'
+[2025-11-13 22:58:39.850] SSHClient Message: Executing command: 'terminal length 0,show ip arp,,'
+[2025-11-13 22:58:39.850] Using shell mode for command execution with ANSI filtering
+[2025-11-13 22:58:39.850] Sending command 1/4: 'terminal length 0'
+[2025-11-13 22:58:39.850] Waiting between sub-commands: 1s
+[2025-11-13 22:58:39.903] Detected prompt: 'eng-leaf-3#'
+[2025-11-13 22:58:39.903] Expect prompt set to: 'eng-leaf-3#'
+[2025-11-13 22:58:39.903] SSHClient Message: Executing command: 'terminal length 0,show running-config,,'
+[2025-11-13 22:58:39.903] Using shell mode for command execution with ANSI filtering
+[2025-11-13 22:58:39.903] Sending command 1/4: 'terminal length 0'
+[2025-11-13 22:58:39.903] Waiting between sub-commands: 1s
+[2025-11-13 22:58:39.969] Detected prompt: 'eng-leaf-3#'
+[2025-11-13 22:58:39.969] Expect prompt set to: 'eng-leaf-3#'
+[2025-11-13 22:58:39.969] SSHClient Message: Executing command: 'terminal length 0,show ip arp,,'
+[2025-11-13 22:58:39.969] Using shell mode for command execution with ANSI filtering
+[2025-11-13 22:58:39.969] Sending command 1/4: 'terminal length 0'
+[2025-11-13 22:58:39.969] Waiting between sub-commands: 1s
+[2025-11-13 22:58:40.046] Detected prompt: 'eng-leaf-3#'
+[2025-11-13 22:58:40.046] Expect prompt set to: 'eng-leaf-3#'
+[2025-11-13 22:58:40.046] SSHClient Message: Executing command: 'terminal length 0,show mac address-table,,'
+[2025-11-13 22:58:40.046] Using shell mode for command execution with ANSI filtering
+[2025-11-13 22:58:40.046] Sending command 1/4: 'terminal length 0'
+[2025-11-13 22:58:40.048] Waiting between sub-commands: 1s
+[2025-11-13 22:58:40.853] Sending command 2/4: 'show ip arp'
+[2025-11-13 22:58:40.853] Waiting between sub-commands: 1s
+[2025-11-13 22:58:40.906] Sending command 2/4: 'show running-config'
+[2025-11-13 22:58:40.906] Waiting between sub-commands: 1s
+[2025-11-13 22:58:40.972] Sending command 2/4: 'show ip arp'
+[2025-11-13 22:58:40.972] Waiting between sub-commands: 1s
+[2025-11-13 22:58:41.048] Sending command 2/4: 'show mac address-table'
+[2025-11-13 22:58:41.048] Waiting between sub-commands: 1s
+[2025-11-13 22:58:41.746] Detected prompt: 'eng-leaf-3#'
+[2025-11-13 22:58:41.746] Expect prompt set to: 'eng-leaf-3#'
+[2025-11-13 22:58:41.746] SSHClient Message: Executing command: 'enable,terminal length 0,show running-config,,'
+[2025-11-13 22:58:41.746] Using shell mode for command execution with ANSI filtering
+[2025-11-13 22:58:41.746] Sending command 1/5: 'enable'
+[2025-11-13 22:58:41.746] Waiting between sub-commands: 1s
+[2025-11-13 22:58:41.854] Sending newline command 3/4
+[2025-11-13 22:58:41.855] Sending newline command 3/4
+[2025-11-13 22:58:41.855] Waiting between sub-commands: 1s
+[2025-11-13 22:58:41.907] Sending newline command 3/4
+[2025-11-13 22:58:41.907] Sending newline command 3/4
+[2025-11-13 22:58:41.907] Waiting between sub-commands: 1s
+[2025-11-13 22:58:41.974] Sending newline command 3/4
+[2025-11-13 22:58:41.974] Sending newline command 3/4
+[2025-11-13 22:58:41.974] Waiting between sub-commands: 1s
+[2025-11-13 22:58:42.050] Sending newline command 3/4
+[2025-11-13 22:58:42.050] Sending newline command 3/4
+[2025-11-13 22:58:42.050] Waiting between sub-commands: 1s
+[2025-11-13 22:58:42.749] Sending command 2/5: 'terminal length 0'
+[2025-11-13 22:58:42.749] Waiting between sub-commands: 1s
+[2025-11-13 22:58:42.856] Sending newline command 4/4
+[2025-11-13 22:58:42.856] Sending newline command 4/4
+[2025-11-13 22:58:42.856] Monitoring for EXACTLY 3 occurrences of: 'eng-leaf-3#'
+[2025-11-13 22:58:42.862] PROMPT DETECTED: 4/3
+[2025-11-13 22:58:42.862] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-13 22:58:42.862] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-13 22:58:42.862] Shell command execution completed
+[2025-11-13 22:58:42.862] Total shell command execution time: 3012.01ms
+[2025-11-13 22:58:42.862] SSHClient Message: Waiting between commands: 1s
+[2025-11-13 22:58:42.912] Sending newline command 4/4
+[2025-11-13 22:58:42.912] Sending newline command 4/4
+[2025-11-13 22:58:42.912] Monitoring for EXACTLY 3 occurrences of: 'eng-leaf-3#'
+[2025-11-13 22:58:42.912] PROMPT DETECTED: 4/3
+[2025-11-13 22:58:42.912] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-13 22:58:42.914] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-13 22:58:42.914] Shell command execution completed
+[2025-11-13 22:58:42.914] Total shell command execution time: 3011.02ms
+[2025-11-13 22:58:42.914] SSHClient Message: Waiting between commands: 1s
+[2025-11-13 22:58:42.975] Sending newline command 4/4
+[2025-11-13 22:58:42.976] Sending newline command 4/4
+[2025-11-13 22:58:42.976] Monitoring for EXACTLY 3 occurrences of: 'eng-leaf-3#'
+[2025-11-13 22:58:42.976] PROMPT DETECTED: 4/3
+[2025-11-13 22:58:42.976] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-13 22:58:42.976] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-13 22:58:42.976] Shell command execution completed
+[2025-11-13 22:58:42.976] Total shell command execution time: 3007.16ms
+[2025-11-13 22:58:42.976] SSHClient Message: Waiting between commands: 1s
+[2025-11-13 22:58:43.051] Sending newline command 4/4
+[2025-11-13 22:58:43.051] Sending newline command 4/4
+[2025-11-13 22:58:43.051] Monitoring for EXACTLY 3 occurrences of: 'eng-leaf-3#'
+[2025-11-13 22:58:43.051] PROMPT DETECTED: 4/3
+[2025-11-13 22:58:43.051] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-13 22:58:43.051] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-13 22:58:43.051] Shell command execution completed
+[2025-11-13 22:58:43.051] Total shell command execution time: 3005.78ms
+[2025-11-13 22:58:43.051] SSHClient Message: Waiting between commands: 1s
+[2025-11-13 22:58:43.752] Sending command 3/5: 'show running-config'
+[2025-11-13 22:58:43.752] Waiting between sub-commands: 1s
+[2025-11-13 22:58:43.864] SSHClient Message: Command execution completed in 4013.98ms
+[2025-11-13 22:58:43.864] Disconnecting from device
+[2025-11-13 22:58:43.864] Successfully disconnected
+[2025-11-13 22:58:43.915] SSHClient Message: Command execution completed in 4012.20ms
+[2025-11-13 22:58:43.915] Disconnecting from device
+[2025-11-13 22:58:43.915] Successfully disconnected
+[2025-11-13 22:58:43.979] SSHClient Message: Command execution completed in 4010.20ms
+[2025-11-13 22:58:43.979] Disconnecting from device
+[2025-11-13 22:58:43.980] Successfully disconnected
+[2025-11-13 22:58:44.055] SSHClient Message: Command execution completed in 4008.89ms
+[2025-11-13 22:58:44.055] Disconnecting from device
+[2025-11-13 22:58:44.055] Successfully disconnected
+[2025-11-13 22:58:44.756] Sending newline command 4/5
+[2025-11-13 22:58:44.756] Sending newline command 4/5
+[2025-11-13 22:58:44.756] Waiting between sub-commands: 1s
+[2025-11-13 22:58:45.762] Sending newline command 5/5
+[2025-11-13 22:58:45.762] Sending newline command 5/5
+[2025-11-13 22:58:45.762] Monitoring for EXACTLY 4 occurrences of: 'eng-leaf-3#'
+[2025-11-13 22:58:45.764] PROMPT DETECTED: 5/4
+[2025-11-13 22:58:45.764] TARGET REACHED: 5 prompts detected. STOPPING NOW.
+[2025-11-13 22:58:45.764] SUCCESS: Command execution completed with 5/4 prompts
+[2025-11-13 22:58:45.764] Shell command execution completed
+[2025-11-13 22:58:45.764] Total shell command execution time: 4017.92ms
+[2025-11-13 22:58:45.764] SSHClient Message: Waiting between commands: 1s
+[2025-11-13 22:58:46.768] SSHClient Message: Command execution completed in 5022.24ms
+[2025-11-13 22:58:46.768] Disconnecting from device
+[2025-11-13 22:58:46.768] Successfully disconnected
+[2025-11-13 23:00:30.623] Connecting to 172.16.11.43:22...
+[2025-11-13 23:00:30.623] Connecting to 172.16.11.43:22...
+[2025-11-13 23:00:30.903] Connecting to 172.16.11.43:22...
+[2025-11-13 23:00:31.321] Connecting to 172.16.11.43:22...
+[2025-11-13 23:00:31.400] Connected to 172.16.11.43:22
+[2025-11-13 23:00:31.400] Creating shell stream with ANSI filtering
+[2025-11-13 23:00:31.460] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-13 23:00:31.460] Creating shell stream with ANSI filtering
+[2025-11-13 23:00:31.523] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-13 23:00:32.091] Connected to 172.16.11.43:22
+[2025-11-13 23:00:32.091] Creating shell stream with ANSI filtering
+[2025-11-13 23:00:32.123] Connected to 172.16.11.43:22
+[2025-11-13 23:00:32.133] Creating shell stream with ANSI filtering
+[2025-11-13 23:00:32.145] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-13 23:00:32.187] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-13 23:00:33.470] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-13 23:00:33.470] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-13 23:00:33.470] Sending single newline to trigger prompt
+[2025-11-13 23:00:33.530] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-13 23:00:33.530] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-13 23:00:33.530] Sending single newline to trigger prompt
+[2025-11-13 23:00:34.156] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-13 23:00:34.159] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-13 23:00:34.159] Sending single newline to trigger prompt
+[2025-11-13 23:00:34.197] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-13 23:00:34.197] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-13 23:00:34.197] Sending single newline to trigger prompt
+[2025-11-13 23:00:39.485] Detected prompt: 'eng-leaf-3#'
+[2025-11-13 23:00:39.485] Expect prompt set to: 'eng-leaf-3#'
+[2025-11-13 23:00:39.485] SSHClient Message: Executing command: 'terminal length 0,show mac address-table,,'
+[2025-11-13 23:00:39.486] Using shell mode for command execution with ANSI filtering
+[2025-11-13 23:00:39.486] Sending command 1/4: 'terminal length 0'
+[2025-11-13 23:00:39.487] Waiting between sub-commands: 1s
+[2025-11-13 23:00:39.548] Detected prompt: 'eng-leaf-3#'
+[2025-11-13 23:00:39.550] Expect prompt set to: 'eng-leaf-3#'
+[2025-11-13 23:00:39.551] SSHClient Message: Executing command: 'terminal length 0,show lldp neighbors detail,,'
+[2025-11-13 23:00:39.552] Using shell mode for command execution with ANSI filtering
+[2025-11-13 23:00:39.552] Sending command 1/4: 'terminal length 0'
+[2025-11-13 23:00:39.553] Waiting between sub-commands: 1s
+[2025-11-13 23:00:40.177] Detected prompt: 'eng-leaf-3#'
+[2025-11-13 23:00:40.177] Expect prompt set to: 'eng-leaf-3#'
+[2025-11-13 23:00:40.177] SSHClient Message: Executing command: 'terminal length 0,show lldp neighbors detail,,'
+[2025-11-13 23:00:40.177] Using shell mode for command execution with ANSI filtering
+[2025-11-13 23:00:40.177] Sending command 1/4: 'terminal length 0'
+[2025-11-13 23:00:40.178] Waiting between sub-commands: 1s
+[2025-11-13 23:00:40.218] Detected prompt: 'eng-leaf-3#'
+[2025-11-13 23:00:40.218] Expect prompt set to: 'eng-leaf-3#'
+[2025-11-13 23:00:40.218] SSHClient Message: Executing command: 'terminal length 0,show version,,'
+[2025-11-13 23:00:40.219] Using shell mode for command execution with ANSI filtering
+[2025-11-13 23:00:40.219] Sending command 1/4: 'terminal length 0'
+[2025-11-13 23:00:40.219] Waiting between sub-commands: 1s
+[2025-11-13 23:00:40.488] Sending command 2/4: 'show mac address-table'
+[2025-11-13 23:00:40.488] Waiting between sub-commands: 1s
+[2025-11-13 23:00:40.554] Sending command 2/4: 'show lldp neighbors detail'
+[2025-11-13 23:00:40.555] Waiting between sub-commands: 1s
+[2025-11-13 23:00:40.950] Connecting to 172.16.11.43:22...
+[2025-11-13 23:00:41.179] Sending command 2/4: 'show lldp neighbors detail'
+[2025-11-13 23:00:41.179] Waiting between sub-commands: 1s
+[2025-11-13 23:00:41.221] Sending command 2/4: 'show version'
+[2025-11-13 23:00:41.221] Waiting between sub-commands: 1s
+[2025-11-13 23:00:41.489] Sending newline command 3/4
+[2025-11-13 23:00:41.489] Sending newline command 3/4
+[2025-11-13 23:00:41.489] Waiting between sub-commands: 1s
+[2025-11-13 23:00:41.556] Sending newline command 3/4
+[2025-11-13 23:00:41.556] Sending newline command 3/4
+[2025-11-13 23:00:41.556] Waiting between sub-commands: 1s
+[2025-11-13 23:00:41.929] Connected to 172.16.11.43:22
+[2025-11-13 23:00:41.930] Creating shell stream with ANSI filtering
+[2025-11-13 23:00:41.991] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-13 23:00:42.180] Sending newline command 3/4
+[2025-11-13 23:00:42.181] Sending newline command 3/4
+[2025-11-13 23:00:42.181] Waiting between sub-commands: 1s
+[2025-11-13 23:00:42.222] Sending newline command 3/4
+[2025-11-13 23:00:42.222] Sending newline command 3/4
+[2025-11-13 23:00:42.223] Waiting between sub-commands: 1s
+[2025-11-13 23:00:42.491] Sending newline command 4/4
+[2025-11-13 23:00:42.491] Sending newline command 4/4
+[2025-11-13 23:00:42.492] Monitoring for EXACTLY 3 occurrences of: 'eng-leaf-3#'
+[2025-11-13 23:00:42.492] PROMPT DETECTED: 4/3
+[2025-11-13 23:00:42.492] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-13 23:00:42.492] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-13 23:00:42.493] Shell command execution completed
+[2025-11-13 23:00:42.493] Total shell command execution time: 3006.35ms
+[2025-11-13 23:00:42.493] SSHClient Message: Waiting between commands: 1s
+[2025-11-13 23:00:42.558] Sending newline command 4/4
+[2025-11-13 23:00:42.558] Sending newline command 4/4
+[2025-11-13 23:00:42.558] Monitoring for EXACTLY 3 occurrences of: 'eng-leaf-3#'
+[2025-11-13 23:00:42.558] PROMPT DETECTED: 4/3
+[2025-11-13 23:00:42.559] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-13 23:00:42.559] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-13 23:00:42.559] Shell command execution completed
+[2025-11-13 23:00:42.560] Total shell command execution time: 3007.81ms
+[2025-11-13 23:00:42.560] SSHClient Message: Waiting between commands: 1s
+[2025-11-13 23:00:43.182] Sending newline command 4/4
+[2025-11-13 23:00:43.182] Sending newline command 4/4
+[2025-11-13 23:00:43.183] Monitoring for EXACTLY 3 occurrences of: 'eng-leaf-3#'
+[2025-11-13 23:00:43.183] PROMPT DETECTED: 4/3
+[2025-11-13 23:00:43.183] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-13 23:00:43.183] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-13 23:00:43.184] Shell command execution completed
+[2025-11-13 23:00:43.184] Total shell command execution time: 3007.06ms
+[2025-11-13 23:00:43.184] SSHClient Message: Waiting between commands: 1s
+[2025-11-13 23:00:43.224] Sending newline command 4/4
+[2025-11-13 23:00:43.224] Sending newline command 4/4
+[2025-11-13 23:00:43.224] Monitoring for EXACTLY 3 occurrences of: 'eng-leaf-3#'
+[2025-11-13 23:00:43.225] PROMPT DETECTED: 4/3
+[2025-11-13 23:00:43.225] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-13 23:00:43.225] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-13 23:00:43.226] Shell command execution completed
+[2025-11-13 23:00:43.226] Total shell command execution time: 3006.78ms
+[2025-11-13 23:00:43.227] SSHClient Message: Waiting between commands: 1s
+[2025-11-13 23:00:43.494] SSHClient Message: Command execution completed in 4007.70ms
+[2025-11-13 23:00:43.495] Disconnecting from device
+[2025-11-13 23:00:43.495] Successfully disconnected
+[2025-11-13 23:00:43.561] SSHClient Message: Command execution completed in 4008.60ms
+[2025-11-13 23:00:43.561] Disconnecting from device
+[2025-11-13 23:00:43.561] Successfully disconnected
+[2025-11-13 23:00:43.993] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-13 23:00:43.993] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-13 23:00:43.994] Sending single newline to trigger prompt
+[2025-11-13 23:00:44.186] SSHClient Message: Command execution completed in 4008.65ms
+[2025-11-13 23:00:44.186] Disconnecting from device
+[2025-11-13 23:00:44.187] Successfully disconnected
+[2025-11-13 23:00:44.228] SSHClient Message: Command execution completed in 4008.53ms
+[2025-11-13 23:00:44.228] Disconnecting from device
+[2025-11-13 23:00:44.228] Successfully disconnected
+[2025-11-13 23:00:50.010] Detected prompt: 'eng-leaf-3#'
+[2025-11-13 23:00:50.010] Expect prompt set to: 'eng-leaf-3#'
+[2025-11-13 23:00:50.010] SSHClient Message: Executing command: 'terminal length 0,show version,,'
+[2025-11-13 23:00:50.011] Using shell mode for command execution with ANSI filtering
+[2025-11-13 23:00:50.011] Sending command 1/4: 'terminal length 0'
+[2025-11-13 23:00:50.011] Waiting between sub-commands: 1s
+[2025-11-13 23:00:51.012] Sending command 2/4: 'show version'
+[2025-11-13 23:00:51.012] Waiting between sub-commands: 1s
+[2025-11-13 23:00:52.014] Sending newline command 3/4
+[2025-11-13 23:00:52.014] Sending newline command 3/4
+[2025-11-13 23:00:52.015] Waiting between sub-commands: 1s
+[2025-11-13 23:00:53.016] Sending newline command 4/4
+[2025-11-13 23:00:53.016] Sending newline command 4/4
+[2025-11-13 23:00:53.016] Monitoring for EXACTLY 3 occurrences of: 'eng-leaf-3#'
+[2025-11-13 23:00:53.016] PROMPT DETECTED: 4/3
+[2025-11-13 23:00:53.016] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-13 23:00:53.017] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-13 23:00:53.017] Shell command execution completed
+[2025-11-13 23:00:53.017] Total shell command execution time: 3006.26ms
+[2025-11-13 23:00:53.017] SSHClient Message: Waiting between commands: 1s
+[2025-11-13 23:00:54.019] SSHClient Message: Command execution completed in 4007.91ms
+[2025-11-13 23:00:54.019] Disconnecting from device
+[2025-11-13 23:00:54.019] Successfully disconnected
+[2025-11-13 23:02:30.533] Connecting to 172.16.11.43:22...
+[2025-11-13 23:02:31.325] Connected to 172.16.11.43:22
+[2025-11-13 23:02:31.325] Creating shell stream with ANSI filtering
+[2025-11-13 23:02:31.389] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-13 23:02:31.897] Connecting to 172.16.11.43:22...
+[2025-11-13 23:02:33.390] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-13 23:02:33.390] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-13 23:02:33.390] Sending single newline to trigger prompt
+[2025-11-13 23:02:33.901] Connected to 172.16.11.43:22
+[2025-11-13 23:02:33.901] Creating shell stream with ANSI filtering
+[2025-11-13 23:02:33.965] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-13 23:02:35.969] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-13 23:02:35.969] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-13 23:02:35.969] Sending single newline to trigger prompt
+[2025-11-13 23:02:39.418] Detected prompt: 'eng-leaf-3#'
+[2025-11-13 23:02:39.418] Expect prompt set to: 'eng-leaf-3#'
+[2025-11-13 23:02:39.418] SSHClient Message: Executing command: 'terminal length 0,show inventory,,'
+[2025-11-13 23:02:39.418] Using shell mode for command execution with ANSI filtering
+[2025-11-13 23:02:39.423] Sending command 1/4: 'terminal length 0'
+[2025-11-13 23:02:39.423] Waiting between sub-commands: 1s
+[2025-11-13 23:02:40.425] Sending command 2/4: 'show inventory'
+[2025-11-13 23:02:40.425] Waiting between sub-commands: 1s
+[2025-11-13 23:02:41.426] Sending newline command 3/4
+[2025-11-13 23:02:41.426] Sending newline command 3/4
+[2025-11-13 23:02:41.426] Waiting between sub-commands: 1s
+[2025-11-13 23:02:41.992] Detected prompt: 'eng-leaf-3#'
+[2025-11-13 23:02:41.992] Expect prompt set to: 'eng-leaf-3#'
+[2025-11-13 23:02:41.992] SSHClient Message: Executing command: 'enable,terminal length 0,show inventory,,'
+[2025-11-13 23:02:41.992] Using shell mode for command execution with ANSI filtering
+[2025-11-13 23:02:41.992] Sending command 1/5: 'enable'
+[2025-11-13 23:02:41.994] Waiting between sub-commands: 1s
+[2025-11-13 23:02:42.429] Sending newline command 4/4
+[2025-11-13 23:02:42.429] Sending newline command 4/4
+[2025-11-13 23:02:42.429] Monitoring for EXACTLY 3 occurrences of: 'eng-leaf-3#'
+[2025-11-13 23:02:42.429] PROMPT DETECTED: 4/3
+[2025-11-13 23:02:42.429] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-13 23:02:42.429] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-13 23:02:42.429] Shell command execution completed
+[2025-11-13 23:02:42.429] Total shell command execution time: 3005.78ms
+[2025-11-13 23:02:42.429] SSHClient Message: Waiting between commands: 1s
+[2025-11-13 23:02:42.995] Sending command 2/5: 'terminal length 0'
+[2025-11-13 23:02:42.996] Waiting between sub-commands: 1s
+[2025-11-13 23:02:43.432] SSHClient Message: Command execution completed in 4014.28ms
+[2025-11-13 23:02:43.432] Disconnecting from device
+[2025-11-13 23:02:43.432] Successfully disconnected
+[2025-11-13 23:02:43.999] Sending command 3/5: 'show inventory'
+[2025-11-13 23:02:43.999] Waiting between sub-commands: 1s
+[2025-11-13 23:02:45.000] Sending newline command 4/5
+[2025-11-13 23:02:45.000] Sending newline command 4/5
+[2025-11-13 23:02:45.000] Waiting between sub-commands: 1s
+[2025-11-13 23:02:46.004] Sending newline command 5/5
+[2025-11-13 23:02:46.004] Sending newline command 5/5
+[2025-11-13 23:02:46.004] Monitoring for EXACTLY 4 occurrences of: 'eng-leaf-3#'
+[2025-11-13 23:02:46.004] PROMPT DETECTED: 5/4
+[2025-11-13 23:02:46.004] TARGET REACHED: 5 prompts detected. STOPPING NOW.
+[2025-11-13 23:02:46.004] SUCCESS: Command execution completed with 5/4 prompts
+[2025-11-13 23:02:46.004] Shell command execution completed
+[2025-11-13 23:02:46.004] Total shell command execution time: 4012.14ms
+[2025-11-13 23:02:46.004] SSHClient Message: Waiting between commands: 1s

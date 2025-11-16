@@ -1,0 +1,864 @@
+{% extends "base.html" %}
+
+{% block title %}{{ map_name }} - {{ site_name }} - Network Maps{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb Navigation -->
+<nav class="breadcrumb">
+    <a href="{{ url_for('maps.index') }}">🗺️ Network Maps</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{{ url_for('maps.site_maps', site_name=site_name) }}">{{ site_name }}</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">{{ map_name }}</span>
+</nav>
+
+<div class="map-header">
+    <div class="map-header-content">
+        <div class="map-title-section">
+            <h1>🗺️ {{ map_name }}</h1>
+            <div class="map-meta">
+                {% if map_data.created %}
+                <span class="meta-item">
+                    <i data-lucide="calendar" size="16"></i>
+                    {{ map_data.created.strftime('%Y-%m-%d %H:%M') }}
+                </span>
+                {% endif %}
+                {% if map_data.size_mb %}
+                <span class="meta-item">
+                    <i data-lucide="hard-drive" size="16"></i>
+                    {{ "%.1f"|format(map_data.size_mb) }} MB
+                </span>
+                {% endif %}
+                {% if map_data.device_count %}
+                <span class="meta-item">
+                    <i data-lucide="router" size="16"></i>
+                    {{ map_data.device_count }} devices
+                </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="map-actions">
+            <div class="download-group">
+                {% for ext, file_info in map_data.files.items() %}
+                <a href="{{ url_for('maps.download_map', site_name=site_name, map_name=map_name, format=ext.lstrip('.')) }}"
+                   class="md-button md-button-outlined download-btn"
+                   title="Download {{ ext.upper() }} ({{ (file_info.size_bytes / 1024 / 1024)|round(1) }}MB)">
+                    <i data-lucide="download" size="16"></i>
+                    {{ ext.upper().lstrip('.') }}
+                </a>
+                {% endfor %}
+            </div>
+
+            <div class="view-controls">
+                <button id="zoom-fit" class="md-button md-button-outlined" title="Fit to view">
+                    <i data-lucide="maximize" size="16"></i>
+                </button>
+                <button id="zoom-in" class="md-button md-button-outlined" title="Zoom in">
+                    <i data-lucide="zoom-in" size="16"></i>
+                </button>
+                <button id="zoom-out" class="md-button md-button-outlined" title="Zoom out">
+                    <i data-lucide="zoom-out" size="16"></i>
+                </button>
+                <button id="fullscreen-btn" class="md-button md-button-outlined" title="Toggle fullscreen">
+                    <i data-lucide="maximize-2" size="16"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Map Viewer -->
+<div class="map-viewer-container" id="map-container">
+    <div class="map-viewer" id="map-viewer">
+        {% if '.svg' in map_data.files %}
+        <div class="svg-container" id="svg-container">
+            <!-- Try multiple methods to load SVG -->
+            <img src="{{ url_for('maps.serve_svg', site_name=site_name, map_name=map_name) }}"
+                 class="network-map-svg"
+                 id="network-svg-img"
+                 alt="Network topology map"
+                 style="display: none;"
+                 onload="this.style.display='block'; document.getElementById('svg-fallback').style.display='none';"
+                 onerror="loadSvgFallback();">
+
+            <div id="svg-fallback" class="svg-fallback">
+                <div class="svg-loading">
+                    <div class="loading-spinner"></div>
+                    <p>Loading SVG...</p>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="no-svg-fallback">
+            <i data-lucide="file-x" size="48"></i>
+            <h3>No SVG Preview Available</h3>
+            <p>This map doesn't have an SVG file for preview.</p>
+            <div class="fallback-downloads">
+                {% for ext, file_info in map_data.files.items() %}
+                <a href="{{ url_for('maps.download_map', site_name=site_name, map_name=map_name, format=ext.lstrip('.')) }}"
+                   class="md-button md-button-filled">
+                    Download {{ ext.upper().lstrip('.') }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Zoom indicator -->
+    <div class="zoom-indicator" id="zoom-indicator">100%</div>
+
+    <!-- Map loading overlay -->
+    <div class="map-loading" id="map-loading">
+        <div class="loading-spinner"></div>
+        <p>Loading network topology...</p>
+    </div>
+</div>
+
+<!-- File Details Panel -->
+<div class="file-details-panel">
+    <h3>Available Files</h3>
+    <div class="file-grid">
+        {% for ext, file_info in map_data.files.items() %}
+        <div class="file-card">
+            <div class="file-icon">
+                {% if ext == '.svg' %}
+                <i data-lucide="image" size="24"></i>
+                {% elif ext == '.json' %}
+                <i data-lucide="code" size="24"></i>
+                {% elif ext == '.graphml' %}
+                <i data-lucide="share-2" size="24"></i>
+                {% elif ext == '.drawio' %}
+                <i data-lucide="pen-tool" size="24"></i>
+                {% else %}
+                <i data-lucide="file" size="24"></i>
+                {% endif %}
+            </div>
+            <div class="file-info">
+                <div class="file-type">{{ ext.upper().lstrip('.') }} File</div>
+                <div class="file-size">{{ (file_info.size_bytes / 1024 / 1024)|round(1) }} MB</div>
+                <div class="file-date">{{ file_info.created.strftime('%m/%d/%Y %H:%M') if file_info.created else 'Unknown' }}</div>
+            </div>
+            <div class="file-actions">
+                <a href="{{ url_for('maps.download_map', site_name=site_name, map_name=map_name, format=ext.lstrip('.')) }}"
+                   class="file-download-btn" title="Download">
+                    <i data-lucide="download" size="16"></i>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+/* Breadcrumb Navigation */
+.breadcrumb {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.breadcrumb a {
+    color: var(--md-primary);
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+.breadcrumb-separator {
+    color: var(--md-on-surface-variant);
+}
+
+.breadcrumb-current {
+    color: var(--md-on-surface);
+    font-weight: 500;
+}
+
+/* Map Header */
+.map-header {
+    background: var(--md-surface-container);
+    border: 1px solid var(--md-outline-variant);
+    border-radius: var(--md-shape-corner-medium);
+    padding: 24px;
+    margin-bottom: 20px;
+}
+
+.map-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+}
+
+.map-title-section h1 {
+    margin: 0 0 12px 0;
+    color: var(--md-on-surface);
+}
+
+.map-meta {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--md-on-surface-variant);
+    font-size: 14px;
+}
+
+.map-actions {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.download-group, .view-controls {
+    display: flex;
+    gap: 8px;
+}
+
+/* Map Viewer */
+.map-viewer-container {
+    position: relative;
+    background: var(--md-surface-container);
+    border: 1px solid var(--md-outline-variant);
+    border-radius: var(--md-shape-corner-medium);
+    overflow: hidden;
+    min-height: 600px;
+    margin-bottom: 24px;
+}
+
+.map-viewer {
+    width: 100%;
+    height: 600px;
+    position: relative;
+    overflow: hidden;
+    cursor: grab;
+}
+
+.map-viewer.dragging {
+    cursor: grabbing;
+}
+
+.svg-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform-origin: center center;
+    transition: transform 0.2s ease;
+}
+
+.network-map-svg {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border: none;
+}
+
+.svg-fallback {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.svg-loading {
+    text-align: center;
+    color: var(--md-on-surface-variant);
+}
+
+.no-svg-fallback, .svg-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    color: var(--md-on-surface-variant);
+}
+
+.no-svg-fallback h3, .svg-error h3 {
+    margin: 16px 0 8px 0;
+    color: var(--md-on-surface);
+}
+
+.fallback-downloads {
+    margin-top: 20px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* Zoom Controls */
+.zoom-indicator {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 8px 12px;
+    border-radius: var(--md-shape-corner-small);
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 10;
+}
+
+/* Loading Overlay */
+.map-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--md-surface-container);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--md-outline-variant);
+    border-top: 3px solid var(--md-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* File Details Panel */
+.file-details-panel {
+    background: var(--md-surface-container);
+    border: 1px solid var(--md-outline-variant);
+    border-radius: var(--md-shape-corner-medium);
+    padding: 24px;
+}
+
+.file-details-panel h3 {
+    margin: 0 0 16px 0;
+    color: var(--md-on-surface);
+}
+
+.file-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+}
+
+.file-card {
+    background: var(--md-surface);
+    border: 1px solid var(--md-outline-variant);
+    border-radius: var(--md-shape-corner-small);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s ease;
+}
+
+.file-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.file-icon {
+    color: var(--md-primary);
+    flex-shrink: 0;
+}
+
+.file-info {
+    flex: 1;
+}
+
+.file-type {
+    font-weight: 500;
+    color: var(--md-on-surface);
+    margin-bottom: 4px;
+}
+
+.file-size, .file-date {
+    font-size: 12px;
+    color: var(--md-on-surface-variant);
+}
+
+.file-actions {
+    flex-shrink: 0;
+}
+
+.file-download-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--md-shape-corner-small);
+    background: var(--md-surface-variant);
+    color: var(--md-on-surface-variant);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.file-download-btn:hover {
+    background: var(--md-primary);
+    color: var(--md-on-primary);
+}
+
+/* Button Styles */
+.md-button {
+    padding: 10px 16px;
+    border-radius: var(--md-shape-corner-small);
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.md-button-outlined {
+    background: transparent;
+    border: 1px solid var(--md-outline);
+    color: var(--md-primary);
+}
+
+.md-button-outlined:hover {
+    background: var(--md-surface-variant);
+}
+
+.md-button-filled {
+    background: var(--md-primary);
+    color: var(--md-on-primary);
+}
+
+.md-button-filled:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+/* Fullscreen Styles */
+.fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999 !important;
+    background: var(--md-surface-container) !important;
+}
+
+.fullscreen .map-viewer {
+    height: 100vh !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .map-header-content {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .map-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .download-group, .view-controls {
+        flex-wrap: wrap;
+    }
+
+    .map-viewer {
+        height: 400px;
+    }
+
+    .meta-item {
+        font-size: 12px;
+    }
+
+    .file-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .breadcrumb {
+        flex-wrap: wrap;
+    }
+
+    .map-actions {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .download-group, .view-controls {
+        justify-content: center;
+    }
+}
+</style>
+
+<script>
+let currentZoom = 1;
+let isPanning = false;
+let startPan = { x: 0, y: 0 };
+let currentPan = { x: 0, y: 0 };
+let lastWheelTime = 0;
+let accumulatedDelta = 0;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Lucide icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+
+    // Initialize map viewer
+    initMapViewer();
+
+    // Hide loading overlay after a delay
+    setTimeout(() => {
+        const loadingOverlay = document.getElementById('map-loading');
+        if (loadingOverlay) {
+            loadingOverlay.style.display = 'none';
+        }
+    }, 1000);
+});
+
+function loadSvgFallback() {
+    console.log('SVG image failed to load, trying iframe method...');
+    const svgContainer = document.getElementById('svg-container');
+    const fallbackDiv = document.getElementById('svg-fallback');
+
+    // Try loading with iframe as fallback
+    fallbackDiv.innerHTML = `
+        <iframe src="{{ url_for('maps.serve_svg', site_name=site_name, map_name=map_name) }}"
+                class="network-map-svg"
+                style="width: 100%; height: 100%; border: none;"
+                onload="console.log('SVG loaded via iframe');"
+                onerror="showSvgError();">
+        </iframe>
+    `;
+}
+
+function showSvgError() {
+    console.log('All SVG loading methods failed');
+    const fallbackDiv = document.getElementById('svg-fallback');
+    fallbackDiv.innerHTML = `
+        <div class="svg-error">
+            <i data-lucide="alert-circle" size="48"></i>
+            <h3>SVG Preview Unavailable</h3>
+            <p>Unable to load the SVG file for preview.</p>
+            <a href="{{ url_for('maps.download_map', site_name=site_name, map_name=map_name, format='svg') }}"
+               class="md-button md-button-filled">
+                Download SVG File
+            </a>
+        </div>
+    `;
+
+    // Re-initialize Lucide icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+function initMapViewer() {
+    const svgContainer = document.getElementById('svg-container');
+    const mapViewer = document.getElementById('map-viewer');
+
+    if (!svgContainer || !mapViewer) return;
+
+    // Check if SVG loaded after a timeout
+    setTimeout(() => {
+        const svgImg = document.getElementById('network-svg-img');
+        const fallback = document.getElementById('svg-fallback');
+
+        if (svgImg && svgImg.style.display === 'none' && fallback && fallback.style.display !== 'none') {
+            console.log('SVG still not loaded after timeout, checking server response...');
+
+            // Test if the SVG endpoint is working
+            fetch('{{ url_for("maps.serve_svg", site_name=site_name, map_name=map_name) }}')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.text();
+                })
+                .then(svgContent => {
+                    if (svgContent.includes('<svg')) {
+                        // SVG content exists, try direct injection
+                        console.log('SVG content found, injecting directly...');
+                        fallback.innerHTML = svgContent;
+
+                        // Apply styles to the injected SVG
+                        const svgElement = fallback.querySelector('svg');
+                        if (svgElement) {
+                            svgElement.style.width = '100%';
+                            svgElement.style.height = '100%';
+                            svgElement.style.maxWidth = '100%';
+                            svgElement.style.maxHeight = '100%';
+                        }
+                    } else {
+                        throw new Error('Invalid SVG content');
+                    }
+                })
+                .catch(error => {
+                    console.error('SVG loading error:', error);
+                    showSvgError();
+                });
+        }
+    }, 2000);
+
+    // Zoom controls
+    document.getElementById('zoom-in')?.addEventListener('click', () => zoomMap(1.2));
+    document.getElementById('zoom-out')?.addEventListener('click', () => zoomMap(0.8));
+    document.getElementById('zoom-fit')?.addEventListener('click', resetZoom);
+    document.getElementById('fullscreen-btn')?.addEventListener('click', toggleFullscreen);
+
+    // Pan functionality
+    mapViewer.addEventListener('mousedown', startPanning);
+    mapViewer.addEventListener('mousemove', doPanning);
+    mapViewer.addEventListener('mouseup', stopPanning);
+    mapViewer.addEventListener('mouseleave', stopPanning);
+
+    // Wheel zoom with smooth scaling
+    mapViewer.addEventListener('wheel', handleWheel, { passive: false });
+
+    // Touch support for mobile
+    mapViewer.addEventListener('touchstart', handleTouchStart, { passive: false });
+    mapViewer.addEventListener('touchmove', handleTouchMove, { passive: false });
+    mapViewer.addEventListener('touchend', handleTouchEnd);
+}
+
+// Improved zoom function with cursor position tracking
+function zoomMap(factor, cursorX = null, cursorY = null) {
+    const mapViewer = document.getElementById('map-viewer');
+    const svgContainer = document.getElementById('svg-container');
+
+    if (!mapViewer || !svgContainer) return;
+
+    const oldZoom = currentZoom;
+    currentZoom *= factor;
+    currentZoom = Math.max(0.1, Math.min(5, currentZoom)); // Limit zoom range
+
+    // If cursor position is provided, zoom towards that point
+    if (cursorX !== null && cursorY !== null) {
+        const rect = mapViewer.getBoundingClientRect();
+        const x = cursorX - rect.left;
+        const y = cursorY - rect.top;
+
+        // Calculate the point in the zoomed coordinate system
+        const pointX = (x - currentPan.x) / oldZoom;
+        const pointY = (y - currentPan.y) / oldZoom;
+
+        // Adjust pan to keep the point under the cursor
+        currentPan.x = x - pointX * currentZoom;
+        currentPan.y = y - pointY * currentZoom;
+    }
+
+    applyTransform();
+    updateZoomIndicator();
+}
+
+function resetZoom() {
+    currentZoom = 1;
+    currentPan = { x: 0, y: 0 };
+    applyTransform();
+    updateZoomIndicator();
+}
+
+function applyTransform() {
+    const svgContainer = document.getElementById('svg-container');
+    if (svgContainer) {
+        svgContainer.style.transform = `translate(${currentPan.x}px, ${currentPan.y}px) scale(${currentZoom})`;
+    }
+}
+
+function updateZoomIndicator() {
+    const indicator = document.getElementById('zoom-indicator');
+    if (indicator) {
+        indicator.textContent = `${Math.round(currentZoom * 100)}%`;
+    }
+}
+
+function startPanning(e) {
+    if (e.button === 0) { // Left mouse button
+        isPanning = true;
+        startPan = { x: e.clientX - currentPan.x, y: e.clientY - currentPan.y };
+        document.getElementById('map-viewer').classList.add('dragging');
+        e.preventDefault();
+    }
+}
+
+function doPanning(e) {
+    if (isPanning) {
+        currentPan = {
+            x: e.clientX - startPan.x,
+            y: e.clientY - startPan.y
+        };
+        applyTransform();
+        e.preventDefault();
+    }
+}
+
+function stopPanning() {
+    isPanning = false;
+    document.getElementById('map-viewer').classList.remove('dragging');
+}
+
+
+
+function handleWheel(e) {
+    e.preventDefault();
+
+    const now = Date.now();
+    const timeDelta = now - lastWheelTime;
+
+    // Reset accumulation if it's been more than 100ms since last wheel event
+    if (timeDelta > 100) {
+        accumulatedDelta = 0;
+    }
+
+    lastWheelTime = now;
+    accumulatedDelta += e.deltaY;
+
+    // Only zoom when accumulated delta exceeds threshold
+    // This smooths out trackpad gestures
+    const threshold = 50;
+
+    if (Math.abs(accumulatedDelta) >= threshold) {
+        // Reduce zoom factor for smoother feel (was 0.9/1.1, now 0.95/1.05)
+        const delta = accumulatedDelta > 0 ? 0.95 : 1.05;
+        zoomMap(delta, e.clientX, e.clientY);
+        accumulatedDelta = 0;
+    }
+}
+
+// Touch support
+let lastTouchDistance = 0;
+let touchCenter = { x: 0, y: 0 };
+
+function handleTouchStart(e) {
+    if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        startPanning({ button: 0, clientX: touch.clientX, clientY: touch.clientY, preventDefault: () => e.preventDefault() });
+    } else if (e.touches.length === 2) {
+        lastTouchDistance = getTouchDistance(e.touches);
+        touchCenter = getTouchCenter(e.touches);
+        e.preventDefault();
+    }
+}
+
+function handleTouchMove(e) {
+    if (e.touches.length === 1 && isPanning) {
+        const touch = e.touches[0];
+        doPanning({ clientX: touch.clientX, clientY: touch.clientY, preventDefault: () => e.preventDefault() });
+    } else if (e.touches.length === 2) {
+        const currentDistance = getTouchDistance(e.touches);
+        const scale = currentDistance / lastTouchDistance;
+        const center = getTouchCenter(e.touches);
+
+        zoomMap(scale, center.x, center.y);
+
+        lastTouchDistance = currentDistance;
+        touchCenter = center;
+        e.preventDefault();
+    }
+}
+
+function handleTouchEnd() {
+    stopPanning();
+    lastTouchDistance = 0;
+}
+
+function getTouchDistance(touches) {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+function getTouchCenter(touches) {
+    return {
+        x: (touches[0].clientX + touches[1].clientX) / 2,
+        y: (touches[0].clientY + touches[1].clientY) / 2
+    };
+}
+
+function toggleFullscreen() {
+    const container = document.getElementById('map-container');
+    const btn = document.getElementById('fullscreen-btn');
+    const icon = btn.querySelector('i');
+
+    if (container.classList.contains('fullscreen')) {
+        container.classList.remove('fullscreen');
+        icon.setAttribute('data-lucide', 'maximize-2');
+    } else {
+        container.classList.add('fullscreen');
+        icon.setAttribute('data-lucide', 'minimize-2');
+    }
+
+    // Re-initialize Lucide icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+    switch(e.key) {
+        case '=':
+        case '+':
+            e.preventDefault();
+            // Get viewport center for keyboard zoom
+            const mapViewer = document.getElementById('map-viewer');
+            if (mapViewer) {
+                const rect = mapViewer.getBoundingClientRect();
+                zoomMap(1.2, rect.left + rect.width / 2, rect.top + rect.height / 2);
+            }
+            break;
+        case '-':
+            e.preventDefault();
+            const viewer = document.getElementById('map-viewer');
+            if (viewer) {
+                const rect = viewer.getBoundingClientRect();
+                zoomMap(0.8, rect.left + rect.width / 2, rect.top + rect.height / 2);
+            }
+            break;
+        case '0':
+            e.preventDefault();
+            resetZoom();
+            break;
+        case 'f':
+        case 'F11':
+            e.preventDefault();
+            toggleFullscreen();
+            break;
+        case 'Escape':
+            const container = document.getElementById('map-container');
+            if (container.classList.contains('fullscreen')) {
+                toggleFullscreen();
+            }
+            break;
+    }
+});
+</script>
+{% endblock %}

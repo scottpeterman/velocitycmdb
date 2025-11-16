@@ -1,0 +1,16 @@
+# Complete fresh start (deletes EVERYTHING)
+velocitycmdb reset --yes
+
+# Initialize fresh databases
+velocitycmdb init
+
+# Start the web interface
+velocitycmdb start
+
+# Development mode
+python -m velocitycmdb.cli reset
+python -m velocitycmdb.cli init
+python -m velocitycmdb.cli start
+
+# Or with --yes to skip confirmation (careful!)
+python -m velocitycmdb.cli reset --yes

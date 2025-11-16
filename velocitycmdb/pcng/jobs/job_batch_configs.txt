@@ -1,0 +1,8 @@
+# configs Capture Jobs (All Vendors)
+# Generated: 2025-10-16T06:37:32.048478
+# Jobs: 4
+
+job_328_arista_configs.json
+job_329_cisco-ios_configs.json
+job_330_cisco-nxos_configs.json
+job_331_juniper_configs.json

@@ -1,0 +1,859 @@
+{% extends "base.html" %}
+
+{% block title %}Network Discovery Wizard - Anguis Network Management{% endblock %}
+
+{% block head_extra %}
+<style>
+    /* Wizard Container */
+    .wizard-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    /* Stepper */
+    .stepper {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 48px;
+        position: relative;
+    }
+
+    .stepper::before {
+        content: '';
+        position: absolute;
+        top: 24px;
+        left: 48px;
+        right: 48px;
+        height: 2px;
+        background: var(--md-outline-variant);
+        z-index: 0;
+    }
+
+    .step {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        z-index: 1;
+    }
+
+    .step-indicator {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: var(--md-surface);
+        border: 2px solid var(--md-outline-variant);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 8px;
+        transition: all 0.3s ease;
+        font: var(--md-typescale-title-medium);
+        color: var(--md-on-surface-variant);
+    }
+
+    .step.active .step-indicator {
+        background: var(--md-primary);
+        border-color: var(--md-primary);
+        color: var(--md-on-primary);
+    }
+
+    .step.completed .step-indicator {
+        background: var(--md-primary-container);
+        border-color: var(--md-primary);
+        color: var(--md-on-primary-container);
+    }
+
+    .step-label {
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-surface-variant);
+        text-align: center;
+    }
+
+    .step.active .step-label {
+        color: var(--md-on-surface);
+        font-weight: 500;
+    }
+
+    /* Step Content */
+    .step-content {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .step-content.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Card Styling */
+    .wizard-card {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .card-header {
+        padding: 24px;
+        border-bottom: 1px solid var(--md-outline-variant);
+        background: var(--md-surface-container-low);
+    }
+
+    .card-header h3 {
+        margin: 0 0 8px 0;
+        font: var(--md-typescale-headline-small);
+        color: var(--md-on-surface);
+    }
+
+    .card-header p {
+        margin: 0;
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-surface-variant);
+    }
+
+    .card-content {
+        padding: 24px;
+    }
+
+    .card-actions {
+        padding: 16px 24px;
+        border-top: 1px solid var(--md-outline-variant);
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    /* Form Grid */
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        margin-bottom: 24px;
+    }
+
+    .form-grid.single {
+        grid-template-columns: 1fr;
+    }
+
+    /* Form Fields */
+    .form-field {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-field label {
+        font: var(--md-typescale-body-small);
+        color: var(--md-on-surface);
+        margin-bottom: 8px;
+        font-weight: 500;
+    }
+
+    .form-field input,
+    .form-field select {
+        padding: 12px 16px;
+        font: var(--md-typescale-body-large);
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline);
+        border-radius: 8px;
+        color: var(--md-on-surface);
+        transition: border-color 0.2s ease;
+    }
+
+    .form-field input:focus,
+    .form-field select:focus {
+        outline: none;
+        border-color: var(--md-primary);
+        border-width: 2px;
+        padding: 11px 15px;
+    }
+
+    .form-field input::placeholder {
+        color: var(--md-on-surface-variant);
+        opacity: 0.6;
+    }
+
+    .required-mark {
+        color: var(--md-error);
+        margin-left: 4px;
+    }
+
+    .field-hint {
+        font: var(--md-typescale-body-small);
+        color: var(--md-on-surface-variant);
+        margin-top: 4px;
+    }
+
+    /* Progress Display */
+    .progress-container {
+        margin: 24px 0;
+    }
+
+    .progress-bar {
+        height: 8px;
+        background: var(--md-surface-container-highest);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 16px;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: var(--md-primary);
+        transition: width 0.3s ease;
+        width: 0%;
+    }
+
+    .progress-text {
+        display: flex;
+        justify-content: space-between;
+        font: var(--md-typescale-body-small);
+        color: var(--md-on-surface-variant);
+        margin-bottom: 16px;
+    }
+
+    .progress-details {
+        padding: 16px;
+        background: var(--md-surface-container);
+        border-radius: 8px;
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-surface);
+    }
+
+    /* Activity Log */
+    .activity-log {
+        max-height: 300px;
+        overflow-y: auto;
+        background: var(--md-surface-container);
+        border-radius: 8px;
+        padding: 16px;
+        font-family: 'Roboto Mono', monospace;
+        font-size: 12px;
+        margin-top: 16px;
+    }
+
+    .log-entry {
+        margin-bottom: 8px;
+        color: var(--md-on-surface-variant);
+    }
+
+    .log-entry.success {
+        color: var(--md-tertiary);
+    }
+
+    .log-entry.error {
+        color: var(--md-error);
+    }
+
+    /* Results Grid */
+    .results-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin: 24px 0;
+    }
+
+    .result-stat {
+        padding: 24px;
+        background: var(--md-primary-container);
+        border-radius: 12px;
+        text-align: center;
+    }
+
+    .stat-value {
+        font: var(--md-typescale-display-medium);
+        color: var(--md-on-primary-container);
+        font-weight: 500;
+        margin-bottom: 8px;
+    }
+
+    .stat-label {
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-primary-container);
+        opacity: 0.8;
+    }
+
+    .result-stat.success {
+        background: var(--md-tertiary-container);
+    }
+
+    .result-stat.success .stat-value,
+    .result-stat.success .stat-label {
+        color: var(--md-on-tertiary-container);
+    }
+
+    .result-stat.warning {
+        background: var(--md-error-container);
+    }
+
+    .result-stat.warning .stat-value,
+    .result-stat.warning .stat-label {
+        color: var(--md-on-error-container);
+    }
+
+    /* Failed Devices Table */
+    .failed-devices {
+        margin-top: 24px;
+        background: var(--md-surface-container);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .failed-devices-header {
+        padding: 16px;
+        background: var(--md-error-container);
+        color: var(--md-on-error-container);
+        font: var(--md-typescale-title-small);
+    }
+
+    .failed-devices-table {
+        width: 100%;
+    }
+
+    .failed-devices-table th {
+        text-align: left;
+        padding: 12px 16px;
+        font: var(--md-typescale-body-small);
+        color: var(--md-on-surface-variant);
+        font-weight: 500;
+        border-bottom: 1px solid var(--md-outline-variant);
+    }
+
+    .failed-devices-table td {
+        padding: 12px 16px;
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-surface);
+        border-bottom: 1px solid var(--md-outline-variant);
+    }
+
+    .failed-devices-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Info Box */
+    .info-box {
+        padding: 16px;
+        background: var(--md-secondary-container);
+        border-radius: 8px;
+        border-left: 4px solid var(--md-secondary);
+        margin: 24px 0;
+    }
+
+    .info-box-title {
+        font: var(--md-typescale-title-small);
+        color: var(--md-on-secondary-container);
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .info-box-content {
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-secondary-container);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .stepper {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .stepper::before {
+            display: none;
+        }
+
+        .step {
+            flex-direction: row;
+            gap: 16px;
+            width: 100%;
+        }
+
+        .card-actions {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wizard-container">
+    <!-- Page Header -->
+    <div style="margin-bottom: 32px;">
+        <h1 style="font: var(--md-typescale-display-small); color: var(--md-on-surface); margin: 0 0 8px 0;">
+            Network Discovery Wizard
+        </h1>
+        <p style="font: var(--md-typescale-body-large); color: var(--md-on-surface-variant); margin: 0;">
+            Discover your network topology and identify all devices
+        </p>
+    </div>
+
+    <!-- Stepper -->
+    <div class="stepper">
+        <div class="step active" data-step="1">
+            <div class="step-indicator">1</div>
+            <div class="step-label">Network Discovery</div>
+        </div>
+        <div class="step" data-step="2">
+            <div class="step-indicator">2</div>
+            <div class="step-label">Device Fingerprinting</div>
+        </div>
+        <div class="step" data-step="3">
+            <div class="step-indicator">3</div>
+            <div class="step-label">Complete</div>
+        </div>
+    </div>
+
+    <!-- Step 1: Discovery -->
+    <div id="step1" class="step-content active">
+        <div class="wizard-card">
+            <div class="card-header">
+                <h3>Network Discovery</h3>
+                <p>Crawl your network using CDP/LLDP to discover all connected devices</p>
+            </div>
+            <form id="discoveryForm">
+                <div class="card-content">
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label>Seed Device IP<span class="required-mark">*</span></label>
+                            <input type="text" id="seed_ip" name="seed_ip" placeholder="10.0.0.1" required
+                                   pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$">
+                            <span class="field-hint">Starting point for discovery crawl</span>
+                        </div>
+                        <div class="form-field">
+                            <label>Site Name<span class="required-mark">*</span></label>
+                            <input type="text" id="site_name" name="site_name" placeholder="datacenter1" required
+                                   pattern="^[a-zA-Z0-9_\-]+$" value="network">
+                            <span class="field-hint">Identifier for this location</span>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label>Username<span class="required-mark">*</span></label>
+                            <input type="text" id="username" name="username" placeholder="admin" required>
+                            <span class="field-hint">SSH authentication username</span>
+                        </div>
+                        <div class="form-field">
+                            <label>Password<span class="required-mark">*</span></label>
+                            <input type="password" id="password" name="password" placeholder="••••••••" required>
+                            <span class="field-hint">SSH authentication password</span>
+                        </div>
+                    </div>
+
+                    <div class="info-box">
+                        <div class="info-box-title">
+                            <i data-lucide="info" size="20"></i>
+                            What happens next?
+                        </div>
+                        <div class="info-box-content">
+                            VelocityCMDB will connect to your seed device, gather CDP/LLDP neighbor information,
+                            and recursively discover all connected devices. This typically takes 2-5 minutes for
+                            a small network (10-20 devices).
+                        </div>
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <button type="button" class="md-button md-button-text" onclick="window.location.href='{{ url_for('dashboard.index') }}'">
+                        Cancel
+                    </button>
+                    <button type="submit" class="md-button md-button-filled">
+                        <i data-lucide="play" size="16"></i>
+                        Start Discovery
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Step 1 Progress -->
+    <div id="step1-progress" class="step-content">
+        <div class="wizard-card">
+            <div class="card-header">
+                <h3>Discovery in Progress...</h3>
+                <p>Crawling network topology via CDP/LLDP</p>
+            </div>
+            <div class="card-content">
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div id="discovery-progress-fill" class="progress-fill"></div>
+                    </div>
+                    <div class="progress-text">
+                        <span id="discovery-status">Initializing...</span>
+                        <span id="discovery-percent">0%</span>
+                    </div>
+                    <div id="discovery-details" class="progress-details"></div>
+                </div>
+                <div id="discovery-log" class="activity-log"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 2: Fingerprinting -->
+    <div id="step2" class="step-content">
+        <div class="wizard-card">
+            <div class="card-header">
+                <h3>Device Fingerprinting</h3>
+                <p>Identify exact device models, OS versions, and serial numbers</p>
+            </div>
+            <div class="card-content">
+                <div id="fingerprint-summary" class="results-grid" style="margin-bottom: 24px;">
+                    <div class="result-stat">
+                        <div class="stat-value" id="devices-found">0</div>
+                        <div class="stat-label">Devices Discovered</div>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <div class="info-box-title">
+                        <i data-lucide="fingerprint" size="20"></i>
+                        Device Identification Process
+                    </div>
+                    <div class="info-box-content">
+                        VelocityCMDB will SSH to each discovered device, run "show version", and parse the output
+                        to identify exact platforms (cisco_ios, arista_eos, etc.), hardware models, serial numbers,
+                        and detect stacked devices. This takes about 10-15 seconds per device.
+                    </div>
+                </div>
+            </div>
+            <div class="card-actions">
+                <button type="button" class="md-button md-button-text" onclick="showStep(1)">
+                    Back
+                </button>
+                <button type="button" id="start-fingerprint" class="md-button md-button-filled">
+                    <i data-lucide="fingerprint" size="16"></i>
+                    Start Fingerprinting
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 2 Progress -->
+    <div id="step2-progress" class="step-content">
+        <div class="wizard-card">
+            <div class="card-header">
+                <h3>Fingerprinting Devices...</h3>
+                <p>Identifying platforms and gathering hardware details</p>
+            </div>
+            <div class="card-content">
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div id="fingerprint-progress-fill" class="progress-fill"></div>
+                    </div>
+                    <div class="progress-text">
+                        <span id="fingerprint-status">Initializing...</span>
+                        <span id="fingerprint-percent">0%</span>
+                    </div>
+                    <div id="fingerprint-details" class="progress-details"></div>
+                </div>
+                <div id="fingerprint-log" class="activity-log"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 3: Complete -->
+    <div id="step3" class="step-content">
+        <div class="wizard-card">
+            <div class="card-header">
+                <h3>Discovery Complete! 🎉</h3>
+                <p>Your network has been successfully discovered and cataloged</p>
+            </div>
+            <div class="card-content">
+                <div class="results-grid">
+                    <div class="result-stat success">
+                        <div class="stat-value" id="final-devices">0</div>
+                        <div class="stat-label">Devices Fingerprinted</div>
+                    </div>
+                    <div class="result-stat success">
+                        <div class="stat-value" id="final-loaded">0</div>
+                        <div class="stat-label">Loaded to Database</div>
+                    </div>
+                    <div class="result-stat warning" id="failed-stat" style="display: none;">
+                        <div class="stat-value" id="final-failed">0</div>
+                        <div class="stat-label">Failed Devices</div>
+                    </div>
+                </div>
+
+                <div id="failed-devices-section" class="failed-devices" style="display: none;">
+                    <div class="failed-devices-header">
+                        Failed Devices
+                    </div>
+                    <table class="failed-devices-table">
+                        <thead>
+                            <tr>
+                                <th>Device Name</th>
+                                <th>IP Address</th>
+                                <th>Error</th>
+                            </tr>
+                        </thead>
+                        <tbody id="failed-devices-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-actions">
+                <button type="button" class="md-button md-button-outlined" onclick="location.reload()">
+                    <i data-lucide="refresh-cw" size="16"></i>
+                    New Discovery
+                </button>
+                <button type="button" class="md-button md-button-filled" onclick="window.location.href='/assets/devices'">
+                    <i data-lucide="database" size="16"></i>
+                    View Devices
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SocketIO -->
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+<script>
+// Initialize
+const socket = io();
+let currentDiscoveryJobId = null;
+let currentFingerprintJobId = null;
+
+// Step management
+function showStep(stepNum) {
+    // Hide all steps
+    document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
+
+    // Update stepper
+    document.querySelectorAll('.step').forEach(el => {
+        const num = parseInt(el.dataset.step);
+        el.classList.remove('active', 'completed');
+        if (num < stepNum) el.classList.add('completed');
+        if (num === stepNum) el.classList.add('active');
+    });
+
+    // Show appropriate content
+    if (stepNum === 1) {
+        document.getElementById('step1').classList.add('active');
+    } else if (stepNum === 2) {
+        document.getElementById('step2').classList.add('active');
+    } else if (stepNum === 3) {
+        document.getElementById('step3').classList.add('active');
+    }
+
+    // Re-render icons
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+// Discovery form submission
+document.getElementById('discoveryForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const data = {
+        seed_ip: formData.get('seed_ip'),
+        site_name: formData.get('site_name'),
+        username: formData.get('username'),
+        password: formData.get('password')
+    };
+
+    // Show progress
+    document.getElementById('step1').classList.remove('active');
+    document.getElementById('step1-progress').classList.add('active');
+
+    try {
+        const response = await fetch('/discovery/start', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            currentDiscoveryJobId = result.job_id;
+            addLog('discovery-log', `Discovery started for ${data.site_name}`, 'success');
+        } else {
+            throw new Error(result.error);
+        }
+    } catch (error) {
+        alert('Failed to start discovery: ' + error.message);
+        showStep(1);
+    }
+});
+
+// Discovery progress
+socket.on('discovery_progress', function(data) {
+    if (data.job_id !== currentDiscoveryJobId) return;
+
+    const progress = data.progress || 0;
+    document.getElementById('discovery-progress-fill').style.width = progress + '%';
+    document.getElementById('discovery-percent').textContent = Math.round(progress) + '%';
+    document.getElementById('discovery-status').textContent = data.message || '';
+
+    if (data.message) {
+        addLog('discovery-log', data.message);
+    }
+
+    // Update device count
+    const detailsDiv = document.getElementById('discovery-details');
+    if (detailsDiv) {
+        let deviceCount = 0;
+
+        // Try to get from data first
+        if (data.devices_found !== undefined) {
+            deviceCount = data.devices_found;
+        } else {
+            // Parse from log messages
+            const logDiv = document.getElementById('discovery-log');
+            if (logDiv) {
+                const entries = logDiv.querySelectorAll('.log-entry');
+                deviceCount = Array.from(entries).filter(entry =>
+                    entry.textContent.includes('Discovered device:')
+                ).length;
+            }
+        }
+
+        const stage = data.stage || 'discovery';
+        detailsDiv.textContent = `Stage: ${stage} | Devices found: ${deviceCount}`;
+    }
+});
+
+// Discovery complete
+socket.on('discovery_complete', function(data) {
+    if (data.job_id !== currentDiscoveryJobId) return;
+
+    console.log('Discovery complete, advancing to fingerprinting:', data);
+
+    // Store inventory_file for fingerprinting
+    // Can't store in Flask session from background thread, so store in JS
+    window.discoveryInventoryFile = data.inventory_file;
+
+    document.getElementById('devices-found').textContent = data.device_count || 0;
+
+    // Small delay to let user see completion
+    setTimeout(function() {
+        showStep(2);
+    }, 1000);
+});
+
+// Discovery failed
+socket.on('discovery_failed', function(data) {
+    if (data.job_id !== currentDiscoveryJobId) return;
+
+    alert('Discovery failed: ' + data.error);
+    showStep(1);
+});
+
+// Start fingerprinting
+document.getElementById('start-fingerprint').addEventListener('click', async function() {
+    this.disabled = true;
+
+    document.getElementById('step2').classList.remove('active');
+    document.getElementById('step2-progress').classList.add('active');
+
+    try {
+        const response = await fetch(`/discovery/fingerprint/${currentDiscoveryJobId}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                inventory_file: window.discoveryInventoryFile  // Send inventory file path
+            })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            currentFingerprintJobId = result.fingerprint_job_id;
+            addLog('fingerprint-log', 'Fingerprinting started', 'success');
+        } else {
+            throw new Error(result.error);
+        }
+    } catch (error) {
+        alert('Failed to start fingerprinting: ' + error.message);
+        showStep(2);
+        this.disabled = false;
+    }
+});
+
+// Fingerprint progress
+socket.on('fingerprint_progress', function(data) {
+    if (data.job_id !== currentFingerprintJobId) return;
+
+    const progress = data.progress || 0;
+    document.getElementById('fingerprint-progress-fill').style.width = progress + '%';
+    document.getElementById('fingerprint-percent').textContent = Math.round(progress) + '%';
+    document.getElementById('fingerprint-status').textContent = data.message || '';
+
+    if (data.message) {
+        addLog('fingerprint-log', data.message);
+    }
+
+    if (data.current_device) {
+        document.getElementById('fingerprint-details').textContent =
+            `Current: ${data.current_device} | Progress: ${data.devices_completed || 0}/${data.devices_total || 0}`;
+    }
+});
+
+// Fingerprint complete
+socket.on('fingerprint_complete', function(data) {
+    if (data.job_id !== currentFingerprintJobId) return;
+
+    document.getElementById('final-devices').textContent = data.fingerprinted || 0;
+    document.getElementById('final-loaded').textContent = data.loaded_to_db || 0;
+
+    if (data.failed > 0) {
+        document.getElementById('final-failed').textContent = data.failed;
+        document.getElementById('failed-stat').style.display = 'block';
+
+        if (data.failed_devices && data.failed_devices.length > 0) {
+            showFailedDevices(data.failed_devices);
+        }
+    }
+
+    showStep(3);
+});
+
+// Fingerprint error
+socket.on('fingerprint_error', function(data) {
+    if (data.job_id !== currentFingerprintJobId) return;
+
+    alert('Fingerprinting failed: ' + data.error);
+    showStep(2);
+    document.getElementById('start-fingerprint').disabled = false;
+});
+
+// Helper functions
+function addLog(logId, message, type = 'info') {
+    const log = document.getElementById(logId);
+    const entry = document.createElement('div');
+    entry.className = 'log-entry ' + type;
+    entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
+}
+
+function showFailedDevices(devices) {
+    const tbody = document.getElementById('failed-devices-tbody');
+    tbody.innerHTML = '';
+
+    devices.forEach(device => {
+        const row = tbody.insertRow();
+        row.insertCell(0).textContent = device.name || '-';
+        row.insertCell(1).textContent = device.ip || '-';
+        row.insertCell(2).textContent = device.error || 'Unknown error';
+    });
+
+    document.getElementById('failed-devices-section').style.display = 'block';
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+});
+</script>
+{% endblock %}

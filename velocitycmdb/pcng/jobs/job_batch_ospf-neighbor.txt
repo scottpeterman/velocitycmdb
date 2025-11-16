@@ -1,0 +1,8 @@
+# ospf-neighbor Capture Jobs (All Vendors)
+# Generated: 2025-10-16T06:37:32.049629
+# Jobs: 4
+
+job_368_arista_ospf-neighbor.json
+job_369_cisco-ios_ospf-neighbor.json
+job_370_cisco-nxos_ospf-neighbor.json
+job_371_juniper_ospf-neighbor.json

@@ -1,0 +1,444 @@
+{% extends "base.html" %}
+
+{% block title %}{{ note.title }} - Notes{% endblock %}
+
+{% block head_extra %}
+<!-- Prism.js for syntax highlighting -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+
+<style>
+    .note-detail-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .note-header {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .note-header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 16px;
+    }
+
+    .note-title {
+        font: var(--md-typescale-headline-large);
+        margin: 0 0 8px 0;
+    }
+
+    .note-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .note-meta {
+        display: flex;
+        gap: 24px;
+        flex-wrap: wrap;
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-surface-variant);
+    }
+
+    .note-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .note-type-badge {
+        padding: 4px 12px;
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-label-medium);
+        font-weight: 500;
+    }
+
+    .note-type-site { background: var(--md-primary-container); color: var(--md-on-primary-container); }
+    .note-type-device { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
+    .note-type-kb { background: var(--md-tertiary-container); color: var(--md-on-tertiary-container); }
+    .note-type-incident { background: #ffeaa7; color: #2d3436; }
+    .note-type-maintenance { background: #74b9ff; color: #2d3436; }
+    .note-type-general { background: var(--md-surface-container-highest); color: var(--md-on-surface); }
+
+    .note-content-card {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        padding: 32px;
+        margin-bottom: 24px;
+        line-height: 1.6;
+    }
+
+    /* Rich content styling */
+    .note-content-card h1,
+    .note-content-card h2,
+    .note-content-card h3 {
+        margin-top: 1.5em;
+        margin-bottom: 0.5em;
+        font-weight: 600;
+    }
+
+    .note-content-card h1 { font-size: 2em; }
+    .note-content-card h2 { font-size: 1.5em; }
+    .note-content-card h3 { font-size: 1.25em; }
+
+    .note-content-card ul,
+    .note-content-card ol {
+        margin: 1em 0;
+        padding-left: 2em;
+    }
+
+    .note-content-card table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1.5em 0;
+    }
+
+    .note-content-card table th,
+    .note-content-card table td {
+        border: 1px solid var(--md-outline-variant);
+        padding: 12px;
+        text-align: left;
+    }
+
+    .note-content-card table th {
+        background: var(--md-surface-container-high);
+        font-weight: 600;
+    }
+
+    .note-content-card img {
+        max-width: 100%;
+        height: auto;
+        border-radius: var(--md-shape-corner-small);
+        margin: 1em 0;
+    }
+
+    .note-content-card pre {
+        background: #2d2d2d;
+        border-radius: var(--md-shape-corner-small);
+        padding: 1em;
+        overflow-x: auto;
+        margin: 1.5em 0;
+    }
+
+    .note-content-card code {
+        background: var(--md-surface-container-high);
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        font-size: 0.9em;
+    }
+
+    .note-content-card pre code {
+        background: transparent;
+        padding: 0;
+    }
+
+    .note-tags {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+    }
+
+    .note-tag {
+        background: var(--md-surface-container-high);
+        padding: 6px 12px;
+        border-radius: 16px;
+        font: var(--md-typescale-label-medium);
+        text-decoration: none;
+        color: var(--md-on-surface);
+    }
+
+    .note-tag:hover {
+        background: var(--md-surface-container-highest);
+    }
+
+    .md-button {
+        padding: 10px 24px;
+        border-radius: 20px;
+        border: none;
+        cursor: pointer;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .md-button-filled {
+        background: var(--md-primary);
+        color: var(--md-on-primary);
+    }
+
+    .md-button-outlined {
+        background: transparent;
+        border: 1px solid var(--md-outline);
+        color: var(--md-on-surface);
+    }
+
+    .md-button:hover {
+        opacity: 0.9;
+    }
+
+    .internal-link {
+        color: var(--md-primary);
+        text-decoration: none;
+        border-bottom: 1px solid var(--md-primary);
+        padding: 2px 4px;
+        border-radius: 3px;
+        transition: background 0.2s;
+    }
+
+    .internal-link:hover {
+        background: var(--md-primary-container);
+    }
+
+    .broken-link {
+        color: var(--md-error);
+        text-decoration: line-through;
+        cursor: help;
+        padding: 2px 4px;
+    }
+
+    /* Prism theme adjustments */
+    .note-content-card pre[class*="language-"] {
+        margin: 1.5em 0;
+    }
+
+    /* Line numbers */
+    .line-numbers .line-numbers-rows {
+        border-right: 1px solid #4a4a4a;
+    }
+
+    .attachments-section {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .attachments-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 16px;
+        margin-top: 16px;
+    }
+
+    .attachment-card {
+        background: var(--md-surface-container);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-small);
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .attachment-preview {
+        width: 100%;
+        height: 120px;
+        object-fit: cover;
+        border-radius: var(--md-shape-corner-small);
+        background: var(--md-surface-container-high);
+    }
+
+    .attachment-info {
+        font: var(--md-typescale-body-small);
+        color: var(--md-on-surface-variant);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="note-detail-container">
+    <div class="note-header">
+        <div class="note-header-top">
+            <div>
+                <h1 class="note-title">{{ note.title }}</h1>
+                <div class="note-tags">
+                    {% for tag in tags %}
+                    <a href="{{ url_for('notes.index', tag=tag) }}" class="note-tag">
+                        <i data-lucide="tag" size="14"></i>
+                        {{ tag }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="note-actions">
+                <a href="{{ url_for('notes.edit', note_id=note.id) }}"
+                   class="md-button md-button-filled">
+                    <i data-lucide="edit" size="16"></i>
+                    Edit
+                </a>
+                <button type="button" onclick="exportNote()" class="md-button md-button-outlined">
+                    <i data-lucide="download" size="16"></i>
+                    Export
+                </button>
+                <form method="POST" action="{{ url_for('notes.delete', note_id=note.id) }}"
+                      style="display: inline;"
+                      onsubmit="return confirm('Delete this note? This action cannot be undone.');">
+                    <button type="submit" class="md-button md-button-outlined"
+                            style="color: var(--md-error); border-color: var(--md-error);">
+                        <i data-lucide="trash-2" size="16"></i>
+                        Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="note-meta">
+            <div class="note-meta-item">
+                <span class="note-type-badge note-type-{{ note.note_type }}">
+                    {{ note.note_type|title }}
+                </span>
+            </div>
+            <div class="note-meta-item">
+                <i data-lucide="calendar" size="16"></i>
+                Created: {{ note.created_at[:19] }}
+            </div>
+            <div class="note-meta-item">
+                <i data-lucide="clock" size="16"></i>
+                Updated: {{ note.updated_at[:19] }}
+            </div>
+            {% if note.created_by %}
+            <div class="note-meta-item">
+                <i data-lucide="user" size="16"></i>
+                {{ note.created_by }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="note-content-card">
+        {{ note.content|safe }}
+    </div>
+
+    {% if attachments %}
+    <div class="attachments-section">
+        <h2 style="margin: 0 0 16px 0;">
+            <i data-lucide="paperclip" size="20"></i>
+            Attachments
+        </h2>
+        <div class="attachments-grid">
+            {% for attachment in attachments %}
+            <div class="attachment-card">
+                {% if attachment.content_type.startswith('image/') %}
+                    <img src="{{ url_for('notes.serve_attachment', attachment_id=attachment.id) }}"
+                         alt="{{ attachment.filename }}"
+                         class="attachment-preview">
+                {% else %}
+                    <div class="attachment-preview" style="display: flex; align-items: center; justify-content: center;">
+                        <i data-lucide="file" size="48" style="color: var(--md-on-surface-variant);"></i>
+                    </div>
+                {% endif %}
+                <div class="attachment-info">
+                    <strong>{{ attachment.filename }}</strong><br>
+                    {{ (attachment.file_size / 1024)|round(1) }} KB
+                </div>
+                <a href="{{ url_for('notes.serve_attachment', attachment_id=attachment.id) }}"
+                   class="md-button md-button-outlined"
+                   style="padding: 6px 12px; font-size: 0.875rem;"
+                   download>
+                    <i data-lucide="download" size="14"></i>
+                    Download
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if associations %}
+    <div class="note-header">
+        <h2 style="margin: 0 0 16px 0;">
+            <i data-lucide="link" size="20"></i>
+            Associated With
+        </h2>
+        {% for assoc in associations %}
+<div style="padding: 12px; background: var(--md-surface-container-low); border-radius: 8px; margin-bottom: 8px;">
+    {% if assoc.entity_type == 'device' %}
+    <i data-lucide="server" size="16"></i>
+    <a href="{{ url_for('assets.device_detail', device_id=assoc.entity_id) }}"
+       style="color: var(--md-primary); font-weight: 500;">
+        Device: {{ assoc.entity_name }} <span style="color: var(--md-on-surface-variant);">({{ assoc.entity_id }})</span>
+    </a>
+    {% elif assoc.entity_type == 'site' %}
+    <i data-lucide="building" size="16"></i>
+    <a href="{{ url_for('sites.detail', code=assoc.entity_id) }}"
+       style="color: var(--md-primary); font-weight: 500;">
+        Site: {{ assoc.entity_name }} <span style="color: var(--md-on-surface-variant);">({{ assoc.entity_id }})</span>
+    </a>
+    {% endif %}
+</div>
+{% endfor %}
+    </div>
+    {% endif %}
+
+    <div style="margin-top: 24px;">
+        <a href="{{ url_for('notes.index') }}" class="md-button md-button-outlined">
+            <i data-lucide="arrow-left" size="16"></i>
+            Back to Notes
+        </a>
+    </div>
+</div>
+
+<!-- Prism.js with language support -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize Lucide icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+
+    // Apply syntax highlighting to all code blocks
+    Prism.highlightAll();
+
+    // Add line numbers to code blocks
+    document.querySelectorAll('pre code').forEach((block) => {
+        block.parentElement.classList.add('line-numbers');
+    });
+});
+
+    function exportNote() {
+    // Simple markdown export
+    const title = {{ note.title|tojson|safe }};
+    const noteType = {{ note.note_type|tojson|safe }};
+    const createdAt = {{ note.created_at[:19]|tojson|safe }};
+    const content = document.querySelector('.note-content-card').innerText;
+    const tags = {{ tags|tojson|safe }};
+
+    let markdown = `# ${title}\n\n`;
+    markdown += `**Type:** ${noteType}\n`;
+    markdown += `**Created:** ${createdAt}\n`;
+    if (tags.length > 0) {
+        markdown += `**Tags:** ${tags.join(', ')}\n`;
+    }
+    markdown += `\n---\n\n${content}`;
+
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,380 @@
+# config.yaml - VelocityCMDB Configuration
+#
+# Place this file in the root of your VelocityCMDB project directory
+# Environment variables will override these settings
+
+# ==============================================================================
+# AUTHENTICATION CONFIGURATION
+# ==============================================================================
+# VelocityCMDB supports three authentication backends:
+# 1. Database - Local SQLite database (best for small teams)
+# 2. Local OS - Windows/Linux system authentication
+# 3. LDAP/AD - Enterprise directory services
+#
+# Multiple backends can be enabled simultaneously.
+# Users select their preferred method at login.
+# ==============================================================================
+
+authentication:
+  # -----------------------------------------------------------------------------
+  # Default Authentication Method
+  # -----------------------------------------------------------------------------
+  # Which method is selected by default in the login dropdown
+  # Options: "database", "local", "ldap"
+  default_method: "database"
+
+  # -----------------------------------------------------------------------------
+  # SSH Fallback for Linux (Local Authentication)
+  # -----------------------------------------------------------------------------
+  # If PAM authentication is unavailable on Linux, fall back to SSH
+  use_ssh_fallback: true
+  ssh_host: "localhost"          # SSH server for authentication
+
+  # =============================================================================
+  # DATABASE AUTHENTICATION
+  # =============================================================================
+  # Local SQLite database with bcrypt password hashing
+  #
+  # Best for:
+  # - Small teams (< 50 users)
+  # - Development environments
+  # - When LDAP/AD is not available
+  #
+  # Features:
+  # - User management via admin UI
+  # - Self-service password changes
+  # - Role-based access control
+  # - Password hashing with bcrypt
+  #
+  # Requirements:
+  # - bcrypt Python package (installed with velocitycmdb)
+  # =============================================================================
+  database:
+    enabled: true                # Enable database authentication
+
+    # Database file path
+    # Recommended: Use home directory path (expands ~)
+    path: "~/.velocitycmdb/data/users.db"
+
+    # Alternative path options:
+    # path: "/var/lib/velocitycmdb/users.db"    # System-wide installation
+    # path: "data/users.db"                      # Relative to project root
+    # path: "/mnt/shared/velocitycmdb/users.db" # Network storage
+
+  # =============================================================================
+  # LOCAL OS AUTHENTICATION
+  # =============================================================================
+  # Authenticate against Windows or Linux/Unix system accounts
+  #
+  # Best for:
+  # - Single-server deployments
+  # - Development environments
+  # - When users already have system accounts
+  #
+  # Windows Features:
+  # - Authenticates via win32security
+  # - Supports domain accounts
+  # - Syncs Windows groups
+  #
+  # Linux/Unix Features:
+  # - Authenticates via PAM (preferred) or SSH fallback
+  # - Syncs system groups from /etc/group
+  # - Works with local and NIS/LDAP-backed system accounts
+  #
+  # Requirements:
+  # Windows: pywin32 (pip install pywin32)
+  # Linux: python-pam (pip install python-pam) or paramiko for SSH fallback
+  # =============================================================================
+  local:
+    enabled: false               # Enable local OS authentication
+
+    # --------------------------------------------------------------------------
+    # Windows-Specific Settings
+    # --------------------------------------------------------------------------
+    # These settings only apply when running on Windows
+
+    domain_required: false       # Set true to require domain specification
+                                 # If false, users can login without domain
+
+    use_computer_name_as_domain: true
+                                 # If no domain specified, use computer name
+                                 # Useful for standalone Windows machines
+
+  # =============================================================================
+  # LDAP / ACTIVE DIRECTORY AUTHENTICATION
+  # =============================================================================
+  # Authenticate against enterprise directory services
+  #
+  # Best for:
+  # - Enterprise deployments
+  # - Centralized user management
+  # - Large user bases
+  # - Integration with existing identity infrastructure
+  #
+  # Features:
+  # - Centralized password management
+  # - Group synchronization
+  # - Single sign-on capabilities
+  # - Supports Active Directory and OpenLDAP
+  #
+  # Requirements:
+  # - ldap3 Python package (installed with velocitycmdb)
+  # - Network connectivity to LDAP server
+  # - Valid LDAP user accounts
+  # =============================================================================
+  ldap:
+    enabled: false               # Enable LDAP/AD authentication
+
+    # --------------------------------------------------------------------------
+    # LDAP Server Configuration
+    # --------------------------------------------------------------------------
+    server: "ldap.company.com"   # LDAP server hostname or IP address
+    port: 389                     # 389 for LDAP, 636 for LDAPS (SSL)
+    use_ssl: false               # true for LDAPS (secure LDAP)
+
+    # --------------------------------------------------------------------------
+    # LDAP Directory Structure
+    # --------------------------------------------------------------------------
+    base_dn: "dc=company,dc=com" # Base Distinguished Name for your directory
+
+    # --------------------------------------------------------------------------
+    # User DN Template
+    # --------------------------------------------------------------------------
+    # CRITICAL: This must match your LDAP directory structure
+    # The {username} placeholder will be replaced with the login username
+    #
+    # Common patterns:
+    #
+    # OpenLDAP (uid format):
+    # user_dn_template: "uid={username},ou=users,dc=company,dc=com"
+    #
+    # Active Directory (User Principal Name):
+    # user_dn_template: "{username}@company.com"
+    #
+    # Active Directory (Distinguished Name):
+    # user_dn_template: "cn={username},ou=Users,dc=company,dc=com"
+    #
+    # Custom OU:
+    # user_dn_template: "uid={username},ou=engineering,ou=users,dc=company,dc=com"
+    user_dn_template: "uid={username},ou=users,dc=company,dc=com"
+
+    # --------------------------------------------------------------------------
+    # Group Lookup Configuration (Optional)
+    # --------------------------------------------------------------------------
+    # Enable to synchronize LDAP/AD groups to VelocityCMDB
+    search_groups: false         # Set true to retrieve group memberships
+
+    # Where to search for groups in the directory
+    group_base_dn: "ou=groups,dc=company,dc=com"
+
+    # LDAP filter to find groups user belongs to
+    # The {user_dn} placeholder will be replaced with the user's full DN
+    #
+    # Active Directory:
+    # group_filter: "(&(objectClass=group)(member={user_dn}))"
+    #
+    # OpenLDAP (posixGroup):
+    # group_filter: "(&(objectClass=posixGroup)(memberUid={username}))"
+    #
+    # OpenLDAP (groupOfNames):
+    # group_filter: "(&(objectClass=groupOfNames)(member={user_dn}))"
+    group_filter: "(&(objectClass=group)(member={user_dn}))"
+
+    # --------------------------------------------------------------------------
+    # Connection Settings
+    # --------------------------------------------------------------------------
+    timeout: 10                  # Connection timeout in seconds
+    max_retries: 3              # Number of retry attempts on failure
+
+# ==============================================================================
+# FLASK APPLICATION SETTINGS
+# ==============================================================================
+flask:
+  # Session secret key for encrypting session cookies
+  # SECURITY: Set via environment variable in production!
+  # Generate with: python -c "import secrets; print(secrets.token_hex(32))"
+  secret_key: null               # null = use FLASK_SECRET_KEY env var
+
+  # Session timeout in minutes
+  session_timeout_minutes: 120   # 2 hours (default)
+
+# ==============================================================================
+# SERVER CONFIGURATION
+# ==============================================================================
+server:
+  # Network interface to bind to
+  # 0.0.0.0 = all interfaces (accessible from network)
+  # 127.0.0.1 = localhost only (accessible only from this machine)
+  host: "0.0.0.0"
+
+  # Port to listen on
+  port: 8086
+
+  # Debug mode
+  # WARNING: Never enable debug in production!
+  # Debug mode exposes sensitive information and disables security features
+  debug: false
+
+# ==============================================================================
+# LOGGING CONFIGURATION
+# ==============================================================================
+logging:
+  # Log level
+  # Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  # Use DEBUG for troubleshooting authentication issues
+  level: "INFO"
+
+  # Log message format
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+  # Log file path
+  # Set to null to disable file logging
+  file: "logs/velocitycmdb.log"
+
+# ==============================================================================
+# SECURE CARTOGRAPHY MAPS (SCMAPS) CONFIGURATION
+# ==============================================================================
+# Configuration for network topology visualization
+scmaps:
+  # Base directory for scmaps data
+  # This directory will contain:
+  #   - topology.json (main network topology file)
+  #   - saved_layout.json (saved node positions)
+  #   - platform_icon_map.json (optional icon mapping)
+  data_dir: "scmaps_data"        # Relative to project root
+
+  # Alternative path options:
+  # data_dir: "~/.velocitycmdb/scmaps_data"          # Home directory
+  # data_dir: "/var/lib/velocitycmdb/scmaps_data"    # System-wide
+  # data_dir: "/mnt/shared/velocitycmdb/scmaps_data" # Network storage
+
+
+# ==============================================================================
+# CONFIGURATION EXAMPLES
+# ==============================================================================
+
+# Example 1: Small Team (Database Only)
+# -------------------------------------
+# authentication:
+#   default_method: "database"
+#   database:
+#     enabled: true
+#     path: "~/.velocitycmdb/data/users.db"
+
+# Example 2: Enterprise (LDAP Primary, Database Fallback)
+# -------------------------------------------------------
+# authentication:
+#   default_method: "ldap"
+#   ldap:
+#     enabled: true
+#     server: "ad.company.com"
+#     port: 636
+#     use_ssl: true
+#     base_dn: "dc=company,dc=com"
+#     user_dn_template: "{username}@company.com"
+#     search_groups: true
+#     group_base_dn: "dc=company,dc=com"
+#     group_filter: "(&(objectClass=group)(member={user_dn}))"
+#   database:
+#     enabled: true
+#     path: "/var/lib/velocitycmdb/users.db"
+
+# Example 3: Development (All Methods)
+# ------------------------------------
+# authentication:
+#   default_method: "database"
+#   use_ssh_fallback: true
+#   ssh_host: "localhost"
+#   database:
+#     enabled: true
+#     path: "~/.velocitycmdb/data/users.db"
+#   local:
+#     enabled: true
+#   ldap:
+#     enabled: true
+#     server: "ldap.dev.local"
+#     port: 389
+#     use_ssl: false
+#     base_dn: "dc=dev,dc=local"
+#     user_dn_template: "uid={username},ou=users,dc=dev,dc=local"
+
+# Example 4: Windows Deployment (Local + Database)
+# ------------------------------------------------
+# authentication:
+#   default_method: "local"
+#   local:
+#     enabled: true
+#     domain_required: true
+#     use_computer_name_as_domain: false
+#   database:
+#     enabled: true
+#     path: "C:/ProgramData/VelocityCMDB/users.db"
+
+# Example 5: Linux Deployment (PAM + SSH Fallback)
+# ------------------------------------------------
+# authentication:
+#   default_method: "local"
+#   use_ssh_fallback: true
+#   ssh_host: "localhost"
+#   local:
+#     enabled: true
+#   database:
+#     enabled: true
+#     path: "/var/lib/velocitycmdb/users.db"
+
+
+# ==============================================================================
+# SECURITY BEST PRACTICES
+# ==============================================================================
+#
+# 1. Use HTTPS in production (reverse proxy with SSL)
+# 2. Set FLASK_SECRET_KEY environment variable (don't use default)
+# 3. Use LDAPS (port 636) for LDAP authentication
+# 4. Restrict file permissions: chmod 600 config.yaml
+# 5. Disable debug mode in production
+# 6. Use strong passwords (8+ characters, complexity)
+# 7. Regular password rotation (90 days recommended)
+# 8. Monitor authentication logs for suspicious activity
+# 9. Use firewall rules to restrict access
+# 10. Deploy behind reverse proxy (nginx, apache)
+#
+# ==============================================================================
+
+# ==============================================================================
+# TROUBLESHOOTING
+# ==============================================================================
+#
+# Database authentication not working?
+# - Verify database path exists: ls -la ~/.velocitycmdb/data/users.db
+# - Recreate database: velocitycmdb init
+# - Create admin user: velocitycmdb create-admin
+#
+# Local authentication not working (Windows)?
+# - Verify pywin32 installed: pip show pywin32
+# - Check domain name is correct
+# - Review Windows Event Viewer logs
+#
+# Local authentication not working (Linux)?
+# - Verify PAM installed: python3 -c "import pam"
+# - Check user exists: id yourusername
+# - Verify SSH daemon running: systemctl status sshd
+#
+# LDAP authentication not working?
+# - Test connectivity: telnet ldap.company.com 389
+# - Verify user_dn_template matches your LDAP structure
+# - Test with ldapsearch command
+# - Check firewall rules
+# - Enable DEBUG logging to see detailed errors
+#
+# ==============================================================================
+
+# ==============================================================================
+# ADDITIONAL RESOURCES
+# ==============================================================================
+#
+# Full documentation: docs/AUTHENTICATION_CONFIG_GUIDE.md
+# GitHub Issues: https://github.com/scottpeterman/velocitycmdb/issues
+# LDAP3 Documentation: https://ldap3.readthedocs.io/
+# Flask Sessions: https://flask.palletsprojects.com/en/2.3.x/quickstart/#sessions
+#
+# ==============================================================================

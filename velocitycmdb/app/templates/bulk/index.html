@@ -1,0 +1,611 @@
+<!-- templates/bulk/index.html -->
+{% extends "base.html" %}
+
+{% block title %}Bulk Operations{% endblock %}
+
+{% block content %}
+<div style="max-width: 1400px; margin: 0 auto;">
+    <div style="margin-bottom: 32px;">
+        <h1 class="md-headline-large" style="display: flex; align-items: center; gap: 16px; margin: 0 0 8px 0;">
+            <i data-lucide="layers"></i>
+            Bulk Operations
+        </h1>
+        <p class="md-body-large" style="color: var(--md-on-surface-variant); margin: 0;">
+            Perform batch updates across multiple devices with preview and confirmation
+        </p>
+    </div>
+
+    <!-- Warning Banner -->
+    <div class="md-card outlined" style="margin-bottom: 24px; padding: 16px; background: var(--md-error-container); color: var(--md-on-error-container); border-left: 4px solid var(--md-error);">
+        <div style="display: flex; align-items: start; gap: 12px;">
+            <i data-lucide="alert-triangle" size="20"></i>
+            <div>
+                <strong>Caution: Powerful Operations</strong>
+                <p style="margin: 4px 0 0 0; font-size: 14px;">
+                    Bulk operations affect multiple devices at once. Always preview changes before executing.
+                    Destructive operations cannot be undone.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Operation Selector -->
+    <div class="md-card outlined" style="margin-bottom: 24px;">
+        <div style="padding: 24px; border-bottom: 1px solid var(--md-outline-variant);">
+            <h2 class="md-title-large" style="margin: 0;">Select Operation</h2>
+        </div>
+        <div style="padding: 24px;">
+            <div style="display: grid; gap: 16px;">
+                <label style="display: block;">
+                    <span class="md-body-medium" style="display: block; margin-bottom: 8px; font-weight: 500;">
+                        Operation Type <span style="color: var(--md-error);">*</span>
+                    </span>
+                    <select id="operation-type" class="md-input" style="width: 100%; padding: 12px; border: 1px solid var(--md-outline); border-radius: 4px;">
+                        <option value="">-- Select Operation --</option>
+                        <option value="set_role">Set Device Role</option>
+                        <option value="set_site">Set Site Code</option>
+                        <option value="set_vendor">Set Vendor</option>
+                        <option value="delete_devices" style="color: var(--md-error);">⚠️ Delete Devices</option>
+                    </select>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div id="filters-section" class="md-card outlined" style="margin-bottom: 24px; display: none;">
+        <div style="padding: 24px; border-bottom: 1px solid var(--md-outline-variant);">
+            <h2 class="md-title-large" style="margin: 0;">Filter Devices</h2>
+            <p class="md-body-small" style="color: var(--md-on-surface-variant); margin: 8px 0 0 0;">
+                Select which devices to affect. Use multiple filters for precision.
+            </p>
+        </div>
+        <div style="padding: 24px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+
+                <!-- Name Pattern -->
+                <label>
+                    <span class="md-body-medium" style="display: block; margin-bottom: 8px; font-weight: 500;">
+                        Name Pattern (Regex)
+                    </span>
+                    <input type="text" id="filter-name-pattern" class="md-input"
+                           placeholder="^core-.*"
+                           style="width: 100%; padding: 12px; border: 1px solid var(--md-outline); border-radius: 4px;">
+                    <span class="md-body-small" style="color: var(--md-on-surface-variant); display: block; margin-top: 4px;">
+                        Example: ^core-.* or .*-sw-.*
+                    </span>
+                </label>
+
+                <!-- Site Filter -->
+                <label>
+                    <span class="md-body-medium" style="display: block; margin-bottom: 8px; font-weight: 500;">
+                        Site Code
+                    </span>
+                    <select id="filter-site" class="md-input" style="width: 100%; padding: 12px; border: 1px solid var(--md-outline); border-radius: 4px;">
+                        <option value="">All Sites</option>
+                        {% for site in sites %}
+                        <option value="{{ site.code }}">{{ site.name }} ({{ site.code }})</option>
+                        {% endfor %}
+                    </select>
+                </label>
+
+                <!-- Vendor Filter -->
+                <label>
+                    <span class="md-body-medium" style="display: block; margin-bottom: 8px; font-weight: 500;">
+                        Vendor
+                    </span>
+                    <select id="filter-vendor" class="md-input" style="width: 100%; padding: 12px; border: 1px solid var(--md-outline); border-radius: 4px;">
+                        <option value="">All Vendors</option>
+                        {% for vendor in vendors %}
+                        <option value="{{ vendor.id }}">{{ vendor.name }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+
+                <!-- Role Filter -->
+                <label>
+                    <span class="md-body-medium" style="display: block; margin-bottom: 8px; font-weight: 500;">
+                        Current Role
+                    </span>
+                    <select id="filter-role" class="md-input" style="width: 100%; padding: 12px; border: 1px solid var(--md-outline); border-radius: 4px;">
+                        <option value="">All Roles</option>
+                        {% for role in roles %}
+                        <option value="{{ role.id }}">{{ role.name }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+
+            </div>
+
+            <div id="filter-warning" style="margin-top: 16px; padding: 12px; background: var(--md-warning-container); color: var(--md-on-warning-container); border-radius: 4px; display: none;">
+                <i data-lucide="alert-circle" size="16"></i>
+                <span id="filter-warning-text"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Values Section (operation-specific) -->
+    <div id="operation-values-section" class="md-card outlined" style="margin-bottom: 24px; display: none;">
+        <div style="padding: 24px; border-bottom: 1px solid var(--md-outline-variant);">
+            <h2 class="md-title-large" style="margin: 0;">New Values</h2>
+        </div>
+        <div style="padding: 24px;">
+
+            <!-- Set Role Values -->
+            <div id="values-set_role" style="display: none;">
+                <label>
+                    <span class="md-body-medium" style="display: block; margin-bottom: 8px; font-weight: 500;">
+                        New Role <span style="color: var(--md-error);">*</span>
+                    </span>
+                    <select id="value-role" class="md-input" style="width: 100%; max-width: 400px; padding: 12px; border: 1px solid var(--md-outline); border-radius: 4px;">
+                        <option value="">-- Select Role --</option>
+                        {% for role in roles %}
+                        <option value="{{ role.id }}">{{ role.name }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+            </div>
+
+            <!-- Set Site Values -->
+            <div id="values-set_site" style="display: none;">
+                <label>
+                    <span class="md-body-medium" style="display: block; margin-bottom: 8px; font-weight: 500;">
+                        New Site <span style="color: var(--md-error);">*</span>
+                    </span>
+                    <select id="value-site" class="md-input" style="width: 100%; max-width: 400px; padding: 12px; border: 1px solid var(--md-outline); border-radius: 4px;">
+                        <option value="">-- Select Site --</option>
+                        {% for site in sites %}
+                        <option value="{{ site.code }}">{{ site.name }} ({{ site.code }})</option>
+                        {% endfor %}
+                    </select>
+                </label>
+            </div>
+
+            <!-- Set Vendor Values -->
+            <div id="values-set_vendor" style="display: none;">
+                <label>
+                    <span class="md-body-medium" style="display: block; margin-bottom: 8px; font-weight: 500;">
+                        New Vendor <span style="color: var(--md-error);">*</span>
+                    </span>
+                    <select id="value-vendor" class="md-input" style="width: 100%; max-width: 400px; padding: 12px; border: 1px solid var(--md-outline); border-radius: 4px;">
+                        <option value="">-- Select Vendor --</option>
+                        {% for vendor in vendors %}
+                        <option value="{{ vendor.id }}">{{ vendor.name }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+            </div>
+
+            <!-- Delete Devices (no values needed) -->
+            <div id="values-delete_devices" style="display: none;">
+                <div style="padding: 16px; background: var(--md-error-container); color: var(--md-on-error-container); border-radius: 8px;">
+                    <div style="display: flex; align-items: start; gap: 12px;">
+                        <i data-lucide="alert-octagon" size="24"></i>
+                        <div>
+                            <strong style="font-size: 16px;">Destructive Operation</strong>
+                            <p style="margin: 8px 0 0 0;">
+                                This will permanently delete all selected devices and their associated data including:
+                            </p>
+                            <ul style="margin: 8px 0 0 20px;">
+                                <li>Device records</li>
+                                <li>Serial numbers</li>
+                                <li>Stack members</li>
+                                <li>Components</li>
+                                <li>Fingerprint data</li>
+                                <li>Capture history</li>
+                            </ul>
+                            <p style="margin: 8px 0 0 0; font-weight: bold;">
+                                This operation cannot be undone.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div id="action-buttons" style="margin-bottom: 24px; display: none;">
+        <button id="preview-btn" class="md-button md-button-filled" style="margin-right: 12px;">
+            <i data-lucide="eye" size="16"></i>
+            Preview Changes
+        </button>
+        <button id="clear-btn" class="md-button md-button-outlined">
+            <i data-lucide="x" size="16"></i>
+            Clear
+        </button>
+    </div>
+
+    <!-- Preview Results -->
+    <div id="preview-section" class="md-card outlined" style="display: none; margin-bottom: 24px;">
+        <div style="padding: 24px; border-bottom: 1px solid var(--md-outline-variant);">
+            <h2 class="md-title-large" style="margin: 0;">Preview Results</h2>
+        </div>
+        <div style="padding: 24px;">
+
+            <!-- Summary -->
+            <div id="preview-summary" style="margin-bottom: 24px;">
+                <!-- Populated by JavaScript -->
+            </div>
+
+            <!-- Affected Devices Table -->
+            <div style="margin-bottom: 24px;">
+                <h3 class="md-title-medium" style="margin: 0 0 16px 0;">Affected Devices</h3>
+                <div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--md-outline-variant); border-radius: 4px;">
+                    <table class="md-table" id="preview-devices-table">
+                        <thead style="position: sticky; top: 0; background: var(--md-surface); z-index: 1;">
+                            <tr>
+                                <th>Device Name</th>
+                                <th>Site</th>
+                                <th>Vendor</th>
+                                <th>Field</th>
+                                <th>Old Value</th>
+                                <th>New Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Confirmation -->
+            <div id="confirmation-section" style="padding: 24px; background: var(--md-warning-container); border-radius: 8px;">
+                <h3 class="md-title-medium" style="margin: 0 0 16px 0; color: var(--md-on-warning-container);">
+                    Confirm Execution
+                </h3>
+                <p class="md-body-medium" style="margin: 0 0 16px 0; color: var(--md-on-warning-container);">
+                    To proceed with this operation, type the number of affected devices:
+                    <strong id="confirmation-count-display"></strong>
+                </p>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <input type="text" id="confirmation-input" class="md-input"
+                           placeholder="Type count to confirm"
+                           style="width: 200px; padding: 12px; border: 2px solid var(--md-outline); border-radius: 4px;">
+                    <button id="execute-btn" class="md-button md-button-filled" disabled
+                            style="background: var(--md-error); color: var(--md-on-error);">
+                        <i data-lucide="zap" size="16"></i>
+                        Execute Operation
+                    </button>
+                    <button id="cancel-preview-btn" class="md-button md-button-outlined">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Recent Operations -->
+    <div class="md-card outlined">
+        <div style="padding: 24px; border-bottom: 1px solid var(--md-outline-variant);">
+            <h2 class="md-title-large" style="margin: 0;">Recent Operations</h2>
+        </div>
+        <div style="padding: 24px;">
+            {% if recent_operations %}
+            <table class="md-table">
+                <thead>
+                    <tr>
+                        <th>Operation</th>
+                        <th>Devices Affected</th>
+                        <th>Executed At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for op in recent_operations %}
+                    <tr>
+                        <td><code>{{ op.operation_type }}</code></td>
+                        <td>{{ op.affected_count }}</td>
+                        <td>{{ op.executed_at }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p style="color: var(--md-on-surface-variant); text-align: center; padding: 24px;">
+                No recent bulk operations
+            </p>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+<!-- JavaScript -->
+<script>
+let currentPreviewToken = null;
+let currentAffectedCount = 0;
+
+// Operation type changed
+document.getElementById('operation-type').addEventListener('change', function() {
+    const operation = this.value;
+
+    // Reset everything
+    document.getElementById('preview-section').style.display = 'none';
+    currentPreviewToken = null;
+
+    if (!operation) {
+        document.getElementById('filters-section').style.display = 'none';
+        document.getElementById('operation-values-section').style.display = 'none';
+        document.getElementById('action-buttons').style.display = 'none';
+        return;
+    }
+
+    // Show filters and values sections
+    document.getElementById('filters-section').style.display = 'block';
+    document.getElementById('operation-values-section').style.display = 'block';
+    document.getElementById('action-buttons').style.display = 'block';
+
+    // Hide all value sections
+    document.querySelectorAll('[id^="values-"]').forEach(el => el.style.display = 'none');
+
+    // Show relevant value section
+    const valueSection = document.getElementById(`values-${operation}`);
+    if (valueSection) {
+        valueSection.style.display = 'block';
+    }
+
+    // Update filter warning for delete operation
+    const warning = document.getElementById('filter-warning');
+    if (operation === 'delete_devices') {
+        warning.style.display = 'block';
+        document.getElementById('filter-warning-text').textContent =
+            'Delete operations require at least 2 filters for safety';
+    } else {
+        warning.style.display = 'none';
+    }
+});
+
+// Preview button click
+document.getElementById('preview-btn').addEventListener('click', async function() {
+    const operation = document.getElementById('operation-type').value;
+
+    if (!operation) {
+        alert('Please select an operation');
+        return;
+    }
+
+    // Gather filters
+    const filters = {
+        name_pattern: document.getElementById('filter-name-pattern').value.trim(),
+        site_code: document.getElementById('filter-site').value,
+        vendor_id: document.getElementById('filter-vendor').value ?
+                   parseInt(document.getElementById('filter-vendor').value) : null,
+        role_id: document.getElementById('filter-role').value ?
+                 parseInt(document.getElementById('filter-role').value) : null
+    };
+
+    // Remove null/empty filters to avoid sending them
+    Object.keys(filters).forEach(key => {
+        if (filters[key] === null || filters[key] === '') {
+            delete filters[key];
+        }
+    });
+
+    // Gather values based on operation
+    let values = {};
+    if (operation === 'set_role') {
+        const roleId = document.getElementById('value-role').value;
+        if (!roleId) {
+            alert('Please select a role');
+            return;
+        }
+        values.role_id = parseInt(roleId);
+    } else if (operation === 'set_site') {
+        const siteCode = document.getElementById('value-site').value;
+        if (!siteCode) {
+            alert('Please select a site');
+            return;
+        }
+        values.site_code = siteCode;
+    } else if (operation === 'set_vendor') {
+        const vendorId = document.getElementById('value-vendor').value;
+        if (!vendorId) {
+            alert('Please select a vendor');
+            return;
+        }
+        values.vendor_id = parseInt(vendorId);
+    }
+
+    // Show loading
+    this.disabled = true;
+    this.innerHTML = '<i data-lucide="loader" size="16"></i> Loading...';
+    lucide.createIcons();
+
+    try {
+        const response = await fetch('/bulk/api/preview', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ operation, filters, values })
+        });
+
+        const result = await response.json();
+
+        if (result.error) {
+            alert('Error: ' + result.error);
+            return;
+        }
+
+        displayPreview(result);
+
+    } catch (error) {
+        alert('Error: ' + error.message);
+    } finally {
+        this.disabled = false;
+        this.innerHTML = '<i data-lucide="eye" size="16"></i> Preview Changes';
+        lucide.createIcons();
+    }
+});
+
+function displayPreview(result) {
+    currentPreviewToken = result.preview_token;
+    currentAffectedCount = result.affected_count;
+
+    // Show preview section
+    document.getElementById('preview-section').style.display = 'block';
+
+    // Summary
+    const summaryDiv = document.getElementById('preview-summary');
+    const isDangerous = document.getElementById('operation-type').value === 'delete_devices';
+    summaryDiv.innerHTML = `
+        <div style="padding: 16px; background: ${isDangerous ? 'var(--md-error-container)' : 'var(--md-primary-container)'};
+                    color: ${isDangerous ? 'var(--md-on-error-container)' : 'var(--md-on-primary-container)'};
+                    border-radius: 8px; display: flex; align-items: center; gap: 12px;">
+            <i data-lucide="${isDangerous ? 'alert-octagon' : 'info'}" size="24"></i>
+            <div>
+                <strong style="font-size: 18px;">This operation will affect ${result.affected_count} device(s)</strong>
+                <p style="margin: 4px 0 0 0;">Review the changes below before executing.</p>
+            </div>
+        </div>
+    `;
+
+    // Populate table
+    const tbody = document.querySelector('#preview-devices-table tbody');
+    tbody.innerHTML = '';
+
+    result.changes.forEach(change => {
+        const row = document.createElement('tr');
+        if (change.action === 'DELETE') {
+            row.innerHTML = `
+                <td><strong>${change.device_name}</strong></td>
+                <td>${change.site || '-'}</td>
+                <td>${change.vendor || '-'}</td>
+                <td colspan="3" style="color: var(--md-error); font-weight: bold;">
+                    <i data-lucide="trash-2" size="14"></i> WILL BE DELETED
+                </td>
+            `;
+        } else {
+            row.innerHTML = `
+                <td><strong>${change.device_name}</strong></td>
+                <td>${result.affected_devices.find(d => d.id === change.device_id)?.site_code || '-'}</td>
+                <td>${result.affected_devices.find(d => d.id === change.device_id)?.vendor_name || '-'}</td>
+                <td><code>${change.field}</code></td>
+                <td>${change.old_value || '<em>null</em>'}</td>
+                <td><strong>${change.new_value}</strong></td>
+            `;
+        }
+        tbody.appendChild(row);
+    });
+
+    // Set confirmation count
+    document.getElementById('confirmation-count-display').textContent = result.affected_count;
+    document.getElementById('confirmation-input').value = '';
+    document.getElementById('execute-btn').disabled = true;
+
+    lucide.createIcons();
+
+    // Scroll to preview
+    document.getElementById('preview-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Confirmation input validation
+document.getElementById('confirmation-input').addEventListener('input', function() {
+    const entered = parseInt(this.value);
+    const executeBtn = document.getElementById('execute-btn');
+
+    if (entered === currentAffectedCount) {
+        executeBtn.disabled = false;
+    } else {
+        executeBtn.disabled = true;
+    }
+});
+
+// Execute button click
+document.getElementById('execute-btn').addEventListener('click', async function() {
+    if (!confirm('Are you absolutely sure? This will modify ' + currentAffectedCount + ' device(s).')) {
+        return;
+    }
+
+    const operation = document.getElementById('operation-type').value;
+
+    // Gather filters and values again
+    const filters = {
+        name_pattern: document.getElementById('filter-name-pattern').value.trim(),
+        site_code: document.getElementById('filter-site').value,
+        vendor_id: document.getElementById('filter-vendor').value ?
+                   parseInt(document.getElementById('filter-vendor').value) : null,
+        role_id: document.getElementById('filter-role').value ?
+                 parseInt(document.getElementById('filter-role').value) : null
+    };
+
+    // Remove null/empty filters
+    Object.keys(filters).forEach(key => {
+        if (filters[key] === null || filters[key] === '') {
+            delete filters[key];
+        }
+    });
+
+    let values = {};
+    if (operation === 'set_role') {
+        values.role_id = parseInt(document.getElementById('value-role').value);
+    } else if (operation === 'set_site') {
+        values.site_code = document.getElementById('value-site').value;
+    } else if (operation === 'set_vendor') {
+        values.vendor_id = parseInt(document.getElementById('value-vendor').value);
+    }
+
+    this.disabled = true;
+    this.innerHTML = '<i data-lucide="loader" size="16"></i> Executing...';
+    lucide.createIcons();
+
+    try {
+        const response = await fetch('/bulk/api/execute', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                operation,
+                filters,
+                values,
+                preview_token: currentPreviewToken,
+                confirmation_count: currentAffectedCount
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.error) {
+            alert('Error: ' + result.error);
+            this.disabled = false;
+            this.innerHTML = '<i data-lucide="zap" size="16"></i> Execute Operation';
+            lucide.createIcons();
+            return;
+        }
+
+        alert(`Success! ${result.affected_count} device(s) updated.`);
+
+        // Reload page to show updated recent operations
+        window.location.reload();
+
+    } catch (error) {
+        alert('Error: ' + error.message);
+        this.disabled = false;
+        this.innerHTML = '<i data-lucide="zap" size="16"></i> Execute Operation';
+        lucide.createIcons();
+    }
+});
+
+// Clear button
+document.getElementById('clear-btn').addEventListener('click', function() {
+    if (confirm('Clear all selections?')) {
+        document.getElementById('operation-type').value = '';
+        document.getElementById('operation-type').dispatchEvent(new Event('change'));
+
+        // Clear all inputs
+        document.querySelectorAll('input[type="text"], select').forEach(el => {
+            if (el.id !== 'operation-type') el.value = '';
+        });
+    }
+});
+
+// Cancel preview
+document.getElementById('cancel-preview-btn').addEventListener('click', function() {
+    document.getElementById('preview-section').style.display = 'none';
+    currentPreviewToken = null;
+});
+
+// Initialize Lucide icons
+lucide.createIcons();
+</script>
+{% endblock %}

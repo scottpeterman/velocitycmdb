@@ -1,0 +1,510 @@
+{% extends "base.html" %}
+
+{% block title %}Network Maps - Network Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-content">
+        <h1>🗺️ Network Maps</h1>
+        <p>Topology maps from {{ maps_data.total_maps }} discoveries across {{ maps_data.sites|length }} sites</p>
+    </div>
+    <div class="page-actions">
+        <button id="rebuild-thumbnails-btn" class="md-button md-button-outlined">
+            <i data-lucide="refresh-cw"></i>
+            Rebuild Thumbnails
+        </button>
+    </div>
+</div>
+
+<div class="md-card mb-4">
+    <div class="card-header">
+        <h2>Site Maps Overview</h2>
+        {% if maps_data.last_updated %}
+        <span class="md-badge md-badge-secondary">Last updated: {{ maps_data.last_updated.strftime('%Y-%m-%d %H:%M') }}</span>
+        {% endif %}
+    </div>
+    <div class="card-content">
+        {% if maps_data.sites %}
+        <div class="maps-grid">
+            {% for site_name, site_data in maps_data.sites.items() %}
+            <div class="site-card">
+                <div class="site-header">
+                    <h3><a href="{{ url_for('maps.site_maps', site_name=site_name) }}">{{ site_name }}</a></h3>
+                    <span class="md-badge md-badge-success">{{ site_data.maps|length }} maps</span>
+                </div>
+                <div class="site-maps">
+                    {% for map_data in site_data.maps[:6] %}
+                    <div class="map-preview">
+                        <div class="map-thumbnail">
+                            <a href="{{ url_for('maps.view_map', site_name=site_name, map_name=map_data.name) }}">
+                                <img
+                                    src="{{ url_for('maps.api_thumbnail', site_name=site_name, map_name=map_data.name) }}"
+                                    alt="{{ map_data.name }} thumbnail"
+                                    loading="lazy"
+                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                >
+                                <div class="thumbnail-fallback" style="display: none;">
+                                    <i data-lucide="map" size="24"></i>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="map-info">
+                            <div class="map-name">
+                                <a href="{{ url_for('maps.view_map', site_name=site_name, map_name=map_data.name) }}">
+                                    {{ map_data.name }}
+                                </a>
+                            </div>
+                            <div class="map-meta">
+                                <span class="map-date">{{ map_data.created.strftime('%m/%d') if map_data.created else 'N/A' }}</span>
+                                {% if map_data.size_mb %}
+                                <span class="map-size">{{ "%.1f"|format(map_data.size_mb) }}MB</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% if site_data.maps|length > 6 %}
+                    <div class="map-preview more-maps">
+                        <div class="map-thumbnail">
+                            <div class="thumbnail-more">
+                                <i data-lucide="plus" size="24"></i>
+                            </div>
+                        </div>
+                        <div class="map-info">
+                            <div class="map-name">
+                                <a href="{{ url_for('maps.site_maps', site_name=site_name) }}">
+                                    +{{ site_data.maps|length - 6 }} more maps...
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i data-lucide="map" size="48"></i>
+            <h3>No maps found</h3>
+            <p>No topology maps found in Anguis/maps/ directory</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Rebuild Thumbnails Modal -->
+<div id="rebuild-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Rebuild Thumbnails</h3>
+            <button class="modal-close" onclick="closeRebuildModal()">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p>This will regenerate thumbnails for all network maps. This may take a few moments.</p>
+            <div id="rebuild-progress" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <div class="progress-text" id="progress-text">Processing...</div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="md-button md-button-outlined" onclick="closeRebuildModal()">Cancel</button>
+            <button class="md-button md-button-filled" onclick="rebuildThumbnails()" id="rebuild-confirm-btn">
+                Rebuild All Thumbnails
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.page-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.maps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 20px;
+}
+
+.site-card {
+    border: 1px solid var(--md-outline-variant);
+    border-radius: var(--md-shape-corner-medium);
+    padding: 20px;
+    background: var(--md-surface-container);
+}
+
+.site-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.site-header h3 {
+    margin: 0;
+}
+
+.site-header a {
+    color: var(--md-primary);
+    text-decoration: none;
+}
+
+.site-header a:hover {
+    text-decoration: underline;
+}
+
+.site-maps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+.map-preview {
+    background: var(--md-surface);
+    border-radius: var(--md-shape-corner-small);
+    border: 1px solid var(--md-outline-variant);
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.map-preview:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.map-preview.more-maps {
+    border: 2px dashed var(--md-outline-variant);
+    background: var(--md-surface-variant);
+}
+
+.map-thumbnail {
+    position: relative;
+    height: 100px;
+    overflow: hidden;
+    background: var(--md-surface-variant);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.map-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.2s ease;
+}
+
+.map-preview:hover .map-thumbnail img {
+    transform: scale(1.05);
+}
+
+.thumbnail-fallback {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--md-surface-variant);
+    color: var(--md-on-surface-variant);
+}
+
+.thumbnail-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--md-on-surface-variant);
+}
+
+.map-info {
+    padding: 12px;
+}
+
+.map-name {
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.map-name a {
+    color: var(--md-on-surface);
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.map-name a:hover {
+    color: var(--md-primary);
+}
+
+.map-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: var(--md-on-surface-variant);
+}
+
+.map-date, .map-size {
+    font-size: 12px;
+    color: var(--md-on-surface-variant);
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: var(--md-surface-container-high);
+    border-radius: var(--md-shape-corner-large);
+    min-width: 400px;
+    max-width: 90vw;
+    max-height: 90vh;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+    padding: 24px 24px 0 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: var(--md-on-surface);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: var(--md-shape-corner-small);
+    color: var(--md-on-surface-variant);
+}
+
+.modal-close:hover {
+    background: var(--md-surface-variant);
+}
+
+.modal-body {
+    padding: 20px 24px;
+}
+
+.modal-footer {
+    padding: 0 24px 24px 24px;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--md-surface-variant);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 16px 0 8px 0;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--md-primary);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    text-align: center;
+    font-size: 14px;
+    color: var(--md-on-surface-variant);
+}
+
+/* Button Styles */
+.md-button {
+    padding: 10px 16px;
+    border-radius: var(--md-shape-corner-small);
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.md-button-outlined {
+    background: transparent;
+    border: 1px solid var(--md-outline);
+    color: var(--md-primary);
+}
+
+.md-button-outlined:hover {
+    background: var(--md-surface-variant);
+}
+
+.md-button-filled {
+    background: var(--md-primary);
+    color: var(--md-on-primary);
+}
+
+.md-button-filled:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.md-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        gap: 16px;
+        align-items: stretch;
+    }
+
+    .maps-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .site-maps {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    }
+
+    .modal-content {
+        margin: 20px;
+        min-width: unset;
+    }
+}
+</style>
+
+<script>
+// Initialize Lucide icons
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+});
+
+// Rebuild thumbnails functionality
+function openRebuildModal() {
+    document.getElementById('rebuild-modal').style.display = 'flex';
+}
+
+function closeRebuildModal() {
+    document.getElementById('rebuild-modal').style.display = 'none';
+    document.getElementById('rebuild-progress').style.display = 'none';
+    document.getElementById('progress-fill').style.width = '0%';
+    document.getElementById('progress-text').textContent = 'Processing...';
+    document.getElementById('rebuild-confirm-btn').disabled = false;
+}
+
+async function rebuildThumbnails() {
+    const progressDiv = document.getElementById('rebuild-progress');
+    const progressFill = document.getElementById('progress-fill');
+    const progressText = document.getElementById('progress-text');
+    const confirmBtn = document.getElementById('rebuild-confirm-btn');
+
+    // Show progress and disable button
+    progressDiv.style.display = 'block';
+    confirmBtn.disabled = true;
+
+    try {
+        // Get all maps data
+        const response = await fetch('/maps/api/maps');
+        const mapsData = await response.json();
+
+        const allMaps = [];
+        for (const [siteName, siteData] of Object.entries(mapsData.sites || {})) {
+            for (const map of siteData.maps || []) {
+                allMaps.push({ siteName, mapName: map.name });
+            }
+        }
+
+        if (allMaps.length === 0) {
+            progressText.textContent = 'No maps found to process';
+            setTimeout(closeRebuildModal, 2000);
+            return;
+        }
+
+        progressText.textContent = `Processing ${allMaps.length} maps...`;
+
+        // Process each map
+        for (let i = 0; i < allMaps.length; i++) {
+            const { siteName, mapName } = allMaps[i];
+
+            try {
+                // Force regenerate thumbnail by adding cache-busting parameter
+                const thumbnailUrl = `/maps/api/thumbnail/${siteName}/${mapName}?rebuild=${Date.now()}`;
+                await fetch(thumbnailUrl);
+
+                const progress = ((i + 1) / allMaps.length) * 100;
+                progressFill.style.width = `${progress}%`;
+                progressText.textContent = `Processed ${i + 1}/${allMaps.length}: ${mapName}`;
+
+                // Small delay to prevent overwhelming the server
+                await new Promise(resolve => setTimeout(resolve, 100));
+            } catch (error) {
+                console.warn(`Failed to regenerate thumbnail for ${siteName}/${mapName}:`, error);
+            }
+        }
+
+        progressText.textContent = 'Thumbnails rebuilt successfully!';
+
+        // Reload thumbnails in current page
+        setTimeout(() => {
+            const images = document.querySelectorAll('.map-thumbnail img');
+            images.forEach(img => {
+                const originalSrc = img.src.split('?')[0]; // Remove existing query params
+                img.src = `${originalSrc}?t=${Date.now()}`;
+            });
+            closeRebuildModal();
+        }, 1000);
+
+    } catch (error) {
+        console.error('Error rebuilding thumbnails:', error);
+        progressText.textContent = 'Error occurred while rebuilding thumbnails';
+        setTimeout(closeRebuildModal, 3000);
+    }
+}
+
+// Event listeners
+document.getElementById('rebuild-thumbnails-btn').addEventListener('click', openRebuildModal);
+
+// Close modal when clicking outside
+document.getElementById('rebuild-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeRebuildModal();
+    }
+});
+</script>
+{% endblock %}

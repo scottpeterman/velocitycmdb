@@ -1,0 +1,472 @@
+{% extends "base.html" %}
+
+{% block title %}{{ role.name }} - Role Details{% endblock %}
+
+{% block head_extra %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 32px;
+        gap: 24px;
+    }
+
+    .page-header-content {
+        flex: 1;
+    }
+
+    .page-header-actions {
+        display: flex;
+        gap: 12px;
+        flex-shrink: 0;
+    }
+
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        list-style: none;
+        padding: 0;
+    }
+
+    .breadcrumb-item {
+        color: var(--md-on-surface-variant);
+        font: var(--md-typescale-body-medium);
+    }
+
+    .breadcrumb-item a {
+        color: var(--md-primary);
+        text-decoration: none;
+    }
+
+    .breadcrumb-item a:hover {
+        text-decoration: underline;
+    }
+
+    .breadcrumb-item:not(:last-child)::after {
+        content: "/";
+        margin-left: 8px;
+        color: var(--md-on-surface-variant);
+    }
+
+    .badge-infrastructure {
+        background: var(--md-tertiary-container);
+        color: var(--md-on-tertiary-container);
+        padding: 4px 12px;
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-label-medium);
+        font-weight: 500;
+    }
+
+    /* Overview cards grid */
+    .overview-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 24px;
+        margin-bottom: 32px;
+    }
+
+    .info-card {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        overflow: hidden;
+    }
+
+    .info-card-header {
+        background: var(--md-surface-container);
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--md-outline-variant);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .info-card-header h3 {
+        margin: 0;
+        font: var(--md-typescale-title-medium);
+        color: var(--md-on-surface);
+        font-weight: 500;
+    }
+
+    .info-card-content {
+        padding: 24px;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--md-outline-variant);
+        gap: 16px;
+    }
+
+    .info-row:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .info-row:first-child {
+        padding-top: 0;
+    }
+
+    .info-label {
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-surface-variant);
+        font-weight: 500;
+        min-width: 120px;
+        flex-shrink: 0;
+    }
+
+    .info-value {
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-surface);
+        text-align: right;
+        flex: 1;
+    }
+
+    /* Devices section */
+    .devices-section {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        overflow: hidden;
+    }
+
+    .devices-section-header {
+        background: var(--md-surface-container);
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--md-outline-variant);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .devices-section-header h2 {
+        margin: 0;
+        font: var(--md-typescale-title-large);
+        color: var(--md-on-surface);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .devices-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .devices-table thead {
+        background: var(--md-surface-container-low);
+    }
+
+    .devices-table th {
+        padding: 12px 16px;
+        text-align: left;
+        font: var(--md-typescale-label-large);
+        color: var(--md-on-surface-variant);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .devices-table td {
+        padding: 16px;
+        border-bottom: 1px solid var(--md-outline-variant);
+        font: var(--md-typescale-body-medium);
+    }
+
+    .devices-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .devices-table tbody tr:hover {
+        background: var(--md-surface-container-low);
+    }
+
+    .device-link {
+        color: var(--md-primary);
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .device-link:hover {
+        text-decoration: underline;
+    }
+
+    .status-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+    }
+
+    .status-online { background-color: var(--md-success); }
+    .status-partial { background-color: var(--md-warning); }
+    .status-offline { background-color: var(--md-error); }
+
+    .badge {
+        padding: 4px 8px;
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-label-small);
+        font-weight: 500;
+    }
+
+    .badge-stack {
+        background: var(--md-primary-container);
+        color: var(--md-on-primary-container);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 48px 24px;
+        color: var(--md-on-surface-variant);
+    }
+
+    @media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .overview-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .devices-table {
+            font-size: 14px;
+        }
+
+        .devices-table th,
+        .devices-table td {
+            padding: 12px 8px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="page-header">
+    <div class="page-header-content">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('roles.index') }}">Roles</a></li>
+                <li class="breadcrumb-item">{{ role.name }}</li>
+            </ol>
+        </nav>
+        <h1 class="md-headline-large" style="margin: 0;">
+            {{ role.name }}
+            {% if role.is_infrastructure %}
+            <span class="badge-infrastructure" style="margin-left: 12px;">Infrastructure</span>
+            {% endif %}
+        </h1>
+        {% if role.description %}
+        <p class="md-body-large" style="color: var(--md-on-surface-variant); margin-top: 8px;">
+            {{ role.description }}
+        </p>
+        {% endif %}
+    </div>
+
+    <div class="page-header-actions">
+        <a href="{{ url_for('roles.edit', role_id=role.id) }}" class="md-button md-button-filled">
+            <i data-lucide="edit" size="16"></i>
+            Edit Role
+        </a>
+        {% if role.device_count == 0 %}
+        <button class="md-button md-button-outlined"
+                onclick="document.getElementById('deleteModal').classList.add('open')"
+                style="color: var(--md-error); border-color: var(--md-error);">
+            <i data-lucide="trash-2" size="16"></i>
+            Delete
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Role Overview Cards -->
+<div class="overview-grid">
+    <div class="info-card">
+        <div class="info-card-header">
+            <i data-lucide="info" size="20"></i>
+            <h3>Role Information</h3>
+        </div>
+        <div class="info-card-content">
+            <div class="info-row">
+                <span class="info-label">Role Name:</span>
+                <span class="info-value">{{ role.name }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Type:</span>
+                <span class="info-value">
+                    {% if role.is_infrastructure %}
+                    Infrastructure
+                    {% else %}
+                    Standard
+                    {% endif %}
+                </span>
+            </div>
+            {% if role.description %}
+            <div class="info-row">
+                <span class="info-label">Description:</span>
+                <span class="info-value">{{ role.description }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="info-card">
+        <div class="info-card-header">
+            <i data-lucide="server" size="20"></i>
+            <h3>Device Statistics</h3>
+        </div>
+        <div class="info-card-content">
+            <div class="info-row">
+                <span class="info-label">Total Devices:</span>
+                <span class="info-value"><strong>{{ role.device_count or 0 }}</strong></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Port Range:</span>
+                <span class="info-value">
+                    {% if role.port_count_min or role.port_count_max %}
+                    {{ role.port_count_min or '0' }} - {{ role.port_count_max or '∞' }}
+                    {% else %}
+                    Any
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Devices with This Role -->
+<div class="devices-section">
+    <div class="devices-section-header">
+        <h2>
+            <i data-lucide="server" size="24"></i>
+            Devices with This Role
+        </h2>
+        {% if devices %}
+        <a href="{{ url_for('assets.devices') }}?role={{ role.id }}" class="md-button md-button-text">
+            <i data-lucide="external-link" size="16"></i>
+            View in Device List
+        </a>
+        {% endif %}
+    </div>
+
+    {% if devices %}
+    <table class="devices-table">
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Device</th>
+                <th>Site</th>
+                <th>Vendor</th>
+                <th>Model</th>
+                <th>Captures</th>
+                <th style="text-align: right;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for device in devices %}
+            <tr>
+                <td>
+                    {% if device.current_captures > 0 and device.last_fingerprint_success %}
+                    <span class="status-indicator status-online" title="Online"></span>
+                    {% elif device.current_captures > 0 or device.last_fingerprint_success %}
+                    <span class="status-indicator status-partial" title="Partial"></span>
+                    {% else %}
+                    <span class="status-indicator status-offline" title="Offline"></span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('assets.device_detail', device_id=device.id) }}" class="device-link">
+                        {{ device.name }}
+                    </a>
+                    {% if device.is_stack %}
+                    <span class="badge badge-stack" style="margin-left: 8px;">Stack</span>
+                    {% endif %}
+                </td>
+                <td>{{ device.site_name or '-' }}</td>
+                <td>{{ device.vendor_name or '-' }}</td>
+                <td>{{ device.model or '-' }}</td>
+                <td>
+                    {% if device.current_captures > 0 %}
+                    <strong>{{ device.current_captures }}</strong> / {{ device.capture_types or 0 }} types
+                    {% else %}
+                    <span style="color: var(--md-on-surface-variant);">0</span>
+                    {% endif %}
+                </td>
+                <td style="text-align: right;">
+                    <a href="{{ url_for('assets.device_detail', device_id=device.id) }}"
+                       class="md-icon-button" title="View Details">
+                        <i data-lucide="eye" size="16"></i>
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <div style="margin-bottom: 16px;">
+            <i data-lucide="server" size="48"></i>
+        </div>
+        <h3>No devices with this role</h3>
+        <p>Assign devices to this role to see them here</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+{% if role.device_count == 0 %}
+<div class="md-modal" id="deleteModal">
+    <div class="md-modal-content">
+        <div class="md-modal-header">
+            <h2 class="md-modal-title" style="color: var(--md-error);">
+                <i data-lucide="alert-triangle" size="20"></i>
+                Confirm Deletion
+            </h2>
+            <button class="md-icon-button" onclick="document.getElementById('deleteModal').classList.remove('open')">
+                <i data-lucide="x" size="20"></i>
+            </button>
+        </div>
+        <div class="md-modal-body">
+            <p class="md-body-large">Delete role "<strong>{{ role.name }}</strong>"?</p>
+            <p class="md-body-medium" style="margin-top: 16px; color: var(--md-error);">
+                This action cannot be undone.
+            </p>
+        </div>
+        <div class="md-modal-footer">
+            <button class="md-button md-button-text"
+                    onclick="document.getElementById('deleteModal').classList.remove('open')">
+                Cancel
+            </button>
+            <form method="POST" action="{{ url_for('roles.delete', role_id=role.id) }}" style="display: inline;">
+                <button type="submit" class="md-button md-button-filled"
+                        style="background: var(--md-error); color: var(--md-on-error);">
+                    <i data-lucide="trash-2" size="16"></i>
+                    Delete Role
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+document.getElementById('deleteModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        this.classList.remove('open');
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    lucide.createIcons();
+});
+</script>
+{% endblock %}

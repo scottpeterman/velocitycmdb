@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Configuration - Admin - Anguis{% endblock %}
+
+{% block content %}
+<div style="padding: 32px;">
+    <!-- Header -->
+    <div style="margin-bottom: 32px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1 style="font: var(--md-typescale-headline-large); margin: 0 0 8px 0; display: flex; align-items: center; gap: 12px;">
+                <i data-lucide="edit" size="32"></i>
+                Edit System Configuration
+            </h1>
+            <p style="font: var(--md-typescale-body-large); color: var(--md-on-surface-variant); margin: 0;">
+                Modify system settings (config.yaml)
+            </p>
+            {% if config_path %}
+            <p style="font: var(--md-typescale-body-small); color: var(--md-on-surface-variant); margin: 4px 0 0 0; font-family: monospace;">
+                File: {{ config_path }}
+            </p>
+            {% endif %}
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <a href="{{ url_for('admin.config_view') }}" class="md-button md-button-outlined">
+                <i data-lucide="arrow-left" size="18"></i>
+                Cancel
+            </a>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="md-card" style="margin-bottom: 20px; border-left: 4px solid {% if category == 'error' %}var(--md-error){% elif category == 'success' %}#4caf50{% elif category == 'warning' %}#ff9800{% else %}var(--md-primary){% endif %};">
+                <div class="md-card-content">
+                    {{ message }}
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Warning Banner -->
+    <div class="md-card" style="margin-bottom: 24px; border-left: 4px solid #ff9800; background: rgba(255, 152, 0, 0.05);">
+        <div class="md-card-content">
+            <div style="display: flex; align-items: start; gap: 16px;">
+                <i data-lucide="alert-triangle" size="24" style="color: #ff9800; flex-shrink: 0; margin-top: 2px;"></i>
+                <div>
+                    <h5 style="font: var(--md-typescale-title-medium); margin: 0 0 8px 0; color: #ff9800;">Configuration Changes</h5>
+                    <ul style="margin: 0; padding-left: 20px; font: var(--md-typescale-body-medium);">
+                        <li>Invalid YAML syntax will be rejected before saving</li>
+                        <li>A backup will be created automatically (config.yaml.backup)</li>
+                        <li>Application restart required for changes to take effect</li>
+                        <li>Incorrect configuration may prevent application startup</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuration Editor -->
+    <form method="POST" id="config-form">
+        <div class="md-card">
+            <div class="md-card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h5 style="margin: 0; font: var(--md-typescale-title-large);">Configuration Editor</h5>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    {% if is_new %}
+                    <span class="md-badge" style="background: var(--md-tertiary-container); color: var(--md-on-tertiary-container);">
+                        <i data-lucide="plus-circle" size="14"></i>
+                        New File
+                    </span>
+                    {% endif %}
+                    <span id="line-count" style="font: var(--md-typescale-body-small); color: var(--md-on-surface-variant);"></span>
+                </div>
+            </div>
+            <div class="md-card-content" style="padding: 0;">
+                <textarea
+                    name="config_text"
+                    id="config-editor"
+                    spellcheck="false"
+                    style="
+                        width: 100%;
+                        min-height: 600px;
+                        padding: 20px;
+                        font-family: 'Courier New', monospace;
+                        font-size: 14px;
+                        line-height: 1.5;
+                        background: var(--md-surface-container-highest);
+                        color: var(--md-on-surface);
+                        border: none;
+                        border-radius: 0;
+                        resize: vertical;
+                    "
+                >{{ config_text }}</textarea>
+            </div>
+            <div class="md-card-content" style="border-top: 1px solid var(--md-outline-variant); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <label style="display: flex; align-items: center; gap: 8px; font: var(--md-typescale-body-medium); cursor: pointer;">
+                        <input type="checkbox" id="validate-yaml" checked style="width: 18px; height: 18px;">
+                        Validate YAML before saving
+                    </label>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <button type="button" onclick="formatYaml()" class="md-button md-button-outlined">
+                        <i data-lucide="align-left" size="18"></i>
+                        Format
+                    </button>
+                    <button type="submit" class="md-button md-button-filled">
+                        <i data-lucide="save" size="18"></i>
+                        Save Configuration
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <!-- YAML Help Card -->
+    <div class="md-card" style="margin-top: 24px;">
+        <div class="md-card-header">
+            <h5 style="margin: 0; font: var(--md-typescale-title-medium); display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="info" size="20"></i>
+                YAML Syntax Help
+            </h5>
+        </div>
+        <div class="md-card-content">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                <div>
+                    <h6 style="font: var(--md-typescale-title-small); margin: 0 0 8px 0; color: var(--md-primary);">Indentation</h6>
+                    <pre style="font-size: 12px; background: var(--md-surface-container-high); padding: 12px; border-radius: 8px; margin: 0;">parent:
+  child: value
+  nested:
+    deep: value</pre>
+                </div>
+                <div>
+                    <h6 style="font: var(--md-typescale-title-small); margin: 0 0 8px 0; color: var(--md-primary);">Lists</h6>
+                    <pre style="font-size: 12px; background: var(--md-surface-container-high); padding: 12px; border-radius: 8px; margin: 0;">items:
+  - first
+  - second
+  - third</pre>
+                </div>
+                <div>
+                    <h6 style="font: var(--md-typescale-title-small); margin: 0 0 8px 0; color: var(--md-primary);">Types</h6>
+                    <pre style="font-size: 12px; background: var(--md-surface-container-high); padding: 12px; border-radius: 8px; margin: 0;">string: "text"
+number: 123
+boolean: true
+null: null</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    const editor = document.getElementById('config-editor');
+    const lineCount = document.getElementById('line-count');
+    const form = document.getElementById('config-form');
+    const validateCheckbox = document.getElementById('validate-yaml');
+
+    // Update line count
+    function updateLineCount() {
+        const lines = editor.value.split('\n').length;
+        lineCount.textContent = `${lines} lines`;
+    }
+
+    editor.addEventListener('input', updateLineCount);
+    updateLineCount();
+
+    // Tab key support
+    editor.addEventListener('keydown', function(e) {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            const value = this.value;
+
+            // Insert 2 spaces
+            this.value = value.substring(0, start) + '  ' + value.substring(end);
+            this.selectionStart = this.selectionEnd = start + 2;
+        }
+    });
+
+    // Basic YAML validation (client-side)
+    function validateYaml(text) {
+        const errors = [];
+        const lines = text.split('\n');
+
+        lines.forEach((line, idx) => {
+            // Check for tabs (YAML doesn't allow tabs)
+            if (line.includes('\t')) {
+                errors.push(`Line ${idx + 1}: Contains tabs (use spaces instead)`);
+            }
+
+            // Check for inconsistent indentation
+            const indent = line.match(/^ */)[0].length;
+            if (indent % 2 !== 0) {
+                errors.push(`Line ${idx + 1}: Odd indentation (use 2-space increments)`);
+            }
+        });
+
+        return errors;
+    }
+
+    // Format YAML (basic)
+    function formatYaml() {
+        const lines = editor.value.split('\n');
+        const formatted = lines.map(line => {
+            // Replace tabs with spaces
+            return line.replace(/\t/g, '  ');
+        });
+        editor.value = formatted.join('\n');
+        updateLineCount();
+    }
+
+    // Form submission validation
+    form.addEventListener('submit', function(e) {
+        if (!validateCheckbox.checked) {
+            return; // Skip validation if unchecked
+        }
+
+        const errors = validateYaml(editor.value);
+
+        if (errors.length > 0) {
+            e.preventDefault();
+            alert('YAML Validation Errors:\n\n' + errors.join('\n'));
+        }
+    });
+
+    // Auto-save to localStorage (recovery)
+    let saveTimer;
+    editor.addEventListener('input', function() {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => {
+            localStorage.setItem('config_draft', editor.value);
+            localStorage.setItem('config_draft_time', new Date().toISOString());
+        }, 1000);
+    });
+
+    // Check for recovery
+    window.addEventListener('load', function() {
+        const draft = localStorage.getItem('config_draft');
+        const draftTime = localStorage.getItem('config_draft_time');
+
+        if (draft && draftTime) {
+            const time = new Date(draftTime);
+            const now = new Date();
+            const hours = (now - time) / (1000 * 60 * 60);
+
+            if (hours < 24) {
+                if (confirm(`Found unsaved draft from ${time.toLocaleString()}. Restore it?`)) {
+                    editor.value = draft;
+                    updateLineCount();
+                }
+            }
+        }
+    });
+
+    // Clear draft on successful save
+    form.addEventListener('submit', function() {
+        setTimeout(() => {
+            localStorage.removeItem('config_draft');
+            localStorage.removeItem('config_draft_time');
+        }, 100);
+    });
+</script>
+{% endblock %}

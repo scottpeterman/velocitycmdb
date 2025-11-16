@@ -1,0 +1,135 @@
+/* Modal Styles for SCMaps */
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.modal-dialog {
+    background: var(--md-surface, white);
+    padding: 0;
+    border-radius: 12px;
+    min-width: 400px;
+    max-width: 600px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--md-outline-variant, #e0e0e0);
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--md-on-surface, #1f1f1f);
+}
+
+.modal-body {
+    padding: 24px;
+}
+
+.modal-body p {
+    margin: 0 0 16px 0;
+    color: var(--md-on-surface, #1f1f1f);
+}
+
+.modal-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--md-outline, #ccc);
+    border-radius: 8px;
+    font-size: 14px;
+    box-sizing: border-box;
+    background: var(--md-surface-container-low, white);
+    color: var(--md-on-surface, #1f1f1f);
+}
+
+.modal-input:focus {
+    outline: none;
+    border-color: var(--md-primary, #0078d4);
+    box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.1);
+}
+
+.modal-footer {
+    padding: 16px 24px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    border-top: 1px solid var(--md-outline-variant, #e0e0e0);
+}
+
+.md-button {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.md-button-text {
+    background: transparent;
+    color: var(--md-primary, #0078d4);
+}
+
+.md-button-text:hover {
+    background: rgba(0, 120, 212, 0.08);
+}
+
+.md-button-filled {
+    background: var(--md-primary, #0078d4);
+    color: white;
+}
+
+.md-button-filled:hover {
+    background: var(--md-primary-hover, #006abc);
+}
+
+/* Toast notifications */
+.toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    padding: 16px 24px;
+    background: var(--md-surface-container-high, #2a2a2a);
+    color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s;
+    z-index: 10000;
+    max-width: 400px;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast-success {
+    background: #10b981;
+}
+
+.toast-error {
+    background: #ef4444;
+}
+
+.toast-warning {
+    background: #f59e0b;
+}
+
+.toast-info {
+    background: #3b82f6;
+}

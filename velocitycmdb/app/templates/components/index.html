@@ -1,0 +1,363 @@
+{% extends "base.html" %}
+
+{% block title %}Component Inventory{% endblock %}
+
+{% block head_extra %}
+<style>
+    /* Component Inventory Styles */
+    .inventory-header { margin-bottom: 32px; }
+    .inventory-title { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+
+    /* Statistics Cards */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .stat-card { background: var(--md-surface); border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-corner-medium); padding: 20px; display: flex; align-items: center; gap: 16px; }
+    .stat-icon { width: 48px; height: 48px; border-radius: var(--md-shape-corner-small); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .stat-icon.primary { background: var(--md-primary-container); color: var(--md-on-primary-container); }
+    .stat-icon.success  { background: var(--md-success-container);  color: var(--md-on-success-container); }
+    .stat-icon.tertiary { background: var(--md-tertiary-container); color: var(--md-on-tertiary-container); }
+    .stat-content { flex: 1; }
+    .stat-value { font: var(--md-typescale-display-small); color: var(--md-on-surface); font-weight: 500; line-height: 1; margin-bottom: 4px; }
+    .stat-label { font: var(--md-typescale-body-small); color: var(--md-on-surface-variant); }
+
+    /* Type Distribution */
+    .type-distribution { background: var(--md-surface); border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-corner-medium); padding: 24px; margin-bottom: 32px; }
+    .distribution-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .distribution-title { font: var(--md-typescale-title-large); color: var(--md-on-surface); margin: 0; }
+    .type-bars { display: flex; flex-direction: column; gap: 16px; }
+    .type-bar-item { display: flex; align-items: center; gap: 12px; }
+    .type-label { min-width: 120px; font: var(--md-typescale-body-medium); color: var(--md-on-surface); text-transform: capitalize; }
+    .type-bar-container { flex: 1; height: 32px; background: var(--md-surface-container); border-radius: var(--md-shape-corner-small); position: relative; overflow: hidden; }
+    .type-bar-fill { height: 100%; background: var(--md-primary); border-radius: var(--md-shape-corner-small); display: flex; align-items: center; padding: 0 12px; transition: width 0.3s; }
+    .type-bar-text { font: var(--md-typescale-label-medium); color: var(--md-on-primary); font-weight: 500; }
+    .type-count { min-width: 120px; text-align: right; font: var(--md-typescale-body-medium); color: var(--md-on-surface-variant); }
+
+    /* Filter Controls */
+    .filter-section { background: var(--md-surface); border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-corner-medium); padding: 20px; margin-bottom: 24px; }
+    .filter-controls { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 12px; align-items: end; }
+    @media (max-width: 1200px) { .filter-controls { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 768px)  { .filter-controls { grid-template-columns: 1fr; } }
+    .form-group { display: flex; flex-direction: column; gap: 8px; }
+    .form-label { font: var(--md-typescale-body-small); color: var(--md-on-surface-variant); font-weight: 500; }
+    .form-input, .form-select { padding: 10px 14px; border: 1px solid var(--md-outline); border-radius: var(--md-shape-corner-small); background: var(--md-surface); color: var(--md-on-surface); font: var(--md-typescale-body-medium); }
+    .form-input:focus, .form-select:focus { outline: none; border-color: var(--md-primary); }
+
+    /* Component Table */
+    .component-table-container { background: var(--md-surface); border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-corner-medium); overflow: hidden; }
+    .component-table { width: 100%; border-collapse: collapse; }
+    .component-table thead { background: var(--md-surface-container); border-bottom: 1px solid var(--md-outline-variant); }
+    .component-table th { text-align: left; padding: 16px; font: var(--md-typescale-title-small); color: var(--md-on-surface); font-weight: 500; }
+    .component-table tbody tr { border-bottom: 1px solid var(--md-outline-variant); }
+    .component-table tbody tr:hover { background: var(--md-surface-container); }
+    .component-table tbody tr:last-child { border-bottom: none; }
+    .component-table td { padding: 16px; font: var(--md-typescale-body-medium); color: var(--md-on-surface); }
+
+    .component-name { font-weight: 500; color: var(--md-on-surface); }
+    .component-description { font: var(--md-typescale-body-small); color: var(--md-on-surface-variant); margin-top: 4px; }
+
+    .component-type { display: inline-block; padding: 4px 12px; border-radius: var(--md-shape-corner-small); font: var(--md-typescale-label-small); font-weight: 500; text-transform: capitalize; }
+    .type-chassis    { background: var(--md-primary-container);   color: var(--md-on-primary-container); }
+    .type-module     { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
+    .type-psu        { background: var(--md-tertiary-container);  color: var(--md-on-tertiary-container); }
+    .type-fan        { background: var(--md-success-container);   color: var(--md-on-success-container); }
+    .type-transceiver{ background: var(--md-warning-container);   color: var(--md-on-warning-container); }
+    .type-supervisor { background: var(--md-error-container);     color: var(--md-on-error-container); }
+    .type-unknown    { background: var(--md-surface-container-high); color: var(--md-on-surface-variant); }
+
+    .serial-display { font-family: 'Courier New', monospace; font-size: 13px; background: var(--md-surface-container); padding: 4px 8px; border-radius: var(--md-shape-corner-small); }
+    .no-serial { font: var(--md-typescale-body-small); color: var(--md-on-surface-variant); font-style: italic; }
+
+    .confidence-bar { width: 80px; height: 6px; background: var(--md-surface-container); border-radius: 3px; overflow: hidden; }
+    .confidence-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+    .confidence-high { background: var(--md-success); }
+    .confidence-medium { background: var(--md-warning); }
+    .confidence-low { background: var(--md-error); }
+
+    .device-link { color: var(--md-primary); text-decoration: none; font-weight: 500; }
+    .device-link:hover { text-decoration: underline; }
+
+    /* Empty State */
+    .empty-state { text-align: center; padding: 64px 24px; color: var(--md-on-surface-variant); }
+    .empty-state-icon { margin-bottom: 16px; opacity: 0.6; }
+
+    /* Pagination */
+    .pagination-container { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-top: 1px solid var(--md-outline-variant); }
+    .pagination-info { font: var(--md-typescale-body-small); color: var(--md-on-surface-variant); }
+    .pagination-controls { display: flex; gap: 8px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="inventory-header">
+    <div class="inventory-title">
+        <i data-lucide="cpu" size="28"></i>
+        <h1 class="md-headline-large" style="margin: 0;">Component Inventory</h1>
+    </div>
+    <p class="md-body-large" style="color: var(--md-on-surface-variant); margin: 0;">
+        Comprehensive tracking of network device components across your infrastructure
+    </p>
+</div>
+
+<!-- Overall Statistics -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon primary"><i data-lucide="box" size="24"></i></div>
+        <div class="stat-content">
+            <div class="stat-value">{{ "{:,}".format(overall_stats.total or 0) }}</div>
+            <div class="stat-label">Total Components</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon success"><i data-lucide="check-circle" size="24"></i></div>
+        <div class="stat-content">
+            <div class="stat-value">{{ "{:,}".format(overall_stats.with_serials or 0) }}</div>
+            <div class="stat-label">With Serial Numbers</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon tertiary"><i data-lucide="server" size="24"></i></div>
+        <div class="stat-content">
+            <div class="stat-value">{{ "{:,}".format(overall_stats.unique_devices or 0) }}</div>
+            <div class="stat-label">Devices Tracked</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon primary"><i data-lucide="percent" size="24"></i></div>
+        <div class="stat-content">
+            <div class="stat-value">
+                {% if (overall_stats.total or 0) > 0 %}
+                    {{ "%.1f"|format(((overall_stats.with_serials or 0) / (overall_stats.total or 1)) * 100) }}%
+                {% else %}
+                    0%
+                {% endif %}
+            </div>
+            <div class="stat-label">Serial Coverage</div>
+        </div>
+    </div>
+</div>
+
+{% if not components %}
+<div class="component-table-container">
+    <div class="empty-state">
+        <div class="empty-state-icon"><i data-lucide="inbox" size="64"></i></div>
+        <h3 class="md-headline-small" style="margin: 0 0 8px 0;">No components found</h3>
+        <p class="md-body-large">
+            {% if filters.search or filters.type or filters.vendor or filters.has_serial %}
+                No components match your current filters. Try adjusting your search criteria.
+            {% else %}
+                No hardware components have been discovered yet. Run inventory captures to populate this data.
+            {% endif %}
+        </p>
+        {% if filters.search or filters.type or filters.vendor or filters.has_serial %}
+        <a href="{{ url_for('components.index') }}" class="md-button md-button-filled" style="margin-top: 16px;">
+            <i data-lucide="x" size="16"></i> Clear Filters
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Type Distribution -->
+{% if type_stats %}
+<div class="type-distribution">
+    <div class="distribution-header">
+        <h2 class="distribution-title">Component Types</h2>
+    </div>
+    <div class="type-bars">
+        {% set max_count = type_stats[0].total if type_stats else 1 %}
+        {% for stat in type_stats[:8] %}
+        <div class="type-bar-item">
+            <div class="type-label">{{ stat.type or 'Unknown' }}</div>
+            <div class="type-bar-container">
+                <div class="type-bar-fill" style="width: {{ ((stat.total / (max_count or 1)) * 100)|round }}%">
+                    <span class="type-bar-text">{{ "{:,}".format(stat.total) }}</span>
+                </div>
+            </div>
+            <div class="type-count">{{ stat.with_serials }}/{{ stat.total }} serials</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Filters -->
+<form method="GET" action="{{ url_for('components.index') }}" class="filter-section">
+  <div class="filter-controls">
+    <div class="form-group">
+      <label class="form-label">Search</label>
+      <input type="text" name="search" class="form-input"
+             placeholder="Name, description, serial, or device..."
+             value="{{ filters.search or '' }}">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Type</label>
+      <select name="type" class="form-select">
+        <option value="">All Types</option>
+        {% for type in types %}
+          <option value="{{ type }}" {% if filters.type == type %}selected{% endif %}>
+            {{ type|capitalize }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Vendor</label>
+      <select name="vendor" class="form-select">
+        <option value="">All Vendors</option>
+        {% for vendor in vendors %}
+          <option value="{{ vendor }}" {% if filters.vendor == vendor %}selected{% endif %}>
+            {{ vendor }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Serial Number</label>
+      <select name="has_serial" class="form-select">
+        <option value="">All</option>
+        <option value="yes" {% if filters.has_serial == 'yes' %}selected{% endif %}>With Serial</option>
+        <option value="no"  {% if filters.has_serial == 'no'  %}selected{% endif %}>Without Serial</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <button type="submit" class="md-button md-button-filled">
+        <i data-lucide="search" size="16"></i> Search&nbsp;&nbsp;
+      </button>
+    </div>
+  </div>
+
+  <input type="hidden" name="page" value="1">
+  {% if pagination.per_page %}
+  <input type="hidden" name="per_page" value="{{ pagination.per_page }}">
+  {% endif %}
+</form>
+
+<!-- Component Table -->
+<div class="component-table-container">
+    {% if components %}
+    <table class="component-table">
+        <thead>
+            <tr>
+                <th>Component</th>
+                <th>Type</th>
+                <th>Serial Number</th>
+                <th>Position</th>
+                <th>Device</th>
+                <th>Vendor</th>
+                <th>Confidence</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for comp in components %}
+            <tr>
+                <td>
+                    <div class="component-name">{{ comp.name }}</div>
+                    {% if comp.description %}
+                    <div class="component-description">{{ comp.description }}</div>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="component-type type-{{ (comp.type or 'unknown')|lower }}">
+                        {{ comp.type or 'Unknown' }}
+                    </span>
+                </td>
+                <td>
+                    {% if comp.serial %}
+                    <code class="serial-display">{{ comp.serial }}</code>
+                    {% else %}
+                    <span class="no-serial">No serial</span>
+                    {% endif %}
+                </td>
+                <td>{{ comp.position or '—' }}</td>
+                <td>
+                    <a href="{{ url_for('assets.device_detail', device_id=comp.device_id) }}" class="device-link">
+                        {{ comp.device_name }}
+                    </a>
+                    {% if comp.device_model %}
+                    <div class="component-description">{{ comp.device_model }}</div>
+                    {% endif %}
+                </td>
+                <td>{{ comp.vendor_name or '—' }}</td>
+                <td>
+                    {% if comp.extraction_confidence is not none %}
+                    <div class="confidence-bar" title="{{ '%.1f'|format((comp.extraction_confidence or 0) * 100) }}%">
+                        <div class="confidence-fill
+                                    {% if (comp.extraction_confidence or 0) >= 0.7 %}confidence-high
+                                    {% elif (comp.extraction_confidence or 0) >= 0.4 %}confidence-medium
+                                    {% else %}confidence-low{% endif %}"
+                             style="width: {{ ((comp.extraction_confidence or 0) * 100)|round }}%">
+                        </div>
+                    </div>
+                    {% else %}
+                    —
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="pagination-container">
+        <div class="pagination-info">
+            Page {{ pagination.page }} of {{ pagination.total_pages }} — {{ "{:,}".format(pagination.total) }} total
+        </div>
+        <div class="pagination-controls">
+            {% if pagination.has_prev %}
+            <a class="md-button md-button-tonal" href="{{ url_for('components.index',
+                page=1,
+                per_page=pagination.per_page,
+                search=filters.search,
+                type=filters.type,
+                vendor=filters.vendor,
+                has_serial=filters.has_serial) }}">« First</a>
+            <a class="md-button md-button-tonal" href="{{ url_for('components.index',
+                page=pagination.prev_num,
+                per_page=pagination.per_page,
+                search=filters.search,
+                type=filters.type,
+                vendor=filters.vendor,
+                has_serial=filters.has_serial) }}">‹ Prev</a>
+            {% else %}
+            <button class="md-button" disabled>« First</button>
+            <button class="md-button" disabled>‹ Prev</button>
+            {% endif %}
+
+            {% if pagination.has_next %}
+            <a class="md-button md-button-tonal" href="{{ url_for('components.index',
+                page=pagination.next_num,
+                per_page=pagination.per_page,
+                search=filters.search,
+                type=filters.type,
+                vendor=filters.vendor,
+                has_serial=filters.has_serial) }}">Next ›</a>
+            <a class="md-button md-button-tonal" href="{{ url_for('components.index',
+                page=pagination.total_pages,
+                per_page=pagination.per_page,
+                search=filters.search,
+                type=filters.type,
+                vendor=filters.vendor,
+                has_serial=filters.has_serial) }}">Last »</a>
+            {% else %}
+            <button class="md-button" disabled>Next ›</button>
+            <button class="md-button" disabled>Last »</button>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+    }
+});
+</script>
+{% endblock %}

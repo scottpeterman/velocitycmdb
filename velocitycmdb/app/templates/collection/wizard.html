@@ -1,0 +1,979 @@
+{% extends "base.html" %}
+
+{% block title %}Data Collection Wizard - VelocityCMDB{% endblock %}
+
+{% block head_extra %}
+<style>
+    /* Wizard Container */
+    .wizard-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    /* Stepper */
+    .stepper {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 48px;
+        position: relative;
+    }
+
+    .stepper::before {
+        content: '';
+        position: absolute;
+        top: 24px;
+        left: 48px;
+        right: 48px;
+        height: 2px;
+        background: var(--md-outline-variant);
+        z-index: 0;
+    }
+
+    .step {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        z-index: 1;
+    }
+
+    .step-indicator {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: var(--md-surface);
+        border: 2px solid var(--md-outline-variant);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 8px;
+        transition: all 0.3s ease;
+        font: var(--md-typescale-title-medium);
+        color: var(--md-on-surface-variant);
+    }
+
+    .step.active .step-indicator {
+        background: var(--md-primary);
+        border-color: var(--md-primary);
+        color: var(--md-on-primary);
+    }
+
+    .step.completed .step-indicator {
+        background: var(--md-primary-container);
+        border-color: var(--md-primary);
+        color: var(--md-on-primary-container);
+    }
+
+    .step-label {
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-surface-variant);
+        text-align: center;
+    }
+
+    .step.active .step-label {
+        color: var(--md-on-surface);
+        font-weight: 500;
+    }
+
+    /* Step Content */
+    .step-content {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .step-content.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Card Styling */
+    .wizard-card {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .card-header {
+        padding: 24px;
+        border-bottom: 1px solid var(--md-outline-variant);
+    }
+
+    .card-header h2 {
+        font: var(--md-typescale-headline-medium);
+        margin: 0 0 8px 0;
+    }
+
+    .card-header p {
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-surface-variant);
+        margin: 0;
+    }
+
+    .card-content {
+        padding: 24px;
+    }
+
+    .card-actions {
+        padding: 16px 24px;
+        border-top: 1px solid var(--md-outline-variant);
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    /* Form Elements */
+    .form-group {
+        margin-bottom: 24px;
+    }
+
+    .form-group label {
+        display: block;
+        font: var(--md-typescale-body-medium);
+        font-weight: 500;
+        margin-bottom: 8px;
+        color: var(--md-on-surface);
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group select {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid var(--md-outline);
+        border-radius: 4px;
+        font: var(--md-typescale-body-large);
+        background: var(--md-surface);
+        color: var(--md-on-surface);
+    }
+
+    /* Command Checkboxes */
+    .command-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 12px;
+        margin: 16px 0;
+    }
+
+    .command-checkbox {
+        display: flex;
+        align-items: center;
+        padding: 12px;
+        border: 1px solid var(--md-outline-variant);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .command-checkbox:hover {
+        background: var(--md-surface-variant);
+        border-color: var(--md-primary);
+    }
+
+    .command-checkbox input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        margin-right: 12px;
+        cursor: pointer;
+    }
+
+    .command-checkbox label {
+        cursor: pointer;
+        margin: 0;
+        font: var(--md-typescale-body-medium);
+    }
+
+    /* Device Preview */
+    .device-preview {
+        background: var(--md-surface-variant);
+        padding: 16px;
+        border-radius: 8px;
+        margin-top: 16px;
+    }
+
+    .device-preview-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .device-count {
+        font: var(--md-typescale-headline-small);
+        color: var(--md-primary);
+        font-weight: 600;
+    }
+
+    /* Progress */
+    .progress-container {
+        margin: 24px 0;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: var(--md-surface-variant);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: var(--md-primary);
+        transition: width 0.3s ease;
+        width: 0%;
+    }
+
+    .progress-text {
+        text-align: center;
+        margin-top: 8px;
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-surface-variant);
+    }
+
+    /* Activity Log */
+    .activity-log {
+        background: var(--md-surface-variant);
+        border-radius: 8px;
+        padding: 16px;
+        max-height: 400px;
+        overflow-y: auto;
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    .activity-log .log-entry {
+        margin: 2px 0;
+        white-space: pre-wrap;
+    }
+
+    .activity-log .log-success {
+        color: #4caf50;
+    }
+
+    .activity-log .log-error {
+        color: #f44336;
+    }
+
+    .activity-log .log-info {
+        color: var(--md-on-surface-variant);
+    }
+
+    .activity-log .log-warning {
+        color: #ff9800;
+    }
+
+    /* Concurrent Device Status Grid */
+    .device-status-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 12px;
+        margin: 24px 0;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .device-status-card {
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid var(--md-outline-variant);
+        transition: all 0.3s ease;
+    }
+
+    .device-status-card.running {
+        background: #fff3e0;
+        border-color: #ff9800;
+    }
+
+    .device-status-card.success {
+        background: #e8f5e9;
+        border-color: #4caf50;
+    }
+
+    .device-status-card.failed {
+        background: #ffebee;
+        border-color: #f44336;
+    }
+
+    .device-status-card .device-name {
+        font-weight: 500;
+        margin-bottom: 4px;
+    }
+
+    .device-status-card .device-status {
+        font-size: 12px;
+        color: var(--md-on-surface-variant);
+    }
+
+    /* Stats Cards */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 16px;
+        margin: 24px 0;
+    }
+
+    .stat-card {
+        background: var(--md-surface-variant);
+        padding: 16px;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .stat-value {
+        font: var(--md-typescale-headline-large);
+        font-weight: 600;
+        color: var(--md-primary);
+    }
+
+    .stat-label {
+        font: var(--md-typescale-body-small);
+        color: var(--md-on-surface-variant);
+        margin-top: 4px;
+    }
+
+    /* Results */
+    .results-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin: 24px 0;
+    }
+
+    .result-card {
+        background: var(--md-surface-variant);
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .result-card .value {
+        font: var(--md-typescale-display-medium);
+        font-weight: 600;
+        color: var(--md-primary);
+    }
+
+    .result-card .label {
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-surface-variant);
+        margin-top: 8px;
+    }
+
+    /* Buttons */
+    .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 20px;
+        font: var(--md-typescale-label-large);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+        background: var(--md-primary);
+        color: var(--md-on-primary);
+    }
+
+    .btn-primary:hover {
+        background: var(--md-primary);
+        filter: brightness(1.1);
+    }
+
+    .btn-secondary {
+        background: var(--md-surface-variant);
+        color: var(--md-on-surface-variant);
+    }
+
+    .btn-secondary:hover {
+        background: var(--md-surface-variant);
+        filter: brightness(0.95);
+    }
+
+    .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* Status badges */
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font: var(--md-typescale-label-small);
+        font-weight: 500;
+    }
+
+    .status-success {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    .status-error {
+        background: #ffebee;
+        color: #c62828;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wizard-container">
+    <h1 style="font: var(--md-typescale-display-small); margin-bottom: 32px;">Data Collection Wizard</h1>
+
+    <!-- Stepper -->
+    <div class="stepper">
+        <div class="step active" id="stepper-1">
+            <div class="step-indicator">1</div>
+            <div class="step-label">Select Devices & Commands</div>
+        </div>
+        <div class="step" id="stepper-2">
+            <div class="step-indicator">2</div>
+            <div class="step-label">Configure Options</div>
+        </div>
+        <div class="step" id="stepper-3">
+            <div class="step-indicator">3</div>
+            <div class="step-label">Collecting</div>
+        </div>
+        <div class="step" id="stepper-4">
+            <div class="step-indicator">4</div>
+            <div class="step-label">Complete</div>
+        </div>
+    </div>
+
+    <!-- Step 1: Device & Command Selection -->
+    <div id="step1" class="step-content active">
+        <div class="wizard-card">
+            <div class="card-header">
+                <h2>Select Devices & Commands</h2>
+                <p>Choose which devices and data types to collect</p>
+            </div>
+            <div class="card-content">
+                <!-- Device Filters -->
+                <div class="form-group">
+                    <label>Filter Devices</label>
+                    <input type="text" id="vendorFilter" placeholder="Vendor (e.g., Cisco)" value="Cisco">
+                </div>
+
+                <div class="device-preview">
+                    <div class="device-preview-header">
+                        <span style="font-weight: 500;">Matching Devices:</span>
+                        <span class="device-count" id="deviceCount">0</span>
+                    </div>
+                    <button class="btn btn-secondary" onclick="refreshDevices()">Refresh Device List</button>
+                </div>
+
+                <!-- Command Selection -->
+                <div style="margin-top: 32px;">
+                    <label style="font: var(--md-typescale-title-medium); display: block; margin-bottom: 16px;">
+                        Commands to Collect
+                    </label>
+                    <div class="command-grid" id="commandGrid">
+                        <div class="command-checkbox">
+                            <input type="checkbox" id="cmd-configs" value="configs" checked>
+                            <label for="cmd-configs">Configuration (show running-config)</label>
+                        </div>
+                        <div class="command-checkbox">
+                            <input type="checkbox" id="cmd-arp" value="arp">
+                            <label for="cmd-arp">ARP Table (show ip arp)</label>
+                        </div>
+                        <div class="command-checkbox">
+                            <input type="checkbox" id="cmd-mac" value="mac">
+                            <label for="cmd-mac">MAC Table (show mac address-table)</label>
+                        </div>
+                        <div class="command-checkbox">
+                            <input type="checkbox" id="cmd-lldp" value="lldp">
+                            <label for="cmd-lldp">LLDP Neighbors (show lldp neighbors detail)</label>
+                        </div>
+                        <div class="command-checkbox">
+                            <input type="checkbox" id="cmd-interfaces" value="interfaces">
+                            <label for="cmd-interfaces">Interfaces (show interfaces status)</label>
+                        </div>
+                        <div class="command-checkbox">
+                            <input type="checkbox" id="cmd-routes" value="routes">
+                            <label for="cmd-routes">Routes (show ip route)</label>
+                        </div>
+                        <div class="command-checkbox">
+                            <input type="checkbox" id="cmd-version" value="version">
+                            <label for="cmd-version">Version (show version)</label>
+                        </div>
+                        <div class="command-checkbox">
+                            <input type="checkbox" id="cmd-inventory" value="inventory">
+                            <label for="cmd-inventory">Inventory (show inventory)</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-actions">
+                <button class="btn btn-primary" onclick="goToStep(2)">Next: Configure Options</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 2: Configure Options -->
+    <div id="step2" class="step-content">
+        <div class="wizard-card">
+            <div class="card-header">
+                <h2>Configure Collection Options</h2>
+                <p>Set credentials and execution parameters</p>
+            </div>
+            <div class="card-content">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="username" placeholder="admin" value="cisco" required>
+                    <small style="color: var(--md-on-surface-variant); display: block; margin-top: 4px;">
+                        Will be set as CRED_1_USER environment variable
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="password" placeholder="password" value="cisco" required>
+                    <small style="color: var(--md-on-surface-variant); display: block; margin-top: 4px;">
+                        Will be set as CRED_1_PASS environment variable
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="useKeys">
+                        Use SSH Key Authentication (requires key setup)
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label>Max Workers (Concurrent Jobs)</label>
+                    <input type="number" id="maxWorkers" min="1" max="50" value="5">
+                    <small style="color: var(--md-on-surface-variant); display: block; margin-top: 4px;">
+                        Higher values = faster completion, but higher system load
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="autoLoadDb" checked>
+                        Automatically load captured data into database
+                    </label>
+                </div>
+
+                <!-- Summary -->
+                <div class="device-preview">
+                    <h3 style="margin-top: 0;">Collection Summary</h3>
+                    <p><strong>Devices:</strong> <span id="summaryDeviceCount">0</span></p>
+                    <p><strong>Commands:</strong> <span id="summaryCommandCount">0</span></p>
+                    <p><strong>Total operations:</strong> <span id="summaryTotalOps">0</span></p>
+                    <p><strong>Concurrent workers:</strong> <span id="summaryWorkers">5</span></p>
+                </div>
+            </div>
+            <div class="card-actions">
+                <button class="btn btn-secondary" onclick="goToStep(1)">Back</button>
+                <button class="btn btn-primary" onclick="startCollection()">Start Collection</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 3: Collecting Progress -->
+    <div id="step3" class="step-content">
+        <div class="wizard-card">
+            <div class="card-header">
+                <h2>Collecting Data...</h2>
+                <p id="currentStatus">Starting concurrent collection...</p>
+            </div>
+            <div class="card-content">
+                <!-- Real-time Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="statRunning">0</div>
+                        <div class="stat-label">Running</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statCompleted">0</div>
+                        <div class="stat-label">Completed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statFailed">0</div>
+                        <div class="stat-label">Failed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statRemaining">0</div>
+                        <div class="stat-label">Remaining</div>
+                    </div>
+                </div>
+
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">0%</div>
+                </div>
+
+                <!-- Device Status Grid -->
+                <h3>Device Status</h3>
+                <div class="device-status-grid" id="deviceStatusGrid">
+                    <!-- Populated dynamically -->
+                </div>
+
+                <h3>Activity Log</h3>
+                <div class="activity-log" id="activityLog">
+                    <div class="log-entry log-info">[Starting] Initializing concurrent collection...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 4: Complete -->
+    <div id="step4" class="step-content">
+        <div class="wizard-card">
+            <div class="card-header">
+                <h2>✅ Collection Complete!</h2>
+                <p>Data has been collected and loaded into the database</p>
+            </div>
+            <div class="card-content">
+                <div class="results-summary">
+                    <div class="result-card">
+                        <div class="value" id="resultSuccess">0</div>
+                        <div class="label">Devices Succeeded</div>
+                    </div>
+                    <div class="result-card">
+                        <div class="value" id="resultFailed">0</div>
+                        <div class="label">Devices Failed</div>
+                    </div>
+                    <div class="result-card">
+                        <div class="value" id="resultCommands">0</div>
+                        <div class="label">Commands Executed</div>
+                    </div>
+                    <div class="result-card">
+                        <div class="value" id="resultTime">0s</div>
+                        <div class="label">Execution Time</div>
+                    </div>
+                </div>
+
+                <div id="failedDevicesSection" style="display: none; margin-top: 24px;">
+                    <h3>Failed Devices</h3>
+                    <div id="failedDevicesList"></div>
+                </div>
+
+                <div style="margin-top: 24px;">
+                    <h3>Next Steps</h3>
+                    <ul>
+                        <li><a href="/arp">View ARP Catalog</a></li>
+                        <li><a href="/changes">Review Configuration Changes</a></li>
+                        <li><a href="/assets">Browse Device Inventory</a></li>
+                        <li><a href="/collection/wizard">Run Another Collection</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-actions">
+                <button class="btn btn-primary" onclick="location.href='/dashboard'">Back to Dashboard</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script>
+let currentStep = 1;
+let selectedDevices = [];
+let jobId = null;
+const socket = io();
+
+// Device tracking for concurrent execution
+let deviceStatuses = new Map(); // deviceName -> {status, timestamp}
+let stats = {
+    running: 0,
+    completed: 0,
+    failed: 0,
+    total: 0
+};
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    refreshDevices();
+});
+
+// Step navigation
+function goToStep(step) {
+    // Hide current step
+    document.getElementById(`step${currentStep}`).classList.remove('active');
+    document.getElementById(`stepper-${currentStep}`).classList.remove('active');
+    document.getElementById(`stepper-${currentStep}`).classList.add('completed');
+
+    // Show new step
+    currentStep = step;
+    document.getElementById(`step${step}`).classList.add('active');
+    document.getElementById(`stepper-${step}`).classList.add('active');
+
+    // Update summary if going to step 2
+    if (step === 2) {
+        updateSummary();
+    }
+}
+
+// Refresh device list
+async function refreshDevices() {
+    const vendor = document.getElementById('vendorFilter').value;
+
+    try {
+        const response = await fetch('/collection/devices', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({vendor: vendor})
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            selectedDevices = data.devices.map(d => d.id);
+            document.getElementById('deviceCount').textContent = data.count;
+        } else {
+            console.error('Failed to load devices:', data.error);
+        }
+    } catch (error) {
+        console.error('Error loading devices:', error);
+    }
+}
+
+// Update summary
+function updateSummary() {
+    const commands = getSelectedCommands();
+    const deviceCount = selectedDevices.length;
+    const commandCount = commands.length;
+    const workers = parseInt(document.getElementById('maxWorkers').value);
+
+    document.getElementById('summaryDeviceCount').textContent = deviceCount;
+    document.getElementById('summaryCommandCount').textContent = commandCount;
+    document.getElementById('summaryTotalOps').textContent = deviceCount * commandCount;
+    document.getElementById('summaryWorkers').textContent = workers;
+}
+
+// Get selected commands
+function getSelectedCommands() {
+    const checkboxes = document.querySelectorAll('#commandGrid input[type="checkbox"]:checked');
+    return Array.from(checkboxes).map(cb => cb.value);
+}
+
+// Start collection
+async function startCollection() {
+    const commands = getSelectedCommands();
+
+    if (commands.length === 0) {
+        alert('Please select at least one command to collect');
+        return;
+    }
+
+    if (selectedDevices.length === 0) {
+        alert('No devices selected');
+        return;
+    }
+
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const useKeys = document.getElementById('useKeys').checked;
+
+    if (!username) {
+        alert('Username is required');
+        return;
+    }
+
+    if (!useKeys && !password) {
+        alert('Password is required (or enable SSH key authentication)');
+        return;
+    }
+
+    const credentials = {
+        username: username,
+        password: password,
+        use_keys: useKeys,
+        ssh_key_path: null
+    };
+
+    const options = {
+        max_workers: parseInt(document.getElementById('maxWorkers').value),
+        auto_load_db: document.getElementById('autoLoadDb').checked
+    };
+
+    try {
+        const vendorFilter = document.getElementById('vendorFilter').value.trim();
+
+        const response = await fetch('/collection/start', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                devices: selectedDevices,
+                capture_types: commands,
+                credentials: credentials,
+                filters: {
+                    vendor: vendorFilter
+                },
+                options: options
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            jobId = data.job_id;
+            stats.total = selectedDevices.length;
+            goToStep(3);
+            setupSocketIO();
+        } else {
+            alert('Failed to start collection: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Error starting collection:', error);
+        alert('Failed to start collection: ' + error.message);
+    }
+}
+
+// Setup SocketIO listeners
+function setupSocketIO() {
+    socket.on('collection_progress', function(data) {
+        if (data.job_id === jobId) {
+            updateProgress(data);
+        }
+    });
+
+    socket.on('collection_complete', function(data) {
+        if (data.job_id === jobId) {
+            showResults(data);
+        }
+    });
+
+    socket.on('collection_error', function(data) {
+        if (data.job_id === jobId) {
+            appendLog(`[ERROR] ${data.error}`, 'error');
+        }
+    });
+
+    // Enhanced: handle concurrent device updates
+    socket.on('device_started', function(data) {
+        if (data.job_id === jobId) {
+            updateDeviceStatus(data.device_name, 'running');
+            appendLog(`▶ Started: ${data.device_name}`, 'info');
+        }
+    });
+
+    socket.on('device_completed', function(data) {
+        if (data.job_id === jobId) {
+            updateDeviceStatus(data.device_name, data.success ? 'success' : 'failed');
+            const icon = data.success ? '✓' : '✗';
+            const type = data.success ? 'success' : 'error';
+            appendLog(`${icon} ${data.device_name}: ${data.message || 'Done'}`, type);
+        }
+    });
+}
+
+// Update device status card
+function updateDeviceStatus(deviceName, status) {
+    deviceStatuses.set(deviceName, {status, timestamp: Date.now()});
+
+    // Update stats
+    stats.running = 0;
+    stats.completed = 0;
+    stats.failed = 0;
+
+    deviceStatuses.forEach(s => {
+        if (s.status === 'running') stats.running++;
+        else if (s.status === 'success') stats.completed++;
+        else if (s.status === 'failed') stats.failed++;
+    });
+
+    stats.remaining = stats.total - stats.completed - stats.failed;
+
+    // Update UI
+    document.getElementById('statRunning').textContent = stats.running;
+    document.getElementById('statCompleted').textContent = stats.completed;
+    document.getElementById('statFailed').textContent = stats.failed;
+    document.getElementById('statRemaining').textContent = stats.remaining;
+
+    // Update or create device card
+    const grid = document.getElementById('deviceStatusGrid');
+    let card = document.getElementById(`device-${deviceName}`);
+
+    if (!card) {
+        card = document.createElement('div');
+        card.id = `device-${deviceName}`;
+        card.className = 'device-status-card';
+        grid.appendChild(card);
+    }
+
+    card.className = `device-status-card ${status}`;
+    card.innerHTML = `
+        <div class="device-name">${deviceName}</div>
+        <div class="device-status">${status.toUpperCase()}</div>
+    `;
+}
+
+// Update progress
+function updateProgress(data) {
+    const progress = data.progress || 0;
+    document.getElementById('progressFill').style.width = `${progress}%`;
+    document.getElementById('progressText').textContent = `${Math.round(progress)}%`;
+
+    if (data.message) {
+        document.getElementById('currentStatus').textContent = data.message;
+        if (!data.device_name) { // Only log general messages
+            appendLog(data.message, 'info');
+        }
+    }
+}
+
+// Append to activity log
+function appendLog(message, type = 'info') {
+    const log = document.getElementById('activityLog');
+    const entry = document.createElement('div');
+    entry.className = `log-entry log-${type}`;
+    entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
+}
+
+// Show results
+function showResults(data) {
+    // Use our tracked device stats, not job counts from backend
+    document.getElementById('resultSuccess').textContent = stats.completed;
+    document.getElementById('resultFailed').textContent = stats.failed;
+    document.getElementById('resultCommands').textContent =
+        Object.values(data.captures_created || {}).reduce((a, b) => a + b, 0);
+    document.getElementById('resultTime').textContent =
+        Math.round(data.execution_time || 0) + 's';
+
+    // Show failed devices if any
+    if (stats.failed > 0 || (data.failed_devices && data.failed_devices.length > 0)) {
+        document.getElementById('failedDevicesSection').style.display = 'block';
+        const list = document.getElementById('failedDevicesList');
+
+        // Build list from our tracked statuses
+        const failedDevicesList = [];
+        deviceStatuses.forEach((status, deviceName) => {
+            if (status.status === 'failed') {
+                failedDevicesList.push(`<div class="status-badge status-error">${deviceName}</div>`);
+            }
+        });
+
+        list.innerHTML = failedDevicesList.join('');
+    }
+
+    // DON'T auto-advance - let user review the results in step 3
+    // Show a "View Results" button instead
+    const activityLog = document.getElementById('activityLog');
+    const completeBtn = document.createElement('div');
+    completeBtn.style.cssText = 'margin-top: 16px; text-align: center;';
+    completeBtn.innerHTML = `
+        <button class="btn btn-primary" onclick="goToStep(4)" style="padding: 16px 32px; font-size: 16px;">
+            View Final Results →
+        </button>
+    `;
+    activityLog.parentNode.appendChild(completeBtn);
+
+    // Update current status
+    document.getElementById('currentStatus').textContent =
+        `✓ Collection complete! ${stats.completed} succeeded, ${stats.failed} failed`;
+}
+</script>
+{% endblock %}

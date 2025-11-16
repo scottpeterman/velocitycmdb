@@ -1,0 +1,29 @@
+# Juniper Capture Jobs
+# Generated: 2025-10-16T06:37:32.047027
+# Jobs: 25
+
+job_303_juniper_arp.json
+job_307_juniper_authentication.json
+job_311_juniper_authorization.json
+job_315_juniper_bgp-neighbor.json
+job_319_juniper_bgp-summary.json
+job_323_juniper_bgp-table.json
+job_327_juniper_bgp-table-detail.json
+job_331_juniper_configs.json
+job_335_juniper_console.json
+job_339_juniper_int-status.json
+job_343_juniper_interface-status.json
+job_347_juniper_inventory.json
+job_351_juniper_ip_ssh.json
+job_355_juniper_lldp.json
+job_359_juniper_lldp-detail.json
+job_363_juniper_mac.json
+job_367_juniper_ntp_status.json
+job_371_juniper_ospf-neighbor.json
+job_375_juniper_port-channel.json
+job_379_juniper_radius.json
+job_383_juniper_routes.json
+job_387_juniper_snmp_server.json
+job_391_juniper_syslog.json
+job_395_juniper_tacacs.json
+job_399_juniper_version.json

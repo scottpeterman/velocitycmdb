@@ -1,0 +1,71 @@
+
+# Core documentation
+include README.md
+include LICENSE
+include CHANGELOG.md
+include requirements.txt
+include config.yaml
+
+# Documentation files
+recursive-include docs *.md *.rst *.txt
+
+# Include all feature-specific README files
+include README_*.md
+
+# Flask application files
+recursive-include velocitycmdb/app/templates *.html
+recursive-include velocitycmdb/app/static *
+
+# TextFSM templates and command definitions
+include velocitycmdb/pcng/tfsm_templates.db
+include velocitycmdb/pcng/command_templates.json
+
+# Database schema files
+recursive-include velocitycmdb/db *.sql
+
+# Configuration examples
+include velocitycmdb/app/config_loader.py
+recursive-include velocitycmdb/pcng/jobs *.json
+recursive-include velocitycmdb/app/blueprints/scmaps/data *.json
+recursive-include velocitycmdb/app/blueprints/scmaps/static *
+recursive-include velocitycmdb/app/blueprints/scmaps/templates *.html
+recursive-include velocitycmdb/app/blueprints/*/data *.json
+recursive-include velocitycmdb/app/blueprints/*/static *
+recursive-include velocitycmdb/app/blueprints/*/templates *.html
+
+# Exclude development and build artifacts
+global-exclude __pycache__
+global-exclude *.py[co]
+global-exclude *.so
+global-exclude *.dylib
+global-exclude .DS_Store
+global-exclude *.swp
+global-exclude *.swo
+global-exclude *~
+global-exclude .git*
+
+# Exclude test files and directories
+prune tests
+prune test
+prune .pytest_cache
+prune .coverage
+
+# Exclude CI/CD and development files
+prune .github
+prune .vscode
+prune .idea
+exclude .gitignore
+exclude .gitattributes
+exclude tox.ini
+exclude .travis.yml
+
+# Exclude build directories
+prune build
+prune dist
+prune *.egg-info
+
+# Exclude backup and temporary files
+exclude backups/*
+exclude logs/*
+exclude *.bak
+exclude *.tmp

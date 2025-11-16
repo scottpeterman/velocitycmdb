@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Search Notes{% endblock %}
+
+{% block head_extra %}
+<style>
+    .search-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .search-box {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .search-input-wrapper {
+        display: flex;
+        gap: 12px;
+    }
+
+    .search-input {
+        flex: 1;
+        padding: 14px 16px;
+        font: var(--md-typescale-body-large);
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline);
+        border-radius: var(--md-shape-corner-small);
+        color: var(--md-on-surface);
+    }
+
+    .search-button {
+        padding: 14px 32px;
+        border-radius: 20px;
+        background: var(--md-primary);
+        color: var(--md-on-primary);
+        border: none;
+        cursor: pointer;
+        font-weight: 500;
+    }
+
+    .search-results {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .result-card {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        padding: 20px;
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        transition: all 0.2s;
+    }
+
+    .result-card:hover {
+        border-color: var(--md-primary);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .result-title {
+        font: var(--md-typescale-title-large);
+        margin: 0 0 8px 0;
+        color: var(--md-primary);
+    }
+
+    .result-preview {
+        color: var(--md-on-surface-variant);
+        margin: 8px 0;
+    }
+
+    .result-meta {
+        font-size: 12px;
+        color: var(--md-on-surface-variant);
+        margin-top: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="search-container">
+    <h1 class="md-headline-large" style="margin-bottom: 24px;">Search Notes</h1>
+
+    <div class="search-box">
+        <form method="GET" action="{{ url_for('notes.search') }}">
+            <div class="search-input-wrapper">
+                <input type="text"
+                       name="q"
+                       class="search-input"
+                       placeholder="Search notes by title, content, or tags..."
+                       value="{{ query }}"
+                       autofocus>
+                <button type="submit" class="search-button">
+                    <i data-lucide="search" size="16"></i>
+                    Search
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {% if query %}
+        <h2 style="margin-bottom: 16px;">Results for "{{ query }}"</h2>
+
+        {% if notes %}
+        <div class="search-results">
+            {% for note in notes %}
+            <a href="{{ url_for('notes.detail', note_id=note.id) }}" class="result-card">
+                <h3 class="result-title">{{ note.title }}</h3>
+                <div class="result-preview">
+                    {{ note.content|striptags|truncate(200) }}
+                </div>
+                <div class="result-meta">
+                    <span class="note-type-badge note-type-{{ note.note_type }}"
+                          style="padding: 2px 8px; border-radius: 4px; font-size: 11px;">
+                        {{ note.note_type|title }}
+                    </span>
+                    <span style="margin-left: 12px;">Updated: {{ note.updated_at[:10] }}</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 48px; color: var(--md-on-surface-variant);">
+            <i data-lucide="search-x" size="48"></i>
+            <p>No results found for "{{ query }}"</p>
+        </div>
+        {% endif %}
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+});
+</script>
+{% endblock %}

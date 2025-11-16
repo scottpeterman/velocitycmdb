@@ -1,0 +1,8 @@
+# radius Capture Jobs (All Vendors)
+# Generated: 2025-10-16T06:37:32.049856
+# Jobs: 4
+
+job_376_arista_radius.json
+job_377_cisco-ios_radius.json
+job_378_cisco-nxos_radius.json
+job_379_juniper_radius.json

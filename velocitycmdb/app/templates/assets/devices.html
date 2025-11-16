@@ -1,0 +1,762 @@
+{% extends "base.html" %}
+
+{% block title %}Devices - Network Asset Management{% endblock %}
+
+{% block head_extra %}
+<style>
+    /* Device-specific styles using MD3 design system */
+    .device-card {
+        transition: transform var(--md-motion-duration-short2) var(--md-motion-easing-standard),
+                    box-shadow var(--md-motion-duration-short2) var(--md-motion-easing-standard);
+    }
+
+    .device-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--md-elevation-level2);
+    }
+
+    .device-status {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+    }
+
+    .status-online { background-color: var(--md-success); }
+    .status-partial { background-color: var(--md-warning); }
+    .status-offline { background-color: var(--md-error); }
+
+    .badge-stack {
+        background: var(--md-primary);
+        color: var(--md-on-primary);
+    }
+
+    .badge-infrastructure {
+        background: var(--md-tertiary);
+        color: var(--md-on-tertiary);
+    }
+
+    .filter-section {
+        background: var(--md-surface-container);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .table-container {
+        background: var(--md-surface);
+        border-radius: var(--md-shape-corner-medium);
+        border: 1px solid var(--md-outline-variant);
+        overflow: hidden;
+    }
+
+    .table-header {
+        background: var(--md-surface-container);
+        border-bottom: 1px solid var(--md-outline-variant);
+        padding: 20px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .pagination-container {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        padding: 20px;
+        margin-top: 24px;
+    }
+
+    .view-toggle {
+        display: flex;
+        gap: 4px;
+        background: var(--md-surface-container);
+        border-radius: var(--md-shape-corner-small);
+        padding: 4px;
+    }
+
+    .btn-view {
+        padding: 8px 16px;
+        border: none;
+        background: transparent;
+        color: var(--md-on-surface);
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-label-large);
+        cursor: pointer;
+        transition: background-color var(--md-motion-duration-short2) var(--md-motion-easing-standard);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-view:hover {
+        background: var(--md-surface-container-high);
+    }
+
+    .btn-view.active {
+        background: var(--md-primary);
+        color: var(--md-on-primary);
+    }
+
+    /* Custom table styling for MD3 */
+    .md-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .md-table th,
+    .md-table td {
+        padding: 16px 24px;
+        text-align: left;
+        border-bottom: 1px solid var(--md-outline-variant);
+    }
+
+    .md-table th {
+        background: var(--md-surface-container);
+        font: var(--md-typescale-title-small);
+        color: var(--md-on-surface);
+        font-weight: 500;
+    }
+
+    .md-table td {
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-surface);
+    }
+
+    .md-table tbody tr {
+        transition: background-color var(--md-motion-duration-short2) var(--md-motion-easing-standard);
+    }
+
+    .md-table tbody tr:hover {
+        background: var(--md-surface-container);
+    }
+
+    .md-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Form controls styling */
+    .filter-form {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
+        gap: 16px;
+        align-items: end;
+    }
+
+    .form-field {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .form-field label {
+        font: var(--md-typescale-body-small);
+        color: var(--md-on-surface);
+        font-weight: 500;
+    }
+
+    .form-field input,
+    .form-field select {
+        padding: 12px 16px;
+        border: 1px solid var(--md-outline);
+        border-radius: var(--md-shape-corner-small);
+        background: var(--md-surface);
+        color: var(--md-on-surface);
+        font: var(--md-typescale-body-medium);
+        transition: border-color var(--md-motion-duration-short2) var(--md-motion-easing-standard);
+    }
+
+    .form-field input:focus,
+    .form-field select:focus {
+        outline: none;
+        border-color: var(--md-primary);
+    }
+
+    /* Results summary styling */
+    .results-summary {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        padding: 16px 0;
+    }
+
+    .per-page-control {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .per-page-control select {
+        padding: 6px 12px;
+        border: 1px solid var(--md-outline);
+        border-radius: var(--md-shape-corner-small);
+        background: var(--md-surface);
+        color: var(--md-on-surface);
+        font: var(--md-typescale-body-small);
+    }
+
+    /* Badge styling */
+    .md-badge {
+        padding: 4px 8px;
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-label-small);
+        font-weight: 500;
+    }
+
+    .md-badge-success {
+        background: var(--md-success-container);
+        color: var(--md-on-success-container);
+    }
+
+    .md-badge-secondary {
+        background: var(--md-surface-container-high);
+        color: var(--md-on-surface-variant);
+    }
+
+    /* Device cards for card view */
+    .device-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 24px;
+    }
+
+    .device-card-content {
+        padding: 20px;
+    }
+
+    .device-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+    }
+
+    .device-card-title {
+        font: var(--md-typescale-title-medium);
+        color: var(--md-on-surface);
+        margin: 0;
+        font-weight: 500;
+    }
+
+    .device-card-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .device-card-info {
+        color: var(--md-on-surface-variant);
+        font: var(--md-typescale-body-medium);
+        margin-bottom: 16px;
+    }
+
+    .device-card-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 16px;
+    }
+
+    /* Pagination styling */
+    .md-pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .md-pagination-item {
+        display: flex;
+    }
+
+    .md-pagination-link {
+        padding: 8px 12px;
+        border: 1px solid var(--md-outline);
+        background: var(--md-surface);
+        color: var(--md-on-surface);
+        text-decoration: none;
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-body-medium);
+        transition: all var(--md-motion-duration-short2) var(--md-motion-easing-standard);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .md-pagination-link:hover {
+        background: var(--md-surface-container);
+        border-color: var(--md-outline);
+    }
+
+    .md-pagination-item.active .md-pagination-link {
+        background: var(--md-primary);
+        color: var(--md-on-primary);
+        border-color: var(--md-primary);
+    }
+
+    .md-pagination-item.disabled .md-pagination-link {
+        background: var(--md-surface);
+        color: var(--md-on-surface-variant);
+        border-color: var(--md-outline-variant);
+        cursor: not-allowed;
+    }
+
+    /* Empty state styling */
+    .empty-state {
+        text-align: center;
+        padding: 48px 24px;
+        color: var(--md-on-surface-variant);
+    }
+
+    .empty-state-icon {
+        margin-bottom: 16px;
+        opacity: 0.6;
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+        .filter-form {
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .results-summary {
+            flex-direction: column;
+            gap: 12px;
+            align-items: stretch;
+        }
+
+        .device-cards-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .md-table {
+            min-width: 800px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Replace the page header section in devices.html with this: -->
+
+<div class="page-header">
+    <div class="page-header-content">
+        <h1 class="md-headline-large" style="margin: 0 0 8px 0; display: flex; align-items: center; gap: 16px;">
+            <i data-lucide="server"></i>
+            Device Inventory
+        </h1>
+        <p class="md-body-large" style="color: var(--md-on-surface-variant); margin: 0;">Manage and monitor network devices</p>
+    </div>
+    <div style="display: flex; gap: 12px; align-items: center;">
+        <div class="view-toggle">
+            <button class="btn-view active" id="table-view" onclick="switchView('table')">
+                <i data-lucide="table" size="16"></i>
+                Table&nbsp;
+            </button>
+            <button class="md-button md-button-tonal" onclick="exportDeviceList()">
+                <i data-lucide="download" size="16"></i>
+                Export&nbsp;
+            </button>
+        </div>
+        <a href="{{ url_for('assets.device_create') }}" class="md-button md-button-filled">
+            <i data-lucide="plus" size="16"></i>
+            Add Device&nbsp;&nbsp;
+        </a>
+        <button class="md-button md-button-tonal" onclick="showComingSoon('Device Discovery')">
+            <i data-lucide="refresh-cw" size="16"></i>
+            Refresh&nbsp;&nbsp;
+        </button>
+    </div>
+</div>
+<!-- Filter Section -->
+<div class="filter-section">
+    <form method="GET" id="filter-form" class="filter-form">
+        <div class="form-field">
+            <label for="search">Search</label>
+            <input type="text" id="search" name="search"
+                   value="{{ filters.search }}"
+                   placeholder="Name, IP, Model...">
+        </div>
+        <div class="form-field">
+            <label for="vendor">Vendor</label>
+            <select id="vendor" name="vendor">
+                <option value="">All Vendors</option>
+                {% for vendor in vendors %}
+                <option value="{{ vendor }}" {% if filters.vendor == vendor %}selected{% endif %}>
+                    {{ vendor }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-field">
+            <label for="site">Site</label>
+            <select id="site" name="site">
+                <option value="">All Sites</option>
+                {% for site in sites %}
+                <option value="{{ site }}" {% if filters.site == site %}selected{% endif %}>
+                    {{ site }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-field">
+            <label for="role">Role</label>
+            <select id="role" name="role">
+                <option value="">All Roles</option>
+                {% for role in roles %}
+                <option value="{{ role }}" {% if filters.role == role %}selected{% endif %}>
+                    {{ role }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-field">
+            <label for="stack">Stack</label>
+            <select id="stack" name="stack">
+                <option value="">All</option>
+                <option value="yes" {% if filters.stack == 'yes' %}selected{% endif %}>Stacks Only</option>
+                <option value="no" {% if filters.stack == 'no' %}selected{% endif %}>Non-Stacks</option>
+            </select>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button type="submit" class="md-icon-button">
+                <i data-lucide="filter" size="20"></i>
+            </button>
+            <a href="{{ url_for('assets.devices') }}" class="md-icon-button">
+                <i data-lucide="x" size="20"></i>
+            </a>
+        </div>
+        <input type="hidden" name="per_page" value="{{ pagination.per_page }}">
+    </form>
+</div>
+
+<!-- Results Summary -->
+<div class="results-summary">
+    <div class="md-body-medium" style="color: var(--md-on-surface-variant);">
+        Showing {{ (pagination.page - 1) * pagination.per_page + 1 }} -
+        {{ (pagination.page - 1) * pagination.per_page + devices|length }}
+        of {{ pagination.total }} devices
+    </div>
+    <div class="per-page-control">
+        <label for="per_page" class="md-body-medium" style="color: var(--md-on-surface);">Per page:</label>
+        <select id="per_page" name="per_page">
+            <option value="10" {% if pagination.per_page == 10 %}selected{% endif %}>10</option>
+            <option value="25" {% if pagination.per_page == 25 %}selected{% endif %}>25</option>
+            <option value="50" {% if pagination.per_page == 50 %}selected{% endif %}>50</option>
+            <option value="100" {% if pagination.per_page == 100 %}selected{% endif %}>100</option>
+        </select>
+    </div>
+</div>
+
+<!-- Table View -->
+<div id="table-container" class="table-container">
+    <div class="table-header">
+        <h2 class="md-title-large" style="margin: 0;">Device List</h2>
+        <span class="md-body-small" style="color: var(--md-on-surface-variant);">{{ devices|length }} devices loaded</span>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table class="md-table">
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Device</th>
+                    <th>Site</th>
+                    <th>Vendor/Model</th>
+                    <th>Management IP</th>
+                    <th>Role</th>
+                    <th>Captures</th>
+                    <th>Last Updated</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if not devices %}
+                <tr>
+                    <td colspan="9" class="empty-state">
+                        <div class="empty-state-icon">
+                            <i data-lucide="search" size="48"></i>
+                        </div>
+                        <p class="md-body-large" style="margin: 0;">No devices found matching your filters</p>
+                    </td>
+                </tr>
+                {% endif %}
+
+                {% for device in devices %}
+                <tr>
+                    <td>
+                        {% if device.current_captures > 0 and device.last_fingerprint_success %}
+                        <span class="device-status status-online" title="Online - Has captures and fingerprint"></span>
+                        {% elif device.current_captures > 0 or device.last_fingerprint_success %}
+                        <span class="device-status status-partial" title="Partial - Limited data"></span>
+                        {% else %}
+                        <span class="device-status status-offline" title="Offline - No recent data"></span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="md-title-small" style="margin: 0 0 4px 0;">{{ device.name }}</div>
+                        <div class="md-body-small" style="color: var(--md-on-surface-variant); margin: 0 0 8px 0;">{{ device.normalized_name }}</div>
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            {% if device.is_stack %}
+                            <span class="md-badge badge-stack">Stack ({{ device.stack_count }})</span>
+                            {% endif %}
+                            {% if device.is_infrastructure %}
+                            <span class="md-badge badge-infrastructure">Infrastructure</span>
+                            {% endif %}
+                            {% if device.have_sn %}
+                            <i data-lucide="tag" size="14" style="color: var(--md-success);" title="Has Serial Numbers"></i>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="md-body-medium">{{ device.site_code or '-' }}</div>
+                        {% if device.site_name %}
+                        <div class="md-body-small" style="color: var(--md-on-surface-variant);">{{ device.site_name }}</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="md-title-small" style="margin: 0 0 4px 0;">{{ device.vendor_name or '-' }}</div>
+                        <div class="md-body-small" style="color: var(--md-on-surface-variant); margin: 0 0 4px 0;">{{ device.model or '-' }}</div>
+                        {% if device.device_type_name %}
+                        <div class="md-body-small" style="color: var(--md-primary);">{{ device.device_type_name }}</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if device.management_ip %}
+                        <code style="background: var(--md-surface-container); padding: 2px 6px; border-radius: var(--md-shape-corner-small); font: var(--md-typescale-body-small);">{{ device.management_ip }}</code>
+                        {% else %}
+                        <span style="color: var(--md-on-surface-variant);">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="md-body-medium">{{ device.role_name or '-' }}</span>
+                    </td>
+                    <td>
+                        {% if device.current_captures > 0 %}
+                        <span class="md-badge md-badge-success">{{ device.current_captures }}</span>
+                        <div class="md-body-small" style="color: var(--md-on-surface-variant); margin-top: 4px;">({{ device.capture_types }} types)</div>
+                        {% else %}
+                        <span class="md-badge md-badge-secondary">0</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if device.last_updated %}
+                        <span class="md-body-small">{{ device.last_updated[:19] }}</span>
+                        {% else %}
+                        <span style="color: var(--md-on-surface-variant);">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 4px;">
+                            <a href="{{ url_for('assets.device_detail', device_id=device.id) }}"
+                               class="md-icon-button" title="View Details">
+                                <i data-lucide="eye" size="16"></i>
+                            </a>
+                            <button class="md-icon-button"
+                                    onclick="showComingSoon('SSH Connect')" title="SSH Connect">
+                                <i data-lucide="terminal" size="16"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+<!-- Pagination -->
+{% if pagination.total_pages > 1 %}
+<div class="pagination-container">
+    <nav aria-label="Device pagination">
+        <ul class="md-pagination">
+            {% if pagination.has_prev %}
+            <li class="md-pagination-item">
+                <a class="md-pagination-link" href="{{ url_for('assets.devices', page=pagination.prev_num, **filters) }}">
+                    <i data-lucide="chevron-left" size="16"></i>
+                    Previous
+                </a>
+            </li>
+            {% endif %}
+
+            {% for page_num in range(1, pagination.total_pages + 1) %}
+                {% if page_num == pagination.page %}
+                <li class="md-pagination-item active">
+                    <span class="md-pagination-link">{{ page_num }}</span>
+                </li>
+                {% elif page_num <= 3 or page_num > pagination.total_pages - 3 or
+                        (page_num >= pagination.page - 2 and page_num <= pagination.page + 2) %}
+                <li class="md-pagination-item">
+                    <a class="md-pagination-link" href="{{ url_for('assets.devices', page=page_num, **filters) }}">
+                        {{ page_num }}
+                    </a>
+                </li>
+                {% elif page_num == pagination.page - 3 or page_num == pagination.page + 3 %}
+                <li class="md-pagination-item disabled">
+                    <span class="md-pagination-link">...</span>
+                </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if pagination.has_next %}
+            <li class="md-pagination-item">
+                <a class="md-pagination-link" href="{{ url_for('assets.devices', page=pagination.next_num, **filters) }}">
+                    Next
+                    <i data-lucide="chevron-right" size="16"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+
+    <div style="text-align: center; margin-top: 12px;">
+        <span class="md-body-small" style="color: var(--md-on-surface-variant);">
+            Page {{ pagination.page }} of {{ pagination.total_pages }}
+            ({{ pagination.total }} total devices)
+        </span>
+    </div>
+</div>
+{% endif %}
+
+<script>
+function switchView(view) {
+    const tableView = document.getElementById('table-container');
+    const cardView = document.getElementById('card-container');
+    const tableBtn = document.getElementById('table-view');
+    const cardBtn = document.getElementById('card-view');
+
+    // Check if card view exists
+    if (!cardView) {
+        // Card view not implemented yet, keep table view active
+        if (tableBtn) tableBtn.classList.add('active');
+        if (cardBtn) cardBtn.classList.remove('active');
+        return;
+    }
+
+    if (view === 'table') {
+        tableView.classList.remove('d-none');
+        cardView.classList.add('d-none');
+        tableBtn.classList.add('active');
+        cardBtn.classList.remove('active');
+        localStorage.setItem('deviceView', 'table');
+    } else {
+        tableView.classList.add('d-none');
+        cardView.classList.remove('d-none');
+        tableBtn.classList.remove('active');
+        cardBtn.classList.add('active');
+        localStorage.setItem('deviceView', 'card');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Restore view preference (default to table since card view isn't implemented)
+    const savedView = localStorage.getItem('deviceView') || 'table';
+    const cardView = document.getElementById('card-container');
+
+    // Only switch to saved view if it's available
+    if (savedView === 'card' && !cardView) {
+        switchView('table');
+    } else {
+        switchView(savedView);
+    }
+
+    // Auto-submit form on per_page change
+    document.getElementById('per_page').addEventListener('change', function() {
+        const form = document.getElementById('filter-form');
+        const perPageInput = form.querySelector('input[name="per_page"]');
+        perPageInput.value = this.value;
+        form.submit();
+    });
+
+    // Auto-filter on form changes (debounced)
+    let filterTimeout;
+    const filterInputs = document.querySelectorAll('#filter-form input, #filter-form select');
+
+    filterInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            clearTimeout(filterTimeout);
+            filterTimeout = setTimeout(() => {
+                document.getElementById('filter-form').submit();
+            }, 500);
+        });
+    });
+});
+
+function exportDeviceList() {
+    // Get current filter parameters from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const filters = {
+        search: urlParams.get('search') || '',
+        vendor: urlParams.get('vendor') || '',
+        site: urlParams.get('site') || '',
+        role: urlParams.get('role') || '',
+        stack: urlParams.get('stack') || ''
+    };
+
+    // Build export URL with filters but no pagination
+    const exportParams = new URLSearchParams({
+        ...filters,
+        export: 'csv',
+        per_page: '10000'  // Get all matching devices
+    });
+
+    // Trigger download
+    window.location.href = `/assets/devices/export?${exportParams.toString()}`;
+
+    showToast('Exporting devices...');
+}
+
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--md-inverse-surface); color: var(--md-inverse-on-surface); padding: 12px 24px; border-radius: 8px; z-index: 10000; box-shadow: var(--md-elevation-3);';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Restore view preference
+    const savedView = localStorage.getItem('deviceView') || 'table';
+    switchView(savedView);
+
+    // Auto-submit form on per_page change
+    document.getElementById('per_page').addEventListener('change', function() {
+        const form = document.getElementById('filter-form');
+        const perPageInput = form.querySelector('input[name="per_page"]');
+        perPageInput.value = this.value;
+        form.submit();
+    });
+
+    // Auto-filter on form changes (debounced)
+    let filterTimeout;
+    const filterInputs = document.querySelectorAll('#filter-form input, #filter-form select');
+
+    filterInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            clearTimeout(filterTimeout);
+            filterTimeout = setTimeout(() => {
+                document.getElementById('filter-form').submit();
+            }, 500);
+        });
+    });
+});
+</script>
+{% endblock %}

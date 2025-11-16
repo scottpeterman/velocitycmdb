@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if role else 'Create' }} Device Role{% endblock %}
+
+{% block head_extra %}
+<style>
+    /* Page header */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 32px;
+        gap: 24px;
+    }
+
+    .page-header-content {
+        flex: 1;
+    }
+
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        list-style: none;
+        padding: 0;
+    }
+
+    .breadcrumb-item {
+        color: var(--md-on-surface-variant);
+        font: var(--md-typescale-body-medium);
+    }
+
+    .breadcrumb-item a {
+        color: var(--md-primary);
+        text-decoration: none;
+    }
+
+    .breadcrumb-item a:hover {
+        text-decoration: underline;
+    }
+
+    .breadcrumb-item:not(:last-child)::after {
+        content: "/";
+        margin-left: 8px;
+        color: var(--md-on-surface-variant);
+    }
+
+    /* Form sections */
+    .form-section {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        overflow: hidden;
+        max-width: 800px;
+    }
+
+    .form-section-header {
+        background: var(--md-surface-container);
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--md-outline-variant);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .form-section-header h3 {
+        margin: 0;
+        font: var(--md-typescale-title-medium);
+        color: var(--md-on-surface);
+        font-weight: 500;
+    }
+
+    .form-section-content {
+        padding: 24px;
+    }
+
+    /* Form fields */
+    .md-form-field {
+        margin-bottom: 24px;
+    }
+
+    .md-form-field:last-child {
+        margin-bottom: 0;
+    }
+
+    .md-form-label {
+        display: block;
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-surface);
+        font-weight: 500;
+        margin-bottom: 8px;
+    }
+
+    .required-indicator {
+        color: var(--md-error);
+        margin-left: 4px;
+    }
+
+    .md-form-input,
+    .md-form-textarea {
+        width: 100%;
+        padding: 14px 16px;
+        font: var(--md-typescale-body-large);
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline);
+        border-radius: var(--md-shape-corner-small);
+        color: var(--md-on-surface);
+        transition: border-color var(--md-motion-duration-short4) var(--md-motion-easing-standard),
+                    border-width var(--md-motion-duration-short4) var(--md-motion-easing-standard);
+        outline: none;
+        box-sizing: border-box;
+    }
+
+    .md-form-textarea {
+        resize: vertical;
+        font-family: inherit;
+    }
+
+    .md-form-input:focus,
+    .md-form-textarea:focus {
+        border-color: var(--md-primary);
+        border-width: 2px;
+        padding: 13px 15px;
+    }
+
+    .md-form-input::placeholder {
+        color: var(--md-on-surface-variant);
+        opacity: 0.6;
+    }
+
+    .md-form-help {
+        font: var(--md-typescale-body-small);
+        color: var(--md-on-surface-variant);
+        margin-top: 4px;
+    }
+
+    /* Checkbox field */
+    .md-checkbox-field {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 0;
+    }
+
+    .md-checkbox-field input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+
+    .md-checkbox-field label {
+        font: var(--md-typescale-body-large);
+        color: var(--md-on-surface);
+        cursor: pointer;
+    }
+
+    /* Port range inputs */
+    .port-range-inputs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    /* Action buttons */
+    .form-actions {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        padding: 24px;
+        margin-top: 24px;
+        max-width: 800px;
+    }
+
+    .form-actions-buttons {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+    }
+
+    @media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .form-actions-buttons {
+            flex-direction: column;
+        }
+
+        .port-range-inputs {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="page-header">
+    <div class="page-header-content">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('roles.index') }}">Roles</a></li>
+                <li class="breadcrumb-item">{{ 'Edit' if role else 'Create' }}</li>
+            </ol>
+        </nav>
+        <h1 class="md-headline-large" style="margin: 0;">
+            {% if role %}Edit Device Role{% else %}Create Device Role{% endif %}
+        </h1>
+    </div>
+</div>
+
+<!-- Form -->
+<form method="POST" action="{{ url_for('roles.edit', role_id=role.id) if role else url_for('roles.create') }}">
+    <div class="form-section">
+        <div class="form-section-header">
+            <i data-lucide="shield" size="20"></i>
+            <h3>Role Information</h3>
+        </div>
+        <div class="form-section-content">
+            <div class="md-form-field">
+                <label class="md-form-label" for="name">
+                    Role Name
+                    <span class="required-indicator">*</span>
+                </label>
+                <input type="text"
+                       class="md-form-input"
+                       id="name"
+                       name="name"
+                       value="{{ role.name if role else (form_data.name if form_data else '') }}"
+                       required
+                       placeholder="e.g., Core Router, Access Switch, Firewall">
+                <div class="md-form-help">
+                    Descriptive name for this device role
+                </div>
+            </div>
+
+            <div class="md-form-field">
+                <label class="md-form-label" for="description">Description</label>
+                <textarea class="md-form-textarea"
+                          id="description"
+                          name="description"
+                          rows="3"
+                          placeholder="Optional description of this role's purpose and characteristics">{{ role.description if role else (form_data.description if form_data else '') }}</textarea>
+                <div class="md-form-help">
+                    Additional details about this role (optional)
+                </div>
+            </div>
+
+            <div class="md-form-field">
+                <div class="md-checkbox-field">
+                    <input type="checkbox"
+                           id="is_infrastructure"
+                           name="is_infrastructure"
+                           {% if role and role.is_infrastructure %}checked{% endif %}
+                           {% if form_data and form_data.get('is_infrastructure') %}checked{% endif %}>
+                    <label for="is_infrastructure">Infrastructure Device</label>
+                </div>
+                <div class="md-form-help">
+                    Mark this role as critical network infrastructure (routers, core switches, firewalls)
+                </div>
+            </div>
+
+            <div class="md-form-field">
+                <label class="md-form-label">Port Count Range</label>
+                <div class="port-range-inputs">
+                    <div>
+                        <input type="number"
+                               class="md-form-input"
+                               id="port_count_min"
+                               name="port_count_min"
+                               value="{{ role.port_count_min if role and role.port_count_min else (form_data.port_count_min if form_data else '') }}"
+                               min="0"
+                               placeholder="Min ports">
+                    </div>
+                    <div>
+                        <input type="number"
+                               class="md-form-input"
+                               id="port_count_max"
+                               name="port_count_max"
+                               value="{{ role.port_count_max if role and role.port_count_max else (form_data.port_count_max if form_data else '') }}"
+                               min="0"
+                               placeholder="Max ports">
+                    </div>
+                </div>
+                <div class="md-form-help">
+                    Expected port count range for devices in this role (optional)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="form-actions">
+        <div class="form-actions-buttons">
+            <a href="{{ url_for('roles.index') }}" class="md-button md-button-outlined">
+                <i data-lucide="x" size="16"></i>
+                Cancel&nbsp;&nbsp;
+            </a>
+            <button type="submit" class="md-button md-button-filled">
+                <i data-lucide="save" size="16"></i>
+                {% if role %}Update Role&nbsp;&nbsp;{% else %}Create Role{% endif %}
+            </button>
+        </div>
+    </div>
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    lucide.createIcons();
+
+    // Validate port range
+    const portMin = document.getElementById('port_count_min');
+    const portMax = document.getElementById('port_count_max');
+
+    function validatePortRange() {
+        if (portMin.value && portMax.value) {
+            if (parseInt(portMin.value) > parseInt(portMax.value)) {
+                portMax.setCustomValidity('Maximum must be greater than minimum');
+            } else {
+                portMax.setCustomValidity('');
+            }
+        }
+    }
+
+    portMin.addEventListener('change', validatePortRange);
+    portMax.addEventListener('change', validatePortRange);
+});
+</script>
+{% endblock %}
