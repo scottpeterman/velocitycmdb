@@ -115,7 +115,7 @@ velocitycmdb/
 
 ### Asset Management
 - **Devices** - Full CRUD with sites, vendors, roles, stacks
-- **Components** - Hardware inventory (1,684 components tracked)
+- **Components** - Hardware inventory (1.5k+ components tracked), may include optics, fans, power, stack info etc
 - **Sites/Vendors/Roles** - Complete taxonomy management
 - **Bulk Operations** - Preview-commit workflow for batch changes
 
