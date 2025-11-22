@@ -80,7 +80,7 @@ Access the dashboard at `http://localhost:8086`
 VelocityCMDB is built on proven open-source components:
 
 **Foundation:**
-- [Secure Cartography](https://github.com/scottpeterman/secure_cartography) - Network discovery (134⭐, 21 forks)
+- [Secure Cartography](https://github.com/scottpeterman/secure_cartography) - Network discovery (149⭐)
 - Paramiko - SSH automation
 - TextFSM - Multi-vendor parsing (100+ templates)
 - Flask + SocketIO - Real-time web interface
