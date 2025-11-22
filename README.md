@@ -20,20 +20,20 @@ VelocityCMDB is currently in Proof of Concept (POC) stage and is under active de
 VelocityCMDB is a **pip-installable network CMDB** that combines asset management, automated discovery, configuration tracking, and operational intelligence in a unified platform.
 
 **Key Features:**
-- 🔍 **Automated Discovery** - LLDP/CDP-based topology mapping
-- 📊 **Device Inventory** - Complete asset tracking with components, sites, vendors, roles
-- 🔄 **Change Detection** - Real-time configuration and other cli captured information monitoring with severity classification
-- 🗺️ **Topology Visualization** - Interactive maps with export to GraphML/DrawIO/PNG
-- 🔍 **Operational Search** - Full-text search across 8,891+ captures (Config, Arp, Mac, Inventory and more)
-- 📝 **Integrated Documentation** - Wiki-style notes linked to devices
-- 🖥️ **Web SSH Terminal** - Browser-based device access with authentication
-- 👥 **Multi-Auth** - LDAP, local database, and OS authentication
+- **Automated Discovery** - LLDP/CDP-based topology mapping
+- **Device Inventory** - Complete asset tracking with components, sites, vendors, roles
+- **Change Detection** - Real-time configuration and other cli captured information monitoring with severity classification
+- **Topology Visualization** - Interactive maps with export to GraphML/DrawIO/PNG
+- **Operational Search** - Full-text search across 8k+ captures (Config, Arp, Mac, Inventory and more)
+- **Integrated Documentation** - Wiki-style notes linked to devices
+- **Web SSH Terminal** - Browser-based device access with authentication
+- **Multi-Auth** - LDAP, local database, and OS authentication
 
 **Why VelocityCMDB?**
-- ⚡ **Fast Setup** - `pip install velocitycmdb && init command, then start the app`
-- 🎯 **Wizard-Driven** - Discovery and collection wizards guide deployment
-- 🏢 **Enterprise Friendly** - Basic Role-based access, audit logging, backup/restore
-- 🔧 **Engineer-Focused** - CLI tools, REST API, and scriptable workflows, run locally or on a server
+- **Fast Setup** - `pip install velocitycmdb && init command, then start the app`
+- **Wizard-Driven** - Discovery and collection wizards guide deployment
+- **Enterprise Friendly** - Basic Role-based access, audit logging, backup/restore
+- **Engineer-Focused** - CLI tools, REST API, and scriptable workflows, run locally or on a server
 
 ---
 
@@ -143,7 +143,7 @@ velocitycmdb/
 - **Role-Based Access** - Admin, operator, viewer groups
 - **Audit Logging** - Track all administrative actions
 - **Backup/Restore** - Complete system lifecycle management
-- **User Management** - Full CRUD with password policies
+- **User Management** - Full Admin CRUD UI with password policies when auth using DB
 
 ### Automation
 - **SSH Terminal** - WebSocket-based browser access
