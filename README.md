@@ -177,7 +177,7 @@ velocitycmdb/
 
 ### Change Tracking
 ![Changes](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/changes_light.png)
-*33 configuration changes with severity*
+*configuration changes with severity*
 
 </td>
 <td width="50%">
@@ -211,15 +211,15 @@ velocitycmdb/
 ## Proven at Scale
 
 **Production Deployment Stats:**
-- ✅ 357 devices managed
-- ✅ 53 sites across infrastructure  
-- ✅ 126 switch stacks tracked
-- ✅ 1,684 hardware components
-- ✅ 8,891 successful captures
-- ✅ 99.3% device classification accuracy
+- ✅ 300+ devices managed
+- ✅ 50+ sites across infrastructure  
+- ✅ 120+ switch stacks tracked
+- ✅ 1,6k hardware components
+- ✅ 8.9k successful CLI captures
+- ✅ 90% device classification accuracy, depending on platform. 
 
 **Performance:**
-- Discovery: 45-60 min for 295 devices
+- Discovery: 45-60 min for 300 devices
 - Fingerprinting: 60-90 min (8 concurrent processes)
 - Full onboarding cycle: ~4 hours (manual)
 - Dashboard response: <500ms
@@ -228,8 +228,8 @@ velocitycmdb/
 **Vendor Support:**
 - Cisco IOS/IOS-XE/NX-OS
 - Arista EOS
-- HPE ProCurve/Aruba
-- Juniper Junos (beta)
+- HPE ProCurve/Aruba .. limited
+- Juniper Junos (beta) ... limited
 
 ---
 
