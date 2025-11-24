@@ -358,3 +358,427 @@
 [2025-11-13 23:04:11.922] SSHClient Message: Command execution completed in 5018.63ms
 [2025-11-13 23:04:11.922] Disconnecting from device
 [2025-11-13 23:04:11.922] Successfully disconnected
+[2025-11-23 18:18:52.452] Connecting to 172.16.128.1:22...
+[2025-11-23 18:18:52.963] Connecting to 172.16.128.1:22...
+[2025-11-23 18:18:53.105] Connected to 172.16.128.1:22
+[2025-11-23 18:18:53.105] Creating shell stream with ANSI filtering
+[2025-11-23 18:18:53.137] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:18:53.822] Connected to 172.16.128.1:22
+[2025-11-23 18:18:53.822] Creating shell stream with ANSI filtering
+[2025-11-23 18:18:53.854] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:18:53.997] Connecting to 172.16.128.1:22...
+[2025-11-23 18:18:54.622] Connected to 172.16.128.1:22
+[2025-11-23 18:18:54.622] Creating shell stream with ANSI filtering
+[2025-11-23 18:18:54.652] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:18:55.146] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:18:55.146] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:18:55.146] Sending single newline to trigger prompt
+[2025-11-23 18:18:55.287] Connecting to 172.16.128.1:22...
+[2025-11-23 18:18:55.858] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:18:55.858] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:18:55.858] Sending single newline to trigger prompt
+[2025-11-23 18:18:56.100] Connected to 172.16.128.1:22
+[2025-11-23 18:18:56.100] Creating shell stream with ANSI filtering
+[2025-11-23 18:18:56.130] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:18:56.654] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:18:56.654] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:18:56.654] Sending single newline to trigger prompt
+[2025-11-23 18:18:58.131] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:18:58.131] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:18:58.131] Sending single newline to trigger prompt
+[2025-11-23 18:19:01.161] Detected prompt: 'wan-core-1#'
+[2025-11-23 18:19:01.161] Expect prompt set to: 'wan-core-1#'
+[2025-11-23 18:19:01.161] SSHClient Message: Executing command: 'terminal length 0,show ip arp,,'
+[2025-11-23 18:19:01.166] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:19:01.166] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:19:01.166] Waiting between sub-commands: 1s
+[2025-11-23 18:19:01.874] Detected prompt: 'wan-core-1#'
+[2025-11-23 18:19:01.874] Expect prompt set to: 'wan-core-1#'
+[2025-11-23 18:19:01.874] SSHClient Message: Executing command: 'terminal length 0,show mac address-table,,'
+[2025-11-23 18:19:01.874] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:19:01.874] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:19:01.874] Waiting between sub-commands: 1s
+[2025-11-23 18:19:01.895] Connecting to 172.16.128.1:22...
+[2025-11-23 18:19:02.168] Sending command 2/4: 'show ip arp'
+[2025-11-23 18:19:02.168] Waiting between sub-commands: 1s
+[2025-11-23 18:19:02.563] Connected to 172.16.128.1:22
+[2025-11-23 18:19:02.563] Creating shell stream with ANSI filtering
+[2025-11-23 18:19:02.591] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:19:02.672] Detected prompt: 'wan-core-1#'
+[2025-11-23 18:19:02.672] Expect prompt set to: 'wan-core-1#'
+[2025-11-23 18:19:02.672] SSHClient Message: Executing command: 'terminal length 0,show ip arp,,'
+[2025-11-23 18:19:02.672] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:19:02.672] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:19:02.672] Waiting between sub-commands: 1s
+[2025-11-23 18:19:02.877] Sending command 2/4: 'show mac address-table'
+[2025-11-23 18:19:02.877] Waiting between sub-commands: 1s
+[2025-11-23 18:19:03.171] Sending newline command 3/4
+[2025-11-23 18:19:03.171] Sending newline command 3/4
+[2025-11-23 18:19:03.171] Waiting between sub-commands: 1s
+[2025-11-23 18:19:03.675] Sending command 2/4: 'show ip arp'
+[2025-11-23 18:19:03.675] Waiting between sub-commands: 1s
+[2025-11-23 18:19:03.880] Sending newline command 3/4
+[2025-11-23 18:19:03.880] Sending newline command 3/4
+[2025-11-23 18:19:03.880] Waiting between sub-commands: 1s
+[2025-11-23 18:19:04.146] Detected prompt: 'wan-core-1#'
+[2025-11-23 18:19:04.146] Expect prompt set to: 'wan-core-1#'
+[2025-11-23 18:19:04.146] SSHClient Message: Executing command: 'terminal length 0,show running-config,,'
+[2025-11-23 18:19:04.146] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:19:04.146] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:19:04.146] Waiting between sub-commands: 1s
+[2025-11-23 18:19:04.176] Sending newline command 4/4
+[2025-11-23 18:19:04.176] Sending newline command 4/4
+[2025-11-23 18:19:04.176] Monitoring for EXACTLY 3 occurrences of: 'wan-core-1#'
+[2025-11-23 18:19:04.176] PROMPT DETECTED: 4/3
+[2025-11-23 18:19:04.176] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:19:04.176] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:19:04.176] Shell command execution completed
+[2025-11-23 18:19:04.176] Total shell command execution time: 3010.59ms
+[2025-11-23 18:19:04.176] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:19:04.595] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:19:04.595] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:19:04.597] Sending single newline to trigger prompt
+[2025-11-23 18:19:04.677] Sending newline command 3/4
+[2025-11-23 18:19:04.677] Sending newline command 3/4
+[2025-11-23 18:19:04.677] Waiting between sub-commands: 1s
+[2025-11-23 18:19:04.885] Sending newline command 4/4
+[2025-11-23 18:19:04.885] Sending newline command 4/4
+[2025-11-23 18:19:04.885] Monitoring for EXACTLY 3 occurrences of: 'wan-core-1#'
+[2025-11-23 18:19:04.885] PROMPT DETECTED: 4/3
+[2025-11-23 18:19:04.885] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:19:04.885] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:19:04.885] Shell command execution completed
+[2025-11-23 18:19:04.885] Total shell command execution time: 3011.23ms
+[2025-11-23 18:19:04.885] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:19:05.151] Sending command 2/4: 'show running-config'
+[2025-11-23 18:19:05.151] Waiting between sub-commands: 1s
+[2025-11-23 18:19:05.181] SSHClient Message: Command execution completed in 4015.41ms
+[2025-11-23 18:19:05.181] Disconnecting from device
+[2025-11-23 18:19:05.181] Successfully disconnected
+[2025-11-23 18:19:05.682] Sending newline command 4/4
+[2025-11-23 18:19:05.682] Sending newline command 4/4
+[2025-11-23 18:19:05.682] Monitoring for EXACTLY 3 occurrences of: 'wan-core-1#'
+[2025-11-23 18:19:05.682] PROMPT DETECTED: 4/3
+[2025-11-23 18:19:05.682] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:19:05.682] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:19:05.689] Shell command execution completed
+[2025-11-23 18:19:05.689] Total shell command execution time: 3016.98ms
+[2025-11-23 18:19:05.689] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:19:05.893] SSHClient Message: Command execution completed in 4019.14ms
+[2025-11-23 18:19:05.893] Disconnecting from device
+[2025-11-23 18:19:05.893] Successfully disconnected
+[2025-11-23 18:19:06.153] Sending newline command 3/4
+[2025-11-23 18:19:06.153] Sending newline command 3/4
+[2025-11-23 18:19:06.153] Waiting between sub-commands: 1s
+[2025-11-23 18:19:06.694] SSHClient Message: Command execution completed in 4022.37ms
+[2025-11-23 18:19:06.694] Disconnecting from device
+[2025-11-23 18:19:06.694] Successfully disconnected
+[2025-11-23 18:19:07.156] Sending newline command 4/4
+[2025-11-23 18:19:07.156] Sending newline command 4/4
+[2025-11-23 18:19:07.156] Monitoring for EXACTLY 3 occurrences of: 'wan-core-1#'
+[2025-11-23 18:19:07.160] PROMPT DETECTED: 4/3
+[2025-11-23 18:19:07.165] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:19:07.165] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:19:07.165] Shell command execution completed
+[2025-11-23 18:19:07.165] Total shell command execution time: 3018.50ms
+[2025-11-23 18:19:07.165] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:19:08.171] SSHClient Message: Command execution completed in 4024.50ms
+[2025-11-23 18:19:08.171] Disconnecting from device
+[2025-11-23 18:19:08.171] Successfully disconnected
+[2025-11-23 18:19:10.613] Detected prompt: 'wan-core-1#'
+[2025-11-23 18:19:10.613] Expect prompt set to: 'wan-core-1#'
+[2025-11-23 18:19:10.613] SSHClient Message: Executing command: 'enable,terminal length 0,show running-config,,'
+[2025-11-23 18:19:10.617] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:19:10.617] Sending command 1/5: 'enable'
+[2025-11-23 18:19:10.617] Waiting between sub-commands: 1s
+[2025-11-23 18:19:11.621] Sending command 2/5: 'terminal length 0'
+[2025-11-23 18:19:11.621] Waiting between sub-commands: 1s
+[2025-11-23 18:19:12.625] Sending command 3/5: 'show running-config'
+[2025-11-23 18:19:12.625] Waiting between sub-commands: 1s
+[2025-11-23 18:19:13.628] Sending newline command 4/5
+[2025-11-23 18:19:13.628] Sending newline command 4/5
+[2025-11-23 18:19:13.628] Waiting between sub-commands: 1s
+[2025-11-23 18:19:14.630] Sending newline command 5/5
+[2025-11-23 18:19:14.630] Sending newline command 5/5
+[2025-11-23 18:19:14.630] Monitoring for EXACTLY 4 occurrences of: 'wan-core-1#'
+[2025-11-23 18:19:14.630] PROMPT DETECTED: 5/4
+[2025-11-23 18:19:14.630] TARGET REACHED: 5 prompts detected. STOPPING NOW.
+[2025-11-23 18:19:14.630] SUCCESS: Command execution completed with 5/4 prompts
+[2025-11-23 18:19:14.630] Shell command execution completed
+[2025-11-23 18:19:14.630] Total shell command execution time: 4013.57ms
+[2025-11-23 18:19:14.630] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:19:15.642] SSHClient Message: Command execution completed in 5025.88ms
+[2025-11-23 18:19:15.642] Disconnecting from device
+[2025-11-23 18:19:15.642] Successfully disconnected
+[2025-11-23 18:20:56.055] Connecting to 172.16.128.1:22...
+[2025-11-23 18:20:56.517] Connecting to 172.16.128.1:22...
+[2025-11-23 18:20:56.628] Connected to 172.16.128.1:22
+[2025-11-23 18:20:56.628] Creating shell stream with ANSI filtering
+[2025-11-23 18:20:56.676] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:20:56.993] Connected to 172.16.128.1:22
+[2025-11-23 18:20:56.993] Creating shell stream with ANSI filtering
+[2025-11-23 18:20:57.025] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:20:57.739] Connecting to 172.16.128.1:22...
+[2025-11-23 18:20:58.250] Connected to 172.16.128.1:22
+[2025-11-23 18:20:58.250] Creating shell stream with ANSI filtering
+[2025-11-23 18:20:58.282] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:20:58.687] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:20:58.687] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:20:58.687] Sending single newline to trigger prompt
+[2025-11-23 18:20:59.030] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:20:59.030] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:20:59.030] Sending single newline to trigger prompt
+[2025-11-23 18:21:00.286] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:21:00.286] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:21:00.286] Sending single newline to trigger prompt
+[2025-11-23 18:21:02.359] Connecting to 172.16.128.1:22...
+[2025-11-23 18:21:02.916] Connected to 172.16.128.1:22
+[2025-11-23 18:21:02.916] Creating shell stream with ANSI filtering
+[2025-11-23 18:21:02.947] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:21:04.705] Detected prompt: 'wan-core-1#'
+[2025-11-23 18:21:04.705] Expect prompt set to: 'wan-core-1#'
+[2025-11-23 18:21:04.705] SSHClient Message: Executing command: 'terminal length 0,show lldp neighbors detail,,'
+[2025-11-23 18:21:04.705] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:21:04.705] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:21:04.705] Waiting between sub-commands: 1s
+[2025-11-23 18:21:04.958] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:21:04.958] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:21:04.958] Sending single newline to trigger prompt
+[2025-11-23 18:21:05.048] Detected prompt: 'wan-core-1#'
+[2025-11-23 18:21:05.048] Expect prompt set to: 'wan-core-1#'
+[2025-11-23 18:21:05.048] SSHClient Message: Executing command: 'terminal length 0,show lldp neighbors detail,,'
+[2025-11-23 18:21:05.048] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:21:05.048] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:21:05.048] Waiting between sub-commands: 1s
+[2025-11-23 18:21:05.712] Sending command 2/4: 'show lldp neighbors detail'
+[2025-11-23 18:21:05.712] Waiting between sub-commands: 1s
+[2025-11-23 18:21:06.052] Sending command 2/4: 'show lldp neighbors detail'
+[2025-11-23 18:21:06.052] Waiting between sub-commands: 1s
+[2025-11-23 18:21:06.306] Detected prompt: 'wan-core-1#'
+[2025-11-23 18:21:06.306] Expect prompt set to: 'wan-core-1#'
+[2025-11-23 18:21:06.306] SSHClient Message: Executing command: 'terminal length 0,show mac address-table,,'
+[2025-11-23 18:21:06.306] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:21:06.306] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:21:06.313] Waiting between sub-commands: 1s
+[2025-11-23 18:21:06.715] Sending newline command 3/4
+[2025-11-23 18:21:06.715] Sending newline command 3/4
+[2025-11-23 18:21:06.715] Waiting between sub-commands: 1s
+[2025-11-23 18:21:06.977] Connecting to 172.16.128.1:22...
+[2025-11-23 18:21:07.053] Sending newline command 3/4
+[2025-11-23 18:21:07.053] Sending newline command 3/4
+[2025-11-23 18:21:07.053] Waiting between sub-commands: 1s
+[2025-11-23 18:21:07.315] Sending command 2/4: 'show mac address-table'
+[2025-11-23 18:21:07.315] Waiting between sub-commands: 1s
+[2025-11-23 18:21:07.717] Sending newline command 4/4
+[2025-11-23 18:21:07.717] Sending newline command 4/4
+[2025-11-23 18:21:07.717] Monitoring for EXACTLY 3 occurrences of: 'wan-core-1#'
+[2025-11-23 18:21:07.717] PROMPT DETECTED: 4/3
+[2025-11-23 18:21:07.717] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:21:07.717] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:21:07.717] Shell command execution completed
+[2025-11-23 18:21:07.717] Total shell command execution time: 3012.44ms
+[2025-11-23 18:21:07.717] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:21:08.031] Connected to 172.16.128.1:22
+[2025-11-23 18:21:08.031] Creating shell stream with ANSI filtering
+[2025-11-23 18:21:08.058] Sending newline command 4/4
+[2025-11-23 18:21:08.058] Sending newline command 4/4
+[2025-11-23 18:21:08.058] Monitoring for EXACTLY 3 occurrences of: 'wan-core-1#'
+[2025-11-23 18:21:08.058] PROMPT DETECTED: 4/3
+[2025-11-23 18:21:08.058] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:21:08.064] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:21:08.064] Shell command execution completed
+[2025-11-23 18:21:08.064] Total shell command execution time: 3015.70ms
+[2025-11-23 18:21:08.064] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:21:08.079] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:21:08.318] Sending newline command 3/4
+[2025-11-23 18:21:08.318] Sending newline command 3/4
+[2025-11-23 18:21:08.318] Waiting between sub-commands: 1s
+[2025-11-23 18:21:08.725] SSHClient Message: Command execution completed in 4020.44ms
+[2025-11-23 18:21:08.725] Disconnecting from device
+[2025-11-23 18:21:08.725] Successfully disconnected
+[2025-11-23 18:21:09.070] SSHClient Message: Command execution completed in 4022.20ms
+[2025-11-23 18:21:09.070] Disconnecting from device
+[2025-11-23 18:21:09.070] Successfully disconnected
+[2025-11-23 18:21:09.320] Sending newline command 4/4
+[2025-11-23 18:21:09.320] Sending newline command 4/4
+[2025-11-23 18:21:09.320] Monitoring for EXACTLY 3 occurrences of: 'wan-core-1#'
+[2025-11-23 18:21:09.320] PROMPT DETECTED: 4/3
+[2025-11-23 18:21:09.320] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:21:09.320] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:21:09.320] Shell command execution completed
+[2025-11-23 18:21:09.320] Total shell command execution time: 3013.64ms
+[2025-11-23 18:21:09.320] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:21:10.086] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:21:10.086] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:21:10.086] Sending single newline to trigger prompt
+[2025-11-23 18:21:10.326] SSHClient Message: Command execution completed in 4019.59ms
+[2025-11-23 18:21:10.326] Disconnecting from device
+[2025-11-23 18:21:10.326] Successfully disconnected
+[2025-11-23 18:21:10.976] Detected prompt: 'wan-core-1#'
+[2025-11-23 18:21:10.976] Expect prompt set to: 'wan-core-1#'
+[2025-11-23 18:21:10.976] SSHClient Message: Executing command: 'terminal length 0,show ip route,,'
+[2025-11-23 18:21:10.976] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:21:10.981] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:21:10.981] Waiting between sub-commands: 1s
+[2025-11-23 18:21:11.983] Sending command 2/4: 'show ip route'
+[2025-11-23 18:21:11.984] Waiting between sub-commands: 1s
+[2025-11-23 18:21:12.986] Sending newline command 3/4
+[2025-11-23 18:21:12.986] Sending newline command 3/4
+[2025-11-23 18:21:12.986] Waiting between sub-commands: 1s
+[2025-11-23 18:21:13.991] Sending newline command 4/4
+[2025-11-23 18:21:13.993] Sending newline command 4/4
+[2025-11-23 18:21:13.993] Monitoring for EXACTLY 3 occurrences of: 'wan-core-1#'
+[2025-11-23 18:21:13.999] PROMPT DETECTED: 4/3
+[2025-11-23 18:21:14.001] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:21:14.001] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:21:14.001] Shell command execution completed
+[2025-11-23 18:21:14.001] Total shell command execution time: 3019.84ms
+[2025-11-23 18:21:14.001] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:21:15.008] SSHClient Message: Command execution completed in 4031.98ms
+[2025-11-23 18:21:15.008] Disconnecting from device
+[2025-11-23 18:21:15.011] Successfully disconnected
+[2025-11-23 18:21:16.102] Detected prompt: 'wan-core-1#'
+[2025-11-23 18:21:16.102] Expect prompt set to: 'wan-core-1#'
+[2025-11-23 18:21:16.102] SSHClient Message: Executing command: 'terminal length 0,show ip route,,'
+[2025-11-23 18:21:16.102] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:21:16.102] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:21:16.102] Waiting between sub-commands: 1s
+[2025-11-23 18:21:17.109] Sending command 2/4: 'show ip route'
+[2025-11-23 18:21:17.109] Waiting between sub-commands: 1s
+[2025-11-23 18:21:18.111] Sending newline command 3/4
+[2025-11-23 18:21:18.111] Sending newline command 3/4
+[2025-11-23 18:21:18.112] Waiting between sub-commands: 1s
+[2025-11-23 18:21:19.113] Sending newline command 4/4
+[2025-11-23 18:21:19.113] Sending newline command 4/4
+[2025-11-23 18:21:19.113] Monitoring for EXACTLY 3 occurrences of: 'wan-core-1#'
+[2025-11-23 18:21:19.113] PROMPT DETECTED: 4/3
+[2025-11-23 18:21:19.119] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:21:19.119] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:21:19.119] Shell command execution completed
+[2025-11-23 18:21:19.119] Total shell command execution time: 3017.32ms
+[2025-11-23 18:21:19.119] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:21:20.126] SSHClient Message: Command execution completed in 4023.68ms
+[2025-11-23 18:21:20.126] Disconnecting from device
+[2025-11-23 18:21:20.126] Successfully disconnected
+[2025-11-23 18:22:57.475] Connecting to 172.16.128.1:22...
+[2025-11-23 18:22:57.867] Connecting to 172.16.128.1:22...
+[2025-11-23 18:22:58.107] Connected to 172.16.128.1:22
+[2025-11-23 18:22:58.107] Creating shell stream with ANSI filtering
+[2025-11-23 18:22:58.138] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:22:58.410] Connected to 172.16.128.1:22
+[2025-11-23 18:22:58.410] Creating shell stream with ANSI filtering
+[2025-11-23 18:22:58.442] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:23:00.144] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:23:00.144] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:23:00.144] Sending single newline to trigger prompt
+[2025-11-23 18:23:00.447] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:23:00.447] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:23:00.447] Sending single newline to trigger prompt
+[2025-11-23 18:23:05.853] Connecting to 172.16.128.1:22...
+[2025-11-23 18:23:06.164] Detected prompt: 'wan-core-1#'
+[2025-11-23 18:23:06.164] Expect prompt set to: 'wan-core-1#'
+[2025-11-23 18:23:06.164] SSHClient Message: Executing command: 'terminal length 0,show version,,'
+[2025-11-23 18:23:06.164] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:23:06.166] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:23:06.166] Waiting between sub-commands: 1s
+[2025-11-23 18:23:06.467] Detected prompt: 'wan-core-1#'
+[2025-11-23 18:23:06.467] Expect prompt set to: 'wan-core-1#'
+[2025-11-23 18:23:06.467] SSHClient Message: Executing command: 'terminal length 0,show version,,'
+[2025-11-23 18:23:06.467] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:23:06.467] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:23:06.467] Waiting between sub-commands: 1s
+[2025-11-23 18:23:06.489] Connected to 172.16.128.1:22
+[2025-11-23 18:23:06.489] Creating shell stream with ANSI filtering
+[2025-11-23 18:23:06.521] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:23:07.167] Sending command 2/4: 'show version'
+[2025-11-23 18:23:07.167] Waiting between sub-commands: 1s
+[2025-11-23 18:23:07.474] Sending command 2/4: 'show version'
+[2025-11-23 18:23:07.474] Waiting between sub-commands: 1s
+[2025-11-23 18:23:07.701] Connecting to 172.16.128.1:22...
+[2025-11-23 18:23:08.171] Sending newline command 3/4
+[2025-11-23 18:23:08.172] Sending newline command 3/4
+[2025-11-23 18:23:08.172] Waiting between sub-commands: 1s
+[2025-11-23 18:23:08.476] Sending newline command 3/4
+[2025-11-23 18:23:08.476] Sending newline command 3/4
+[2025-11-23 18:23:08.476] Waiting between sub-commands: 1s
+[2025-11-23 18:23:08.492] Connected to 172.16.128.1:22
+[2025-11-23 18:23:08.492] Creating shell stream with ANSI filtering
+[2025-11-23 18:23:08.520] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:23:08.525] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:23:08.525] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:23:08.525] Sending single newline to trigger prompt
+[2025-11-23 18:23:09.176] Sending newline command 4/4
+[2025-11-23 18:23:09.176] Sending newline command 4/4
+[2025-11-23 18:23:09.178] Monitoring for EXACTLY 3 occurrences of: 'wan-core-1#'
+[2025-11-23 18:23:09.213] PROMPT DETECTED: 4/3
+[2025-11-23 18:23:09.213] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:23:09.215] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:23:09.217] Shell command execution completed
+[2025-11-23 18:23:09.217] Total shell command execution time: 3051.07ms
+[2025-11-23 18:23:09.219] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:23:09.479] Sending newline command 4/4
+[2025-11-23 18:23:09.479] Sending newline command 4/4
+[2025-11-23 18:23:09.479] Monitoring for EXACTLY 3 occurrences of: 'wan-core-1#'
+[2025-11-23 18:23:09.484] PROMPT DETECTED: 4/3
+[2025-11-23 18:23:09.484] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:23:09.484] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:23:09.484] Shell command execution completed
+[2025-11-23 18:23:09.484] Total shell command execution time: 3016.92ms
+[2025-11-23 18:23:09.484] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:23:10.221] SSHClient Message: Command execution completed in 4056.88ms
+[2025-11-23 18:23:10.221] Disconnecting from device
+[2025-11-23 18:23:10.221] Successfully disconnected
+[2025-11-23 18:23:10.492] SSHClient Message: Command execution completed in 4024.53ms
+[2025-11-23 18:23:10.492] Disconnecting from device
+[2025-11-23 18:23:10.492] Successfully disconnected
+[2025-11-23 18:23:10.526] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:23:10.526] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:23:10.527] Sending single newline to trigger prompt
+[2025-11-23 18:23:14.539] Detected prompt: 'wan-core-1#'
+[2025-11-23 18:23:14.539] Expect prompt set to: 'wan-core-1#'
+[2025-11-23 18:23:14.539] SSHClient Message: Executing command: 'terminal length 0,show inventory,,'
+[2025-11-23 18:23:14.539] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:23:14.539] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:23:14.539] Waiting between sub-commands: 1s
+[2025-11-23 18:23:15.546] Sending command 2/4: 'show inventory'
+[2025-11-23 18:23:15.546] Waiting between sub-commands: 1s
+[2025-11-23 18:23:16.543] Detected prompt: 'wan-core-1#'
+[2025-11-23 18:23:16.543] Expect prompt set to: 'wan-core-1#'
+[2025-11-23 18:23:16.543] SSHClient Message: Executing command: 'enable,terminal length 0,show inventory,,'
+[2025-11-23 18:23:16.543] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:23:16.543] Sending command 1/5: 'enable'
+[2025-11-23 18:23:16.547] Waiting between sub-commands: 1s
+[2025-11-23 18:23:16.549] Sending newline command 3/4
+[2025-11-23 18:23:16.549] Sending newline command 3/4
+[2025-11-23 18:23:16.549] Waiting between sub-commands: 1s
+[2025-11-23 18:23:17.548] Sending command 2/5: 'terminal length 0'
+[2025-11-23 18:23:17.548] Waiting between sub-commands: 1s
+[2025-11-23 18:23:17.552] Sending newline command 4/4
+[2025-11-23 18:23:17.552] Sending newline command 4/4
+[2025-11-23 18:23:17.552] Monitoring for EXACTLY 3 occurrences of: 'wan-core-1#'
+[2025-11-23 18:23:17.556] PROMPT DETECTED: 4/3
+[2025-11-23 18:23:17.556] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:23:17.556] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:23:17.556] Shell command execution completed
+[2025-11-23 18:23:17.556] Total shell command execution time: 3017.34ms
+[2025-11-23 18:23:17.556] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:23:18.551] Sending command 3/5: 'show inventory'
+[2025-11-23 18:23:18.551] Waiting between sub-commands: 1s
+[2025-11-23 18:23:18.564] SSHClient Message: Command execution completed in 4025.24ms
+[2025-11-23 18:23:18.564] Disconnecting from device
+[2025-11-23 18:23:18.564] Successfully disconnected
+[2025-11-23 18:23:19.553] Sending newline command 4/5
+[2025-11-23 18:23:19.553] Sending newline command 4/5
+[2025-11-23 18:23:19.553] Waiting between sub-commands: 1s
+[2025-11-23 18:23:20.557] Sending newline command 5/5
+[2025-11-23 18:23:20.557] Sending newline command 5/5
+[2025-11-23 18:23:20.557] Monitoring for EXACTLY 4 occurrences of: 'wan-core-1#'
+[2025-11-23 18:23:20.562] PROMPT DETECTED: 5/4
+[2025-11-23 18:23:20.562] TARGET REACHED: 5 prompts detected. STOPPING NOW.
+[2025-11-23 18:23:20.562] SUCCESS: Command execution completed with 5/4 prompts
+[2025-11-23 18:23:20.562] Shell command execution completed
+[2025-11-23 18:23:20.562] Total shell command execution time: 4019.29ms
+[2025-11-23 18:23:20.562] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:23:21.570] SSHClient Message: Command execution completed in 5026.95ms
+[2025-11-23 18:23:21.570] Disconnecting from device
+[2025-11-23 18:23:21.570] Successfully disconnected

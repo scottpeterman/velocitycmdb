@@ -9,11 +9,29 @@
         <p>Topology maps from {{ maps_data.total_maps }} discoveries across {{ maps_data.sites|length }} sites</p>
     </div>
     <div class="page-actions">
+        <button id="help-btn" class="md-button md-button-outlined" title="How to organize maps">
+            <i data-lucide="help-circle"></i>
+            Help
+        </button>
         <button id="rebuild-thumbnails-btn" class="md-button md-button-outlined">
             <i data-lucide="refresh-cw"></i>
             Rebuild Thumbnails
         </button>
     </div>
+</div>
+
+<!-- Current Maps Location Info -->
+<div class="maps-location-banner">
+    <div class="location-icon">
+        <i data-lucide="folder-open"></i>
+    </div>
+    <div class="location-info">
+        <span class="location-label">Maps Directory:</span>
+        <code class="location-path">{{ maps_base_dir }}</code>
+    </div>
+    <button class="location-help-btn" onclick="openHelpModal()" title="Learn how to organize maps">
+        <i data-lucide="info"></i>
+    </button>
 </div>
 
 <div class="md-card mb-4">
@@ -87,9 +105,134 @@
         <div class="empty-state">
             <i data-lucide="map" size="48"></i>
             <h3>No maps found</h3>
-            <p>No topology maps found in Anguis/maps/ directory</p>
+            <p>No topology maps found in the maps directory.</p>
+            <button class="md-button md-button-filled" onclick="openHelpModal()">
+                <i data-lucide="help-circle"></i>
+                Learn How to Add Maps
+            </button>
         </div>
         {% endif %}
+    </div>
+</div>
+
+<!-- Help Modal -->
+<div id="help-modal" class="modal" style="display: none;">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3><i data-lucide="help-circle"></i> How to Organize Network Maps</h3>
+            <button class="modal-close" onclick="closeHelpModal()">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="help-section">
+                <h4><i data-lucide="folder"></i> Current Maps Location</h4>
+                <div class="help-path-display">
+                    <code>{{ maps_base_dir }}</code>
+                </div>
+                <p class="help-note">This is where VelocityCMDB looks for your network topology maps.</p>
+            </div>
+
+            <div class="help-section">
+                <h4><i data-lucide="folder-tree"></i> Directory Structure</h4>
+                <p>Maps are organized by <strong>site folders</strong>. Each subfolder in the maps directory becomes a site group in the UI.</p>
+                <div class="help-tree">
+                    <pre>{{ maps_base_dir }}
+├── <span class="tree-folder">datacenter-east/</span>          <span class="tree-comment"># Site folder (becomes a group)</span>
+│   ├── <span class="tree-file">core-topology.svg</span>      <span class="tree-comment"># Map file</span>
+│   ├── <span class="tree-file">wan-connections.svg</span>    <span class="tree-comment"># Another map</span>
+│   └── <span class="tree-file">dmz-network.svg</span>        <span class="tree-comment"># Another map</span>
+├── <span class="tree-folder">datacenter-west/</span>          <span class="tree-comment"># Another site</span>
+│   └── <span class="tree-file">full-topology.svg</span>
+├── <span class="tree-folder">branch-offices/</span>           <span class="tree-comment"># Group for branches</span>
+│   ├── <span class="tree-file">seattle.svg</span>
+│   └── <span class="tree-file">portland.svg</span>
+└── <span class="tree-folder">thumbnails/</span>               <span class="tree-comment"># Auto-generated (don't edit)</span>
+    └── ...</pre>
+                </div>
+            </div>
+
+            <div class="help-section">
+                <h4><i data-lucide="file-image"></i> Supported File Formats</h4>
+                <div class="help-formats">
+                    <div class="format-item format-primary">
+                        <span class="format-ext">.svg</span>
+                        <span class="format-desc">Required for preview — scalable vector graphics</span>
+                    </div>
+                    <div class="format-item">
+                        <span class="format-ext">.json</span>
+                        <span class="format-desc">Optional — topology data (device count shown if present)</span>
+                    </div>
+                    <div class="format-item">
+                        <span class="format-ext">.graphml</span>
+                        <span class="format-desc">Optional — graph markup for import/export</span>
+                    </div>
+                    <div class="format-item">
+                        <span class="format-ext">.drawio</span>
+                        <span class="format-desc">Optional — source file for draw.io/diagrams.net</span>
+                    </div>
+                </div>
+                <p class="help-note"><strong>Note:</strong> An SVG file is required for the map to appear. Maps without SVG files are hidden from the UI.</p>
+            </div>
+
+            <div class="help-section">
+                <h4><i data-lucide="image"></i> Thumbnails</h4>
+                <p>Thumbnails are <strong>generated automatically</strong> when you first view a map. They are cached in:</p>
+                <div class="help-path-display">
+                    <code>{{ maps_base_dir }}/thumbnails/</code>
+                </div>
+                <ul class="help-list">
+                    <li>Thumbnails regenerate if the source SVG is newer than the cached thumbnail</li>
+                    <li>Use the <strong>"Rebuild Thumbnails"</strong> button to force regeneration of all thumbnails</li>
+                    <li>Do not manually edit the thumbnails folder — it's managed by the application</li>
+                </ul>
+            </div>
+
+            <div class="help-section">
+                <h4><i data-lucide="plus-circle"></i> Adding New Maps</h4>
+                <ol class="help-list">
+                    <li>Create a site folder (if it doesn't exist) inside the maps directory</li>
+                    <li>Copy or save your SVG file into the site folder</li>
+                    <li>Refresh this page — your map will appear automatically</li>
+                    <li>Optionally add matching .json, .graphml, or .drawio files with the same base name</li>
+                </ol>
+
+                <div class="help-example">
+                    <h5>Example: Adding a new map</h5>
+                    <div class="help-tree compact">
+                        <pre># Create a new site folder
+mkdir "{{ maps_base_dir }}/my-new-site"
+
+# Copy your SVG map into it
+cp my-diagram.svg "{{ maps_base_dir }}/my-new-site/"
+
+# Optional: Add companion files
+cp my-diagram.json "{{ maps_base_dir }}/my-new-site/"</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="help-section">
+                <h4><i data-lucide="alert-triangle"></i> Common Issues</h4>
+                <div class="help-troubleshoot">
+                    <div class="troubleshoot-item">
+                        <div class="troubleshoot-problem">Map doesn't appear</div>
+                        <div class="troubleshoot-solution">Ensure it's an SVG file inside a site subfolder, not in the root maps directory</div>
+                    </div>
+                    <div class="troubleshoot-item">
+                        <div class="troubleshoot-problem">Thumbnail not showing</div>
+                        <div class="troubleshoot-solution">Click "Rebuild Thumbnails" or wait for automatic generation on first view</div>
+                    </div>
+                    <div class="troubleshoot-item">
+                        <div class="troubleshoot-problem">Map shows as empty</div>
+                        <div class="troubleshoot-solution">SVG file may be too small (&lt;10KB) or corrupted — verify it opens in a browser</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="md-button md-button-filled" onclick="closeHelpModal()">Got It</button>
+        </div>
     </div>
 </div>
 
@@ -125,12 +268,71 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
 }
 
 .page-actions {
     display: flex;
     gap: 12px;
+}
+
+/* Maps Location Banner */
+.maps-location-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--md-surface-container);
+    border: 1px solid var(--md-outline-variant);
+    border-radius: var(--md-shape-corner-small);
+    margin-bottom: 20px;
+}
+
+.location-icon {
+    color: var(--md-primary);
+    display: flex;
+    align-items: center;
+}
+
+.location-info {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.location-label {
+    font-size: 14px;
+    color: var(--md-on-surface-variant);
+}
+
+.location-path {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 13px;
+    background: var(--md-surface-variant);
+    padding: 4px 10px;
+    border-radius: var(--md-shape-corner-extra-small);
+    color: var(--md-on-surface);
+    word-break: break-all;
+}
+
+.location-help-btn {
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    color: var(--md-on-surface-variant);
+    border-radius: var(--md-shape-corner-small);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.location-help-btn:hover {
+    background: var(--md-surface-variant);
+    color: var(--md-primary);
 }
 
 .maps-grid {
@@ -264,6 +466,27 @@
     color: var(--md-on-surface-variant);
 }
 
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--md-on-surface-variant);
+}
+
+.empty-state i {
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    margin: 0 0 8px 0;
+    color: var(--md-on-surface);
+}
+
+.empty-state p {
+    margin: 0 0 24px 0;
+}
+
 /* Modal Styles */
 .modal {
     position: fixed;
@@ -285,6 +508,13 @@
     max-width: 90vw;
     max-height: 90vh;
     box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-large {
+    width: 700px;
+    max-width: 90vw;
 }
 
 .modal-header {
@@ -292,11 +522,15 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .modal-header h3 {
     margin: 0;
     color: var(--md-on-surface);
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .modal-close {
@@ -314,6 +548,8 @@
 
 .modal-body {
     padding: 20px 24px;
+    overflow-y: auto;
+    flex: 1;
 }
 
 .modal-footer {
@@ -321,8 +557,177 @@
     display: flex;
     gap: 12px;
     justify-content: flex-end;
+    flex-shrink: 0;
 }
 
+/* Help Modal Specific Styles */
+.help-section {
+    margin-bottom: 24px;
+}
+
+.help-section:last-child {
+    margin-bottom: 0;
+}
+
+.help-section h4 {
+    margin: 0 0 12px 0;
+    color: var(--md-on-surface);
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--md-outline-variant);
+}
+
+.help-section h4 i {
+    width: 20px;
+    height: 20px;
+    color: var(--md-primary);
+}
+
+.help-path-display {
+    background: var(--md-surface-variant);
+    border-radius: var(--md-shape-corner-small);
+    padding: 12px 16px;
+    margin: 8px 0;
+}
+
+.help-path-display code {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 13px;
+    color: var(--md-on-surface);
+    word-break: break-all;
+}
+
+.help-note {
+    font-size: 13px;
+    color: var(--md-on-surface-variant);
+    margin: 8px 0 0 0;
+}
+
+.help-tree {
+    background: var(--md-surface-variant);
+    border-radius: var(--md-shape-corner-small);
+    padding: 16px;
+    overflow-x: auto;
+}
+
+.help-tree pre {
+    margin: 0;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--md-on-surface);
+    white-space: pre;
+}
+
+.help-tree.compact pre {
+    font-size: 11px;
+}
+
+.tree-folder {
+    color: var(--md-primary);
+    font-weight: 600;
+}
+
+.tree-file {
+    color: var(--md-tertiary, #7cb342);
+}
+
+.tree-comment {
+    color: var(--md-on-surface-variant);
+    font-style: italic;
+}
+
+.help-formats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.format-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--md-surface);
+    border-radius: var(--md-shape-corner-small);
+    border: 1px solid var(--md-outline-variant);
+}
+
+.format-item.format-primary {
+    background: rgba(var(--md-primary-rgb, 103, 80, 164), 0.1);
+    border-color: var(--md-primary);
+}
+
+.format-ext {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--md-primary);
+    min-width: 70px;
+}
+
+.format-desc {
+    font-size: 13px;
+    color: var(--md-on-surface-variant);
+}
+
+.help-list {
+    margin: 12px 0;
+    padding-left: 24px;
+}
+
+.help-list li {
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: var(--md-on-surface);
+}
+
+.help-example {
+    background: var(--md-surface);
+    border: 1px solid var(--md-outline-variant);
+    border-radius: var(--md-shape-corner-small);
+    padding: 16px;
+    margin-top: 16px;
+}
+
+.help-example h5 {
+    margin: 0 0 12px 0;
+    font-size: 13px;
+    color: var(--md-on-surface-variant);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.help-troubleshoot {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.troubleshoot-item {
+    padding: 12px 16px;
+    background: var(--md-surface);
+    border-radius: var(--md-shape-corner-small);
+    border-left: 3px solid var(--md-error, #b3261e);
+}
+
+.troubleshoot-problem {
+    font-weight: 600;
+    color: var(--md-on-surface);
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.troubleshoot-solution {
+    font-size: 13px;
+    color: var(--md-on-surface-variant);
+}
+
+/* Progress bar */
 .progress-bar {
     width: 100%;
     height: 8px;
@@ -392,6 +797,21 @@
         align-items: stretch;
     }
 
+    .page-actions {
+        justify-content: flex-end;
+    }
+
+    .maps-location-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .location-info {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
     .maps-grid {
         grid-template-columns: 1fr;
     }
@@ -404,6 +824,14 @@
         margin: 20px;
         min-width: unset;
     }
+
+    .modal-large {
+        width: calc(100vw - 40px);
+    }
+
+    .help-tree pre {
+        font-size: 10px;
+    }
 }
 </style>
 
@@ -414,6 +842,19 @@ document.addEventListener('DOMContentLoaded', function() {
         lucide.createIcons();
     }
 });
+
+// Help modal functionality
+function openHelpModal() {
+    document.getElementById('help-modal').style.display = 'flex';
+    // Re-initialize icons in modal
+    if (typeof lucide !== 'undefined') {
+        setTimeout(() => lucide.createIcons(), 50);
+    }
+}
+
+function closeHelpModal() {
+    document.getElementById('help-modal').style.display = 'none';
+}
 
 // Rebuild thumbnails functionality
 function openRebuildModal() {
@@ -498,11 +939,26 @@ async function rebuildThumbnails() {
 }
 
 // Event listeners
+document.getElementById('help-btn').addEventListener('click', openHelpModal);
 document.getElementById('rebuild-thumbnails-btn').addEventListener('click', openRebuildModal);
 
-// Close modal when clicking outside
+// Close modals when clicking outside
+document.getElementById('help-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeHelpModal();
+    }
+});
+
 document.getElementById('rebuild-modal').addEventListener('click', function(e) {
     if (e.target === this) {
+        closeRebuildModal();
+    }
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeHelpModal();
         closeRebuildModal();
     }
 });

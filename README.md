@@ -20,20 +20,21 @@ VelocityCMDB is currently in Proof of Concept (POC) stage and is under active de
 VelocityCMDB is a **pip-installable network CMDB** that combines asset management, automated discovery, configuration tracking, and operational intelligence in a unified platform.
 
 **Key Features:**
-- **Automated Discovery** - LLDP/CDP-based topology mapping
-- **Device Inventory** - Complete asset tracking with components, sites, vendors, roles
-- **Change Detection** - Real-time configuration and other cli captured information monitoring with severity classification
-- **Topology Visualization** - Interactive maps with export to GraphML/DrawIO/PNG
-- **Operational Search** - Full-text search across 8k+ captures (Config, Arp, Mac, Inventory and more)
-- **Integrated Documentation** - Wiki-style notes linked to devices
-- **Web SSH Terminal** - Browser-based device access with authentication
-- **Multi-Auth** - LDAP, local database, and OS authentication
+- 🔍 **Automated Discovery** - LLDP/CDP-based topology mapping
+- 📊 **Device Inventory** - Complete asset tracking with components, sites, vendors, roles
+- 🔄 **Change Detection** - Real-time configuration and other cli captured information monitoring with severity classification
+- 🗺️ **Topology Visualization** - Interactive maps with export to GraphML/DrawIO/PNG
+- - **Map Library** - Import existing Visio/DrawIO diagrams organized by folder
+- 🔍 **Operational Search** - Full-text search across 8,891+ captures (Config, Arp, Mac, Inventory and more)
+- 📝 **Integrated Documentation** - Wiki-style notes linked to devices
+- 🖥️ **Web SSH Terminal** - Browser-based device access with authentication
+- 👥 **Multi-Auth** - LDAP, local database, and OS authentication
 
 **Why VelocityCMDB?**
-- **Fast Setup** - `pip install velocitycmdb && init command, then start the app`
-- **Wizard-Driven** - Discovery and collection wizards guide deployment
-- **Enterprise Friendly** - Basic Role-based access, audit logging, backup/restore
-- **Engineer-Focused** - CLI tools, REST API, and scriptable workflows, run locally or on a server
+- ⚡ **Fast Setup** - `pip install velocitycmdb && init command, then start the app`
+- 🎯 **Wizard-Driven** - Discovery and collection wizards guide deployment
+- 🏢 **Enterprise Friendly** - Basic Role-based access, audit logging, backup/restore
+- 🔧 **Engineer-Focused** - CLI tools, REST API, and scriptable workflows, run locally or on a server
 
 ---
 
@@ -80,7 +81,7 @@ Access the dashboard at `http://localhost:8086`
 VelocityCMDB is built on proven open-source components:
 
 **Foundation:**
-- [Secure Cartography](https://github.com/scottpeterman/secure_cartography) - Network discovery (149⭐)
+- [Secure Cartography](https://github.com/scottpeterman/secure_cartography) - Network discovery (134⭐, 21 forks)
 - Paramiko - SSH automation
 - TextFSM - Multi-vendor parsing (100+ templates)
 - Flask + SocketIO - Real-time web interface
@@ -115,7 +116,7 @@ velocitycmdb/
 
 ### Asset Management
 - **Devices** - Full CRUD with sites, vendors, roles, stacks
-- **Components** - Hardware inventory (1.5k+ components tracked), may include optics, fans, power, stack info etc
+- **Components** - Hardware inventory (1,684 components tracked)
 - **Sites/Vendors/Roles** - Complete taxonomy management
 - **Bulk Operations** - Preview-commit workflow for batch changes
 
@@ -124,6 +125,38 @@ velocitycmdb/
 - **Topology Maps** - Interactive visualization with export
 - **Secure Cartography** - Enhanced topology with vendor icons
 - **Multiple Formats** - GraphML (yEd), DrawIO, PNG, SVG
+
+### Network Map Library
+
+Centralize your network documentation alongside CMDB data - no discovery required.
+
+- **Bring Your Own Diagrams** - Import SVG exports from Visio, DrawIO, Lucidchart, or any diagramming tool
+- **Flexible Organization** - Group by site, region, project, technology, or any folder structure
+- **Automatic Thumbnails** - Preview images generated on first view
+- **Multiple Formats** - Store companion files (.json, .graphml, .drawio) alongside SVGs
+- **In-App Help** - Built-in guidance shows directory structure and setup
+
+**Use Cases:**
+- Legacy Visio diagrams maintained over years
+- Compliance and audit documentation that must remain static
+- Reference architectures and design templates
+- Vendor-provided network diagrams
+- Hand-crafted documentation for specific systems
+
+**Directory Structure:**
+```
+~/.velocitycmdb/data/maps/
+├── datacenter-east/        # Any folder name becomes a group
+│   ├── core-topology.svg
+│   └── wan-design.svg
+├── compliance-docs/        # Organize however you want
+│   └── pci-network.svg
+└── projects/
+    └── 2025-refresh.svg
+```
+
+Maps with an SVG file appear automatically in the UI. Optional companion files (.json, .graphml, .drawio) are available for download when present.
+
 
 ### Operational Intelligence
 - **Capture Search** - Full-text search across configurations
@@ -143,7 +176,7 @@ velocitycmdb/
 - **Role-Based Access** - Admin, operator, viewer groups
 - **Audit Logging** - Track all administrative actions
 - **Backup/Restore** - Complete system lifecycle management
-- **User Management** - Full Admin CRUD UI with password policies when auth using DB
+- **User Management** - Full CRUD with password policies
 
 ### Automation
 - **SSH Terminal** - WebSocket-based browser access
@@ -177,7 +210,7 @@ velocitycmdb/
 
 ### Change Tracking
 ![Changes](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/changes_light.png)
-*configuration changes with severity*
+*33 configuration changes with severity*
 
 </td>
 <td width="50%">
@@ -211,15 +244,15 @@ velocitycmdb/
 ## Proven at Scale
 
 **Production Deployment Stats:**
-- ✅ 300+ devices managed
-- ✅ 50+ sites across infrastructure  
-- ✅ 120+ switch stacks tracked
-- ✅ 1,6k hardware components
-- ✅ 8.9k successful CLI captures
-- ✅ 90% device classification accuracy, depending on platform. 
+- ✅ 357 devices managed
+- ✅ 53 sites across infrastructure  
+- ✅ 126 switch stacks tracked
+- ✅ 1,684 hardware components
+- ✅ 8,891 successful captures
+- ✅ 99.3% device classification accuracy
 
 **Performance:**
-- Discovery: 45-60 min for 300 devices
+- Discovery: 45-60 min for 295 devices
 - Fingerprinting: 60-90 min (8 concurrent processes)
 - Full onboarding cycle: ~4 hours (manual)
 - Dashboard response: <500ms
@@ -228,8 +261,8 @@ velocitycmdb/
 **Vendor Support:**
 - Cisco IOS/IOS-XE/NX-OS
 - Arista EOS
-- HPE ProCurve/Aruba .. limited
-- Juniper Junos (beta) ... limited
+- HPE ProCurve/Aruba
+- Juniper Junos (beta)
 
 ---
 

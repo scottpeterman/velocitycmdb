@@ -144,3 +144,212 @@
 [2025-11-13 23:13:08.426] Successfully disconnected
 [2025-11-13 23:13:08.426] Successfully disconnected
 [2025-11-13 23:13:08.426] Successfully disconnected
+[2025-11-23 18:25:23.242] Connecting to 172.16.2.2:22...
+[2025-11-23 18:25:23.244] Connecting to 172.16.2.2:22...
+[2025-11-23 18:25:23.255] Connecting to 172.16.2.2:22...
+[2025-11-23 18:25:23.255] Connecting to 172.16.2.2:22...
+[2025-11-23 18:25:23.255] Connecting to 172.16.2.2:22...
+[2025-11-23 18:25:24.292] Connected to 172.16.2.2:22
+[2025-11-23 18:25:24.292] Creating shell stream with ANSI filtering
+[2025-11-23 18:25:24.310] Connected to 172.16.2.2:22
+[2025-11-23 18:25:24.310] Connected to 172.16.2.2:22
+[2025-11-23 18:25:24.319] Creating shell stream with ANSI filtering
+[2025-11-23 18:25:24.319] Creating shell stream with ANSI filtering
+[2025-11-23 18:25:24.328] Connected to 172.16.2.2:22
+[2025-11-23 18:25:24.328] Creating shell stream with ANSI filtering
+[2025-11-23 18:25:24.345] Connected to 172.16.2.2:22
+[2025-11-23 18:25:24.358] Creating shell stream with ANSI filtering
+[2025-11-23 18:25:24.416] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:25:24.443] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:25:24.443] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:25:24.475] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:25:24.496] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:25:26.418] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:25:26.418] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:25:26.418] Sending single newline to trigger prompt
+[2025-11-23 18:25:26.449] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:25:26.449] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:25:26.449] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:25:26.449] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:25:26.449] Sending single newline to trigger prompt
+[2025-11-23 18:25:26.449] Sending single newline to trigger prompt
+[2025-11-23 18:25:26.478] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:25:26.478] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:25:26.481] Sending single newline to trigger prompt
+[2025-11-23 18:25:26.498] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:25:26.498] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:25:26.498] Sending single newline to trigger prompt
+[2025-11-23 18:25:32.434] Detected prompt: 'eng-spine-1>'
+[2025-11-23 18:25:32.436] Expect prompt set to: 'eng-spine-1>'
+[2025-11-23 18:25:32.436] SSHClient Message: Executing command: 'terminal length 0,show ip arp,,'
+[2025-11-23 18:25:32.438] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:25:32.438] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:25:32.440] Waiting between sub-commands: 1s
+[2025-11-23 18:25:32.472] Detected prompt: 'eng-spine-1>'
+[2025-11-23 18:25:32.472] Expect prompt set to: 'eng-spine-1>'
+[2025-11-23 18:25:32.472] Expect prompt set to: 'eng-spine-1>'
+[2025-11-23 18:25:32.472] SSHClient Message: Executing command: 'terminal length 0,show running-config,,'
+[2025-11-23 18:25:32.472] SSHClient Message: Executing command: 'terminal length 0,show mac address-table,,'
+[2025-11-23 18:25:32.472] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:25:32.480] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:25:32.481] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:25:32.481] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:25:32.481] Waiting between sub-commands: 1s
+[2025-11-23 18:25:32.481] Waiting between sub-commands: 1s
+[2025-11-23 18:25:32.498] Detected prompt: 'eng-spine-1>'
+[2025-11-23 18:25:32.498] Expect prompt set to: 'eng-spine-1>'
+[2025-11-23 18:25:32.498] SSHClient Message: Executing command: 'terminal length 0,show ip route,,'
+[2025-11-23 18:25:32.498] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:25:32.498] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:25:32.505] Waiting between sub-commands: 1s
+[2025-11-23 18:25:32.518] Detected prompt: 'eng-spine-1>'
+[2025-11-23 18:25:32.519] Expect prompt set to: 'eng-spine-1>'
+[2025-11-23 18:25:32.519] SSHClient Message: Executing command: 'terminal length 0,show lldp neighbors detail,,'
+[2025-11-23 18:25:32.521] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:25:32.523] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:25:32.525] Waiting between sub-commands: 1s
+[2025-11-23 18:25:33.443] Sending command 2/4: 'show ip arp'
+[2025-11-23 18:25:33.445] Waiting between sub-commands: 1s
+[2025-11-23 18:25:33.486] Sending command 2/4: 'show running-config'
+[2025-11-23 18:25:33.486] Sending command 2/4: 'show mac address-table'
+[2025-11-23 18:25:33.486] Waiting between sub-commands: 1s
+[2025-11-23 18:25:33.486] Waiting between sub-commands: 1s
+[2025-11-23 18:25:33.507] Sending command 2/4: 'show ip route'
+[2025-11-23 18:25:33.523] Waiting between sub-commands: 1s
+[2025-11-23 18:25:33.527] Sending command 2/4: 'show lldp neighbors detail'
+[2025-11-23 18:25:33.527] Waiting between sub-commands: 1s
+[2025-11-23 18:25:34.446] Sending newline command 3/4
+[2025-11-23 18:25:34.448] Sending newline command 3/4
+[2025-11-23 18:25:34.448] Waiting between sub-commands: 1s
+[2025-11-23 18:25:34.488] Sending newline command 3/4
+[2025-11-23 18:25:34.489] Sending newline command 3/4
+[2025-11-23 18:25:34.489] Sending newline command 3/4
+[2025-11-23 18:25:34.489] Sending newline command 3/4
+[2025-11-23 18:25:34.489] Waiting between sub-commands: 1s
+[2025-11-23 18:25:34.489] Waiting between sub-commands: 1s
+[2025-11-23 18:25:34.527] Sending newline command 3/4
+[2025-11-23 18:25:34.527] Sending newline command 3/4
+[2025-11-23 18:25:34.529] Sending newline command 3/4
+[2025-11-23 18:25:34.529] Waiting between sub-commands: 1s
+[2025-11-23 18:25:34.531] Sending newline command 3/4
+[2025-11-23 18:25:34.531] Waiting between sub-commands: 1s
+[2025-11-23 18:25:35.451] Sending newline command 4/4
+[2025-11-23 18:25:35.451] Sending newline command 4/4
+[2025-11-23 18:25:35.454] Monitoring for EXACTLY 3 occurrences of: 'eng-spine-1>'
+[2025-11-23 18:25:35.454] PROMPT DETECTED: 4/3
+[2025-11-23 18:25:35.454] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:25:35.454] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:25:35.454] Shell command execution completed
+[2025-11-23 18:25:35.454] Total shell command execution time: 3015.83ms
+[2025-11-23 18:25:35.454] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:25:35.493] Sending newline command 4/4
+[2025-11-23 18:25:35.494] Sending newline command 4/4
+[2025-11-23 18:25:35.494] Sending newline command 4/4
+[2025-11-23 18:25:35.494] Sending newline command 4/4
+[2025-11-23 18:25:35.494] Monitoring for EXACTLY 3 occurrences of: 'eng-spine-1>'
+[2025-11-23 18:25:35.494] Monitoring for EXACTLY 3 occurrences of: 'eng-spine-1>'
+[2025-11-23 18:25:35.494] PROMPT DETECTED: 4/3
+[2025-11-23 18:25:35.494] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:25:35.501] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:25:35.502] Shell command execution completed
+[2025-11-23 18:25:35.504] Total shell command execution time: 3022.79ms
+[2025-11-23 18:25:35.504] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:25:35.527] PROMPT DETECTED: 4/3
+[2025-11-23 18:25:35.532] Sending newline command 4/4
+[2025-11-23 18:25:35.532] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:25:35.535] Sending newline command 4/4
+[2025-11-23 18:25:35.535] Sending newline command 4/4
+mpleted with 4/3 prompts
+[2025-11-23 18:25:35.535] Sending newline command 4/4
+[2025-11-23 18:25:35.535] Shell command execution completed
+[2025-11-23 18:25:35.535] Monitoring for EXACTLY 3 occurrences of: 'eng-spine-1>'
+[2025-11-23 18:25:35.535] Monitoring for EXACTLY 3 occurrences of: 'eng-spine-1>'
+[2025-11-23 18:25:35.535] Total shell command execution time: 3053.26ms
+[2025-11-23 18:25:35.535] PROMPT DETECTED: 4/3
+[2025-11-23 18:25:35.535] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:25:35.535] PROMPT DETECTED: 1/3
+[2025-11-23 18:25:35.535] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:25:35.535] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:25:35.535] PROMPT DETECTED: 4/3
+[2025-11-23 18:25:35.535] Shell command execution completed
+[2025-11-23 18:25:35.535] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:25:35.550] Total shell command execution time: 3052.04ms
+[2025-11-23 18:25:35.550] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:25:35.550] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:25:35.550] Shell command execution completed
+[2025-11-23 18:25:35.550] Total shell command execution time: 3026.88ms
+[2025-11-23 18:25:35.550] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:25:36.463] SSHClient Message: Command execution completed in 4024.88ms
+[2025-11-23 18:25:36.463] Disconnecting from device
+[2025-11-23 18:25:36.463] Successfully disconnected
+[2025-11-23 18:25:36.507] SSHClient Message: Command execution completed in 4035.26ms
+[2025-11-23 18:25:36.507] Disconnecting from device
+[2025-11-23 18:25:36.509] Successfully disconnected
+[2025-11-23 18:25:36.546] SSHClient Message: Command execution completed in 4066.01ms
+[2025-11-23 18:25:36.546] Disconnecting from device
+[2025-11-23 18:25:36.546] Successfully disconnected
+[2025-11-23 18:25:36.554] SSHClient Message: Command execution completed in 4056.00ms
+[2025-11-23 18:25:36.554] Disconnecting from device
+[2025-11-23 18:25:36.558] SSHClient Message: Command execution completed in 4036.46ms
+[2025-11-23 18:25:36.558] Successfully disconnected
+[2025-11-23 18:25:36.558] Disconnecting from device
+[2025-11-23 18:25:36.562] Successfully disconnected
+[2025-11-23 18:26:04.442] Connecting to 172.16.2.2:22...
+[2025-11-23 18:26:04.445] Connecting to 172.16.2.2:22...
+[2025-11-23 18:26:04.856] Connected to 172.16.2.2:22
+[2025-11-23 18:26:04.878] Creating shell stream with ANSI filtering
+[2025-11-23 18:26:04.878] Creating shell stream with ANSI filtering
+[2025-11-23 18:26:05.010] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:26:05.010] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:26:07.020] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:26:07.020] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:26:07.020] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:26:07.020] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:26:07.020] Sending single newline to trigger prompt
+[2025-11-23 18:26:07.020] Sending single newline to trigger prompt
+[2025-11-23 18:26:13.040] Detected prompt: 'eng-spine-1>'
+[2025-11-23 18:26:13.042] Detected prompt: 'eng-spine-1>'
+1>'
+[2025-11-23 18:26:13.043] SSHClient Message: Executing command: 'terminal length 0,show version,,'
+[2025-11-23 18:26:13.043] Expect prompt set to: 'eng-spine-1>'
+[2025-11-23 18:26:13.043] SSHClient Message: Executing command: 'terminal length 0,show inventory,,'
+[2025-11-23 18:26:13.043] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:26:13.043] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:26:13.043] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:26:13.043] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:26:13.043] Waiting between sub-commands: 1s
+[2025-11-23 18:26:13.043] Waiting between sub-commands: 1s
+[2025-11-23 18:26:14.053] Sending command 2/4: 'show version'
+[2025-11-23 18:26:14.054] Sending command 2/4: 'show inventory'
+[2025-11-23 18:26:14.054] Waiting between sub-commands: 1s
+[2025-11-23 18:26:14.054] Waiting between sub-commands: 1s
+[2025-11-23 18:26:15.057] Sending newline command 3/4
+[2025-11-23 18:26:15.058] Sending newline command 3/4
+[2025-11-23 18:26:15.058] Sending newline command 3/4
+[2025-11-23 18:26:15.058] Sending newline command 3/4
+[2025-11-23 18:26:15.058] Waiting between sub-commands: 1s
+[2025-11-23 18:26:15.058] Waiting between sub-commands: 1s
+[2025-11-23 18:26:16.062] Sending newline command 4/4
+[2025-11-23 18:26:16.063] Sending newline command 4/4
+[2025-11-23 18:26:16.063] Sending newline command 4/4
+[2025-11-23 18:26:16.063] Sending newline command 4/4
+[2025-11-23 18:26:16.063] Monitoring for EXACTLY 3 occurrences of: 'eng-spine-1>'
+[2025-11-23 18:26:16.063] Monitoring for EXACTLY 3 occurrences of: 'eng-spine-1>'
+[2025-11-23 18:26:16.095] PROMPT DETECTED: 4/3
+[2025-11-23 18:26:16.095] PROMPT DETECTED: 4/3
+[2025-11-23 18:26:16.095] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:26:16.095] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:26:16.095] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:26:16.095] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:26:16.095] Shell command execution completed
+[2025-11-23 18:26:16.095] Shell command execution completed
+[2025-11-23 18:26:16.095] Total shell command execution time: 3052.46ms
+[2025-11-23 18:26:16.095] Total shell command execution time: 3052.46ms
+[2025-11-23 18:26:16.095] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:26:16.110] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:26:17.111] SSHClient Message: Command execution completed in 4068.46ms
+[2025-11-23 18:26:17.112] SSHClient Message: Command execution completed in 4069.01ms
+[2025-11-23 18:26:17.112] Disconnecting from device
+[2025-11-23 18:26:17.112] Disconnecting from device
+[2025-11-23 18:26:17.112] Successfully disconnected
+[2025-11-23 18:26:17.112] Successfully disconnected

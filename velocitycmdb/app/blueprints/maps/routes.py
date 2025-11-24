@@ -18,14 +18,33 @@ from . import maps_bp
 class MapScanner:
     """Scans and manages network topology maps"""
 
-    def __init__(self, maps_base_dir: str = "Anguis/maps"):
-        # Make path relative to project root, not Flask app directory
-        if not os.path.isabs(maps_base_dir):
-            # Get the project root (parent of app directory)
-            project_root = Path(__file__).parent.parent.parent.parent
-            self.maps_base_dir = project_root / maps_base_dir
-        else:
+    def __init__(self, maps_base_dir: str = None):
+        """
+        Initialize MapScanner with configurable maps directory.
+
+        Priority:
+        1. Explicit maps_base_dir parameter
+        2. Flask app config DATA_DIR + 'maps'
+        3. ~/.velocitycmdb/data/maps (default)
+        """
+        if maps_base_dir and os.path.isabs(maps_base_dir):
             self.maps_base_dir = Path(maps_base_dir)
+        else:
+            # Try to get from Flask config first
+            try:
+                data_dir = current_app.config.get('DATA_DIR')
+                if data_dir:
+                    self.maps_base_dir = Path(data_dir) / 'maps'
+                else:
+                    # Fallback to default location
+                    self.maps_base_dir = Path.home() / '.velocitycmdb' / 'data' / 'maps'
+            except RuntimeError:
+                # Outside Flask context, use default
+                self.maps_base_dir = Path.home() / '.velocitycmdb' / 'data' / 'maps'
+
+        # Ensure directory exists
+        self.maps_base_dir.mkdir(parents=True, exist_ok=True)
+        print(f"MAPS BASE: {self.maps_base_dir}")
 
     def scan_maps(self) -> Dict[str, Any]:
         """Scan maps directory and return organized map data"""
@@ -43,6 +62,10 @@ class MapScanner:
         # Scan each site folder
         for site_dir in self.maps_base_dir.iterdir():
             if not site_dir.is_dir():
+                continue
+
+            # Skip the thumbnails directory
+            if site_dir.name == 'thumbnails':
                 continue
 
             site_name = site_dir.name
@@ -125,6 +148,7 @@ class MapScanner:
                                    reverse=True)
 
         return site_data
+
     def get_map_metadata(self, site_name: str, map_name: str) -> Dict[str, Any]:
         """Get detailed metadata for a specific map"""
         site_dir = self.maps_base_dir / site_name
@@ -159,6 +183,7 @@ def index():
 
     return render_template('maps/index.html',
                            maps_data=maps_data,
+                           maps_base_dir=str(scanner.maps_base_dir),
                            title="Network Maps")
 
 
@@ -179,6 +204,7 @@ def site_maps(site_name):
     return render_template('maps/site.html',
                            site_name=site_name,
                            site_data=site_data,
+                           maps_base_dir=str(scanner.maps_base_dir),
                            title=f"Maps - {site_name}")
 
 
@@ -195,6 +221,7 @@ def view_map(site_name, map_name):
                            site_name=site_name,
                            map_name=map_name,
                            map_data=map_data,
+                           maps_base_dir=str(scanner.maps_base_dir),
                            title=f"Map - {site_name}/{map_name}")
 
 

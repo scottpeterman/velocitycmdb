@@ -2,10 +2,52 @@ from flask import render_template, request, redirect, url_for, flash, jsonify, R
 from velocitycmdb.app.blueprints.auth.routes import login_required
 from velocitycmdb.app.blueprints.notes import notes_bp
 from velocitycmdb.app.blueprints.notes.models import Note, NoteAssociation, NoteAttachment
-from velocitycmdb.app.blueprints.notes.utils import process_internal_links, sanitize_svg
+from velocitycmdb.app.blueprints.notes.utils import (
+    process_internal_links,
+    sanitize_svg,
+    extract_and_save_base64_images,
+    get_base64_image_count
+)
 import json
+import re
 
 from velocitycmdb.app.utils.database import get_db_connection
+
+
+def cleanup_orphaned_attachments(note_id, content):
+    """Remove attachments that are no longer referenced in note content"""
+    # Find all attachment IDs referenced in content
+    # Handle multiple URL formats TinyMCE might produce:
+    #   /notes/attachments/5
+    #   ../attachments/5
+    #   attachments/5
+    #   http://localhost:8086/notes/attachments/5
+    pattern = r'(?:/notes/attachments/|\.\.?/attachments/|attachments/|/attachments/)(\d+)'
+    referenced_ids = set(int(id) for id in re.findall(pattern, content))
+
+    # Get all attachments for this note
+    all_attachments = NoteAttachment.list_for_note(note_id)
+
+    # Delete orphans
+    orphan_count = 0
+    for attachment in all_attachments:
+        if attachment['id'] not in referenced_ids:
+            NoteAttachment.delete(attachment['id'])
+            orphan_count += 1
+
+    return orphan_count
+
+
+def normalize_attachment_urls(content):
+    """
+    Normalize attachment URLs to consistent format.
+    TinyMCE may convert /notes/attachments/5 to ../attachments/5
+    This converts them back to the canonical /notes/attachments/5 format.
+    """
+    # Pattern to match various attachment URL formats
+    pattern = r'(src=["\'])(?:\.\.?/attachments/|attachments/)(\d+)(["\'])'
+    replacement = r'\1/notes/attachments/\2\3'
+    return re.sub(pattern, replacement, content)
 
 
 @notes_bp.route('/')
@@ -56,14 +98,23 @@ def create():
         # Process internal links
         content = process_internal_links(content)
 
-        # Create note
+        # Normalize attachment URLs (TinyMCE may convert to relative paths)
+        content = normalize_attachment_urls(content)
+
+        # Create note first (we need the ID for image attachments)
         note_id = Note.create(
             title=title,
-            content=content,
+            content=content,  # Save with base64 initially
             note_type=note_type,
             created_by=getattr(request, 'user', {}).get('username') if hasattr(request, 'user') else None,
             tags=tags
         )
+
+        # Now extract any base64 images and convert to attachments
+        if get_base64_image_count(content) > 0:
+            content = extract_and_save_base64_images(content, note_id)
+            # Update note with cleaned content
+            Note.update(note_id, content=content)
 
         # Handle associations
         device_id = request.form.get('device_id')
@@ -136,6 +187,8 @@ def detail(note_id):
                            associations=associations,
                            attachments=attachments,
                            tags=tags)
+
+
 @notes_bp.route('/<int:note_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit(note_id):
@@ -162,7 +215,17 @@ def edit(note_id):
         # Process internal links
         content = process_internal_links(content)
 
+        # Normalize attachment URLs (TinyMCE may convert to relative paths)
+        content = normalize_attachment_urls(content)
+
+        # Extract any base64 images and convert to attachments
+        if get_base64_image_count(content) > 0:
+            content = extract_and_save_base64_images(content, note_id)
+
         Note.update(note_id, title=title, content=content, tags=tags)
+
+        # Clean up any attachments no longer referenced in content
+        orphans_removed = cleanup_orphaned_attachments(note_id, content)
 
         flash(f'Note "{title}" updated successfully', 'success')
         return redirect(url_for('notes.detail', note_id=note_id))
@@ -246,6 +309,57 @@ def upload_attachment(note_id):
         'id': attachment_id,
         'url': url_for('notes.serve_attachment', attachment_id=attachment_id)
     })
+
+
+@notes_bp.route('/api/upload-image', methods=['POST'])
+@login_required
+def upload_image_blob():
+    """
+    Upload image blob from TinyMCE paste.
+    Used for pasting images before note is saved.
+    Stores temporarily and returns a placeholder that gets resolved on save.
+    """
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+
+    file = request.files['file']
+    note_id = request.form.get('note_id')
+
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+
+    # Validate content type
+    if not file.content_type.startswith('image/'):
+        return jsonify({'error': 'Only images allowed'}), 400
+
+    # Read file content
+    content = file.read()
+
+    # Check size (1MB limit)
+    if len(content) > 1024 * 1024:
+        return jsonify({'error': 'File too large (max 1MB)'}), 400
+
+    if note_id:
+        # Note already exists - save directly as attachment
+        attachment_id = NoteAttachment.create(
+            note_id=int(note_id),
+            filename=file.filename or 'pasted_image.png',
+            content_type=file.content_type,
+            data=content,
+            file_size=len(content)
+        )
+        return jsonify({
+            'success': True,
+            'location': url_for('notes.serve_attachment', attachment_id=attachment_id)
+        })
+    else:
+        # No note yet - return base64 (will be extracted on save)
+        import base64
+        b64_data = base64.b64encode(content).decode('utf-8')
+        return jsonify({
+            'success': True,
+            'location': f'data:{file.content_type};base64,{b64_data}'
+        })
 
 
 @notes_bp.route('/attachments/<int:attachment_id>')

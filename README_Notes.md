@@ -33,7 +33,7 @@ note_associations (
     FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE
 )
 
--- File attachments
+-- File attachments (stored as BLOBs)
 note_attachments (
     id INTEGER PRIMARY KEY,
     note_id INTEGER NOT NULL,
@@ -71,7 +71,7 @@ note_attachments (
 - Headers, bold, italic, lists
 - Tables
 - Code blocks with syntax highlighting
-- Image uploads (via attachment system)
+- Image paste/upload (automatic attachment conversion)
 - Links (internal and external)
 
 **Configuration:**
@@ -80,6 +80,10 @@ tinymce.init({
     selector: '#content',
     license_key: 'gpl',
     height: 500,
+    automatic_uploads: true,
+    images_upload_handler: function(blobInfo, progress) {
+        // Uploads to /notes/api/upload-image
+    },
     plugins: ['advlist', 'autolink', 'lists', 'link', 'image', 
               'charmap', 'preview', 'anchor', 'searchreplace', 
               'visualblocks', 'code', 'fullscreen', 'insertdatetime', 
@@ -105,7 +109,7 @@ tinymce.init({
 ### 3. Attachments
 
 **Supported Types:**
-- Images: `image/*`
+- Images: `image/*` (PNG, JPEG, GIF, WebP)
 - SVG: `image/svg+xml` (sanitized)
 - Future: PDFs, documents
 
@@ -113,27 +117,51 @@ tinymce.init({
 - Stored as BLOBs in `note_attachments` table
 - Max size: 1MB per file
 - SVG files are sanitized to remove dangerous elements
+- No filesystem storage - all data in database for easy backup
+
+**Image Paste Handling:**
+- Images pasted/dropped into TinyMCE are captured as base64
+- On save, base64 images are extracted via `extract_and_save_base64_images()`
+- Images are saved as attachments in the database
+- Content is updated with `/notes/attachments/{id}` URLs
+- TinyMCE may convert URLs to relative paths (`../attachments/5`)
+- URLs are normalized back to absolute format on each save via `normalize_attachment_urls()`
+
+**Orphan Cleanup:**
+- On note save, `cleanup_orphaned_attachments()` runs automatically
+- Attachments not referenced in content are deleted
+- Cleanup regex handles multiple URL formats:
+  - `/notes/attachments/5` (absolute)
+  - `../attachments/5` (TinyMCE relative)
+  - `attachments/5` (relative)
+- No manual cleanup required by users
 
 **Security:**
 - SVG sanitization via `bleach` library
 - Only safe elements/attributes allowed
-- No JavaScript execution
+- No JavaScript execution in SVGs
 
 ### 4. Full-Text Search
 
 **Implementation:**
 - SQLite FTS5 virtual table (`note_fts`)
 - Indexes: title, content, tags
+- Triggers maintain sync with notes table
 
 **Usage:**
 ```python
 Note.search("network troubleshooting")
 ```
 
+**FTS Rebuild:**
+- Use `force_rebuild_fts.py` utility to rebuild corrupted indexes
+- Handles both `note_fts` and `capture_fts` tables
+- Run: `python force_rebuild_fts.py assets.db`
+
 ### 5. Tagging System
 
 **Format:**
-- Comma-separated tags
+- Comma-separated tags in UI
 - Stored as JSON array in database
 - Example: `["network", "cisco", "troubleshooting"]`
 
@@ -179,7 +207,7 @@ Note.search("network troubleshooting")
   - Header (title, type badge, tags)
   - Metadata (created, updated, author)
   - Content (rich text rendered)
-  - Attachments (grid view)
+  - Attachments (grid view with thumbnails)
   - Associations (linked devices/sites)
 - **Actions:**
   - Edit button
@@ -192,8 +220,12 @@ Note.search("network troubleshooting")
   - Title (required)
   - Type (dropdown)
   - Tags (comma-separated)
-  - Content (rich text)
+  - Content (rich text with image paste support)
   - Auto-populated associations from query params
+- **Image Handling:**
+  - Paste images directly into editor
+  - Drag-and-drop supported
+  - Status messages show upload progress
 
 #### 4. Device Integration
 - **Location:** Device detail page → Notes tab
@@ -216,18 +248,35 @@ Note.search("network troubleshooting")
 ```
 app/blueprints/notes/
 ├── __init__.py           # Blueprint registration
-├── routes.py             # All view routes
+├── routes.py             # All view routes + helper functions
 ├── models.py             # Database models (Note, NoteAssociation, NoteAttachment)
-└── utils.py              # Helper functions (internal links, SVG sanitization)
+└── utils.py              # Helper functions (internal links, SVG sanitization, image extraction)
 
 app/templates/notes/
 ├── index.html            # Notes list (table view)
 ├── detail.html           # Note viewer
 ├── form.html             # Create/edit form (TinyMCE)
-└── search.html           # Search results (planned)
+└── search.html           # Search results
 
 app/static/tinymce/       # Self-hosted TinyMCE editor
 ```
+
+### utils.py Functions
+
+| Function | Purpose |
+|----------|---------|
+| `process_internal_links(content)` | Convert `[[Note Title]]` to HTML links |
+| `sanitize_svg(svg_content)` | Remove dangerous elements from SVG uploads |
+| `extract_and_save_base64_images(content, note_id)` | Extract base64 images from content, save as attachments, return updated content |
+| `get_base64_image_count(content)` | Count base64 images in content (for conditional processing) |
+| `get_base64_total_size(content)` | Estimate total size of base64 images in bytes |
+
+### routes.py Helper Functions
+
+| Function | Purpose |
+|----------|---------|
+| `cleanup_orphaned_attachments(note_id, content)` | Delete attachments not referenced in content |
+| `normalize_attachment_urls(content)` | Convert TinyMCE relative paths (`../attachments/X`) to absolute (`/notes/attachments/X`) |
 
 ## API Endpoints
 
@@ -239,7 +288,8 @@ app/static/tinymce/       # Self-hosted TinyMCE editor
 | `/notes/{id}/edit` | GET/POST | Edit note |
 | `/notes/{id}/delete` | POST | Delete note |
 | `/notes/search` | GET | Full-text search |
-| `/notes/{id}/upload` | POST | Upload attachment |
+| `/notes/{id}/upload` | POST | Upload attachment (file picker) |
+| `/notes/api/upload-image` | POST | Upload pasted/dropped images from TinyMCE |
 | `/notes/attachments/{id}` | GET | Serve attachment |
 | `/notes/attachments/{id}/delete` | POST | Delete attachment |
 | `/notes/api/link-suggestions` | GET | Autocomplete for internal links |
@@ -258,6 +308,27 @@ app/static/tinymce/       # Self-hosted TinyMCE editor
 8. Click "Create Note"
 9. System creates note with association
 10. Redirects to note detail view
+
+### Pasting an Image
+
+1. Copy image to clipboard (screenshot, browser image, etc.)
+2. Open note in edit mode
+3. Paste (Ctrl+V) into TinyMCE editor
+4. Image appears immediately (as base64 temporarily)
+5. Save note
+6. System extracts base64, saves as attachment
+7. Content updated with attachment URL
+8. Image persists through future edits
+
+### Removing an Image
+
+1. Edit note with existing image
+2. Select image in TinyMCE
+3. Delete image (Backspace/Delete key)
+4. Save note
+5. System detects orphaned attachment
+6. Attachment automatically deleted from database
+7. No manual cleanup needed
 
 ### Viewing Notes for a Site
 
@@ -310,6 +381,11 @@ app/static/tinymce/       # Self-hosted TinyMCE editor
    - Audio notes
    - Drawing/annotation tools
 
+7. **Image Deduplication**
+   - Hash-based duplicate detection
+   - Share attachments across notes
+   - Reduce storage for repeated images
+
 ## Performance Considerations
 
 ### Database
@@ -323,9 +399,15 @@ app/static/tinymce/       # Self-hosted TinyMCE editor
 - Client-side sorting within page
 
 ### Attachments
-- 1MB file size limit
-- BLOB storage (suitable for small files)
-- Consider file system storage for larger files
+- 1MB file size limit per attachment
+- BLOB storage (suitable for documentation images)
+- Automatic orphan cleanup prevents bloat
+- Consider compression for large deployments
+
+### Image Processing
+- Base64 extraction runs only when base64 images detected
+- URL normalization is lightweight regex operation
+- Orphan cleanup scans attachment list (typically small)
 
 ## Security
 
@@ -340,8 +422,9 @@ app/static/tinymce/       # Self-hosted TinyMCE editor
 
 ### File Uploads
 - Content-type validation
-- File size limits
-- SVG sanitization
+- File size limits (1MB)
+- SVG sanitization via bleach
+- No executable file types allowed
 
 ## Styling
 
@@ -349,6 +432,7 @@ app/static/tinymce/       # Self-hosted TinyMCE editor
 - Material Design 3 (MD3) principles
 - CSS custom properties for theming
 - Dark mode support (via CSS variables)
+- Cyber theme support
 
 ### Key Components
 - Cards: `.note-header`, `.info-card`
@@ -361,15 +445,22 @@ app/static/tinymce/       # Self-hosted TinyMCE editor
 - Languages: Python, JavaScript, Bash, JSON, YAML, SQL
 - Line numbers plugin included
 
+### TinyMCE Theming
+- Automatic theme detection (light/dark/cyber)
+- Custom CSS for each theme variant
+- Editor reinitializes on theme change
+
 ## Testing Checklist
 
 - [ ] Create note (all types)
-- [ ] Edit note
+- [ ] Edit note (content persists)
 - [ ] Delete note
 - [ ] Add tags
-- [ ] Search notes
+- [ ] Search notes (FTS)
 - [ ] Filter by type
-- [ ] Upload image attachment
+- [ ] Paste image into editor
+- [ ] Image survives edit/save cycle
+- [ ] Remove image (orphan cleanup works)
 - [ ] Upload SVG attachment
 - [ ] Create internal link
 - [ ] Export to Markdown
@@ -382,6 +473,7 @@ app/static/tinymce/       # Self-hosted TinyMCE editor
 - [ ] Code syntax highlighting
 - [ ] Tables in content
 - [ ] Rich text formatting
+- [ ] Theme switching (TinyMCE updates)
 
 ## Troubleshooting
 
@@ -399,27 +491,52 @@ app/static/tinymce/       # Self-hosted TinyMCE editor
 - Check attachment exists in database
 - Verify `serve_attachment` route is accessible
 - Check content type is correct
+- Verify URL format in content (`/notes/attachments/X`)
+
+### Images Disappearing After Edit
+- TinyMCE converts URLs to relative paths (`../attachments/X`)
+- Ensure `normalize_attachment_urls()` is called before cleanup
+- Verify cleanup regex matches all URL formats
+- Check routes.py has both functions in correct order
 
 ### Search Not Working
 - Verify `note_fts` virtual table exists
 - Check FTS5 is enabled in SQLite
-- Rebuild FTS index if needed
+- Run `force_rebuild_fts.py` to rebuild index
+- Check for "database disk image is malformed" errors
+
+### FTS Table Corrupted
+- Error: `sqlite3.DatabaseError: database disk image is malformed`
+- Run: `python force_rebuild_fts.py assets.db`
+- Script rebuilds both `note_fts` and `capture_fts`
+- Recreates triggers and repopulates indexes
+
+### Orphaned Attachments Not Cleaning Up
+- Check `cleanup_orphaned_attachments()` is called after save
+- Verify regex pattern matches URL format in content
+- Use TinyMCE code view (`<>`) to inspect actual URLs
 
 ## Maintenance
 
 ### Regular Tasks
-- Monitor attachment storage size
+- Monitor database size (attachments as BLOBs)
 - Archive old notes (optional)
-- Clean up orphaned attachments
-- Rebuild FTS index periodically
+- Rebuild FTS index if search degrades
+- Review orphan cleanup logs
 
 ### Database Migrations
 - Add columns: `ALTER TABLE notes ADD COLUMN ...`
 - Update indexes as needed
 - Maintain backward compatibility
 
+### Utilities
+
+| Script | Purpose |
+|--------|---------|
+| `force_rebuild_fts.py` | Rebuild corrupted FTS indexes (note_fts and capture_fts) |
+
 ---
 
-**Last Updated:** 2025-10-02  
-**Version:** 1.0  
+**Last Updated:** 2025-11-24  
+**Version:** 1.1  
 **Status:** Production Ready

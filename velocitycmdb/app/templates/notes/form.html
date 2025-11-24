@@ -186,6 +186,25 @@
         border-color: #00ffff !important;
         color: #00ffff !important;
     }
+
+    .upload-status {
+        padding: 8px 16px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        display: none;
+    }
+
+    .upload-status.info {
+        background: var(--md-primary-container);
+        color: var(--md-on-primary-container);
+        display: block;
+    }
+
+    .upload-status.error {
+        background: var(--md-error-container);
+        color: var(--md-on-error-container);
+        display: block;
+    }
 </style>
 {% endblock %}
 
@@ -194,6 +213,8 @@
     <div class="form-header">
         <h1>{{ 'Edit Note' if note else 'Create Note' }}</h1>
     </div>
+
+    <div id="uploadStatus" class="upload-status"></div>
 
     <form method="POST" id="noteForm">
         <div class="form-group">
@@ -238,6 +259,9 @@
 
         <div class="form-group">
             <label for="content" class="form-label required">Content</label>
+            <div class="form-hint" style="margin-bottom: 8px;">
+                Tip: You can paste images directly. Large images will be automatically saved as attachments.
+            </div>
             <textarea
                 id="content"
                 name="content"
@@ -307,6 +331,21 @@ document.addEventListener('DOMContentLoaded', function() {
         return baseStyles + 'body { background: #ffffff; color: #000000; }';
     }
 
+    // Show upload status message
+    function showStatus(message, type) {
+        const status = document.getElementById('uploadStatus');
+        status.textContent = message;
+        status.className = 'upload-status ' + type;
+        if (type !== 'error') {
+            setTimeout(() => {
+                status.className = 'upload-status';
+            }, 3000);
+        }
+    }
+
+    // Get note ID if editing
+    const noteId = {{ note.id|tojson if note else 'null' }};
+
     // Initialize TinyMCE with theme support
     const currentTheme = getCurrentTheme();
 
@@ -330,34 +369,89 @@ document.addEventListener('DOMContentLoaded', function() {
 
         content_style: getContentCss(currentTheme),
 
+        // Automatic uploads for pasted/dropped images
+        automatic_uploads: true,
+        images_reuse_filename: true,
+
+        // Handle image uploads (paste, drag-drop, insert)
         images_upload_handler: function (blobInfo, progress) {
             return new Promise(function(resolve, reject) {
                 const formData = new FormData();
-                formData.append('file', blobInfo.blob(), blobInfo.filename());
+                formData.append('file', blobInfo.blob(), blobInfo.filename() || 'pasted_image.png');
 
-                const noteId = window.location.pathname.match(/\/notes\/(\d+)/)?.[1];
-
-                if (!noteId) {
-                    reject('Please save the note first before uploading images');
-                    return;
+                if (noteId) {
+                    formData.append('note_id', noteId);
                 }
 
-                fetch(`/notes/${noteId}/upload`, {
+                showStatus('Uploading image...', 'info');
+
+                fetch('/notes/api/upload-image', {
                     method: 'POST',
                     body: formData
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        resolve(data.url);
+                        showStatus('Image uploaded successfully', 'info');
+                        resolve(data.location);
                     } else {
+                        showStatus('Upload failed: ' + (data.error || 'Unknown error'), 'error');
                         reject(data.error || 'Upload failed');
                     }
                 })
                 .catch(error => {
+                    showStatus('Upload failed: ' + error, 'error');
                     reject('Upload failed: ' + error);
                 });
             });
+        },
+
+        // File picker for image insertion
+        file_picker_types: 'image',
+        file_picker_callback: function(callback, value, meta) {
+            if (meta.filetype === 'image') {
+                const input = document.createElement('input');
+                input.setAttribute('type', 'file');
+                input.setAttribute('accept', 'image/*');
+
+                input.onchange = function() {
+                    const file = this.files[0];
+                    const reader = new FileReader();
+
+                    reader.onload = function() {
+                        // For new notes, use base64 (will be extracted on save)
+                        // For existing notes, upload immediately
+                        if (noteId) {
+                            const formData = new FormData();
+                            formData.append('file', file);
+                            formData.append('note_id', noteId);
+
+                            fetch('/notes/api/upload-image', {
+                                method: 'POST',
+                                body: formData
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    callback(data.location, { title: file.name });
+                                }
+                            });
+                        } else {
+                            // New note - use base64, will be extracted on save
+                            callback(reader.result, { title: file.name });
+                        }
+                    };
+
+                    reader.readAsDataURL(file);
+                };
+
+                input.click();
+            }
+        },
+
+        // Paste preprocessing - handle large images
+        paste_preprocess: function(plugin, args) {
+            // Let TinyMCE handle it via images_upload_handler
         },
 
         codesample_languages: [
@@ -440,8 +534,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         skin: getTinymceSkin(newTheme),
                         content_css: 'default',
                         content_style: getContentCss(newTheme),
-                        // ... (copy all other config from above)
                         menubar: true,
+                        automatic_uploads: true,
                         plugins: [
                             'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
                             'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',

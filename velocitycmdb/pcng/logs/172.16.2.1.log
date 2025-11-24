@@ -355,3 +355,426 @@ bors detail'
 [2025-11-13 23:03:00.541] SSHClient Message: Command execution completed in 5019.26ms
 [2025-11-13 23:03:00.541] Disconnecting from device
 [2025-11-13 23:03:00.541] Successfully disconnected
+[2025-11-23 18:17:45.754] Connecting to 172.16.2.1:22...
+[2025-11-23 18:17:45.761] Connecting to 172.16.2.1:22...
+[2025-11-23 18:17:46.008] Connecting to 172.16.2.1:22...
+[2025-11-23 18:17:46.212] Connected to 172.16.2.1:22
+[2025-11-23 18:17:46.212] Creating shell stream with ANSI filtering
+[2025-11-23 18:17:46.228] Connected to 172.16.2.1:22
+[2025-11-23 18:17:46.228] Creating shell stream with ANSI filtering
+[2025-11-23 18:17:46.278] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:17:46.284] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:17:46.463] Connected to 172.16.2.1:22
+[2025-11-23 18:17:46.463] Creating shell stream with ANSI filtering
+[2025-11-23 18:17:46.530] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:17:46.630] Connecting to 172.16.2.1:22...
+[2025-11-23 18:17:47.084] Connected to 172.16.2.1:22
+[2025-11-23 18:17:47.084] Creating shell stream with ANSI filtering
+[2025-11-23 18:17:47.131] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:17:48.281] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:17:48.281] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:17:48.281] Sending single newline to trigger prompt
+[2025-11-23 18:17:48.290] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:17:48.290] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:17:48.290] Sending single newline to trigger prompt
+[2025-11-23 18:17:48.532] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:17:48.532] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:17:48.532] Sending single newline to trigger prompt
+[2025-11-23 18:17:48.698] Connecting to 172.16.2.1:22...
+[2025-11-23 18:17:49.132] Connected to 172.16.2.1:22
+[2025-11-23 18:17:49.132] Creating shell stream with ANSI filtering
+[2025-11-23 18:17:49.146] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:17:49.147] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:17:49.148] Sending single newline to trigger prompt
+[2025-11-23 18:17:49.190] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:17:51.194] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:17:51.194] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:17:51.197] Sending single newline to trigger prompt
+[2025-11-23 18:17:54.298] Detected prompt: 'eng-rtr-1#'
+[2025-11-23 18:17:54.298] Expect prompt set to: 'eng-rtr-1#'
+[2025-11-23 18:17:54.301] SSHClient Message: Executing command: 'terminal length 0,show ip arp,,'
+[2025-11-23 18:17:54.301] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:17:54.304] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:17:54.304] Detected prompt: 'eng-rtr-1#'
+[2025-11-23 18:17:54.304] Waiting between sub-commands: 1s
+[2025-11-23 18:17:54.304] Expect prompt set to: 'eng-rtr-1#'
+[2025-11-23 18:17:54.304] SSHClient Message: Executing command: 'terminal length 0,show mac address-table,,'
+[2025-11-23 18:17:54.304] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:17:54.309] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:17:54.309] Waiting between sub-commands: 1s
+[2025-11-23 18:17:54.549] Detected prompt: 'eng-rtr-1#'
+[2025-11-23 18:17:54.550] Expect prompt set to: 'eng-rtr-1#'
+[2025-11-23 18:17:54.550] SSHClient Message: Executing command: 'terminal length 0,show ip arp,,'
+[2025-11-23 18:17:54.550] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:17:54.550] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:17:54.550] Waiting between sub-commands: 1s
+[2025-11-23 18:17:55.164] Detected prompt: 'eng-rtr-1#'
+[2025-11-23 18:17:55.164] Expect prompt set to: 'eng-rtr-1#'
+[2025-11-23 18:17:55.164] SSHClient Message: Executing command: 'terminal length 0,show running-config,,'
+[2025-11-23 18:17:55.164] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:17:55.164] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:17:55.164] Waiting between sub-commands: 1s
+[2025-11-23 18:17:55.307] Sending command 2/4: 'show ip arp'
+[2025-11-23 18:17:55.307] Waiting between sub-commands: 1s
+[2025-11-23 18:17:55.313] Sending command 2/4: 'show mac address-table'
+[2025-11-23 18:17:55.313] Waiting between sub-commands: 1s
+[2025-11-23 18:17:55.556] Sending command 2/4: 'show ip arp'
+[2025-11-23 18:17:55.556] Waiting between sub-commands: 1s
+[2025-11-23 18:17:56.171] Sending command 2/4: 'show running-config'
+[2025-11-23 18:17:56.171] Waiting between sub-commands: 1s
+[2025-11-23 18:17:56.309] Sending newline command 3/4
+[2025-11-23 18:17:56.309] Sending newline command 3/4
+[2025-11-23 18:17:56.310] Waiting between sub-commands: 1s
+[2025-11-23 18:17:56.314] Sending newline command 3/4
+[2025-11-23 18:17:56.314] Sending newline command 3/4
+[2025-11-23 18:17:56.314] Waiting between sub-commands: 1s
+[2025-11-23 18:17:56.559] Sending newline command 3/4
+[2025-11-23 18:17:56.559] Sending newline command 3/4
+[2025-11-23 18:17:56.559] Waiting between sub-commands: 1s
+[2025-11-23 18:17:57.172] Sending newline command 3/4
+[2025-11-23 18:17:57.174] Sending newline command 3/4
+[2025-11-23 18:17:57.174] Waiting between sub-commands: 1s
+[2025-11-23 18:17:57.214] Detected prompt: 'eng-rtr-1#'
+[2025-11-23 18:17:57.216] Expect prompt set to: 'eng-rtr-1#'
+[2025-11-23 18:17:57.216] SSHClient Message: Executing command: 'enable,terminal length 0,show running-config,,'
+[2025-11-23 18:17:57.218] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:17:57.218] Sending command 1/5: 'enable'
+[2025-11-23 18:17:57.220] Waiting between sub-commands: 1s
+[2025-11-23 18:17:57.311] Sending newline command 4/4
+[2025-11-23 18:17:57.311] Sending newline command 4/4
+[2025-11-23 18:17:57.313] Monitoring for EXACTLY 3 occurrences of: 'eng-rtr-1#'
+[2025-11-23 18:17:57.315] Sending newline command 4/4
+[2025-11-23 18:17:57.315] PROMPT DETECTED: 4/3
+[2025-11-23 18:17:57.315] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:17:57.315] Sending newline command 4/4
+[2025-11-23 18:17:57.315] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:17:57.315] Monitoring for EXACTLY 3 occurrences of: 'eng-rtr-1#'
+[2025-11-23 18:17:57.320] Shell command execution completed
+[2025-11-23 18:17:57.320] PROMPT DETECTED: 4/3
+[2025-11-23 18:17:57.320] Total shell command execution time: 3016.36ms
+[2025-11-23 18:17:57.320] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:17:57.320] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:17:57.320] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:17:57.320] Shell command execution completed
+[2025-11-23 18:17:57.320] Total shell command execution time: 3011.29ms
+[2025-11-23 18:17:57.320] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:17:57.564] Sending newline command 4/4
+[2025-11-23 18:17:57.564] Sending newline command 4/4
+[2025-11-23 18:17:57.567] Monitoring for EXACTLY 3 occurrences of: 'eng-rtr-1#'
+[2025-11-23 18:17:57.569] PROMPT DETECTED: 4/3
+[2025-11-23 18:17:57.569] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:17:57.571] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:17:57.571] Shell command execution completed
+[2025-11-23 18:17:57.571] Total shell command execution time: 3020.79ms
+[2025-11-23 18:17:57.571] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:17:58.177] Sending newline command 4/4
+[2025-11-23 18:17:58.177] Sending newline command 4/4
+[2025-11-23 18:17:58.177] Monitoring for EXACTLY 3 occurrences of: 'eng-rtr-1#'
+[2025-11-23 18:17:58.177] PROMPT DETECTED: 4/3
+[2025-11-23 18:17:58.177] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:17:58.177] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:17:58.185] Shell command execution completed
+[2025-11-23 18:17:58.185] Total shell command execution time: 3021.27ms
+[2025-11-23 18:17:58.185] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:17:58.222] Sending command 2/5: 'terminal length 0'
+[2025-11-23 18:17:58.222] Waiting between sub-commands: 1s
+[2025-11-23 18:17:58.325] SSHClient Message: Command execution completed in 4024.86ms
+[2025-11-23 18:17:58.325] Disconnecting from device
+[2025-11-23 18:17:58.325] Successfully disconnected
+[2025-11-23 18:17:58.330] SSHClient Message: Command execution completed in 4026.08ms
+[2025-11-23 18:17:58.330] Disconnecting from device
+[2025-11-23 18:17:58.333] Successfully disconnected
+[2025-11-23 18:17:58.577] SSHClient Message: Command execution completed in 4026.82ms
+[2025-11-23 18:17:58.577] Disconnecting from device
+[2025-11-23 18:17:58.577] Successfully disconnected
+[2025-11-23 18:17:59.190] SSHClient Message: Command execution completed in 4025.95ms
+[2025-11-23 18:17:59.190] Disconnecting from device
+[2025-11-23 18:17:59.190] Successfully disconnected
+[2025-11-23 18:17:59.226] Sending command 3/5: 'show running-config'
+[2025-11-23 18:17:59.226] Waiting between sub-commands: 1s
+[2025-11-23 18:18:00.227] Sending newline command 4/5
+[2025-11-23 18:18:00.227] Sending newline command 4/5
+[2025-11-23 18:18:00.227] Waiting between sub-commands: 1s
+[2025-11-23 18:18:01.229] Sending newline command 5/5
+[2025-11-23 18:18:01.229] Sending newline command 5/5
+[2025-11-23 18:18:01.229] Monitoring for EXACTLY 4 occurrences of: 'eng-rtr-1#'
+[2025-11-23 18:18:01.229] PROMPT DETECTED: 5/4
+[2025-11-23 18:18:01.229] TARGET REACHED: 5 prompts detected. STOPPING NOW.
+[2025-11-23 18:18:01.229] SUCCESS: Command execution completed with 5/4 prompts
+[2025-11-23 18:18:01.229] Shell command execution completed
+[2025-11-23 18:18:01.229] Total shell command execution time: 4011.17ms
+[2025-11-23 18:18:01.229] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:18:02.234] SSHClient Message: Command execution completed in 5016.37ms
+[2025-11-23 18:18:02.234] Disconnecting from device
+[2025-11-23 18:18:02.236] Successfully disconnected
+[2025-11-23 18:19:47.717] Connecting to 172.16.2.1:22...
+[2025-11-23 18:19:48.191] Connected to 172.16.2.1:22
+[2025-11-23 18:19:48.191] Creating shell stream with ANSI filtering
+[2025-11-23 18:19:48.254] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:19:48.539] Connecting to 172.16.2.1:22...
+[2025-11-23 18:19:48.539] Connecting to 172.16.2.1:22...
+[2025-11-23 18:19:49.209] Connected to 172.16.2.1:22
+[2025-11-23 18:19:49.224] Creating shell stream with ANSI filtering
+[2025-11-23 18:19:49.224] Creating shell stream with ANSI filtering
+[2025-11-23 18:19:49.274] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:19:49.274] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:19:50.256] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:19:50.256] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:19:50.256] Sending single newline to trigger prompt
+[2025-11-23 18:19:51.286] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:19:51.286] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:19:51.286] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:19:51.288] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:19:51.288] Sending single newline to trigger prompt
+[2025-11-23 18:19:51.288] Sending single newline to trigger prompt
+[2025-11-23 18:19:52.104] Connecting to 172.16.2.1:22...
+[2025-11-23 18:19:52.652] Connected to 172.16.2.1:22
+[2025-11-23 18:19:52.652] Creating shell stream with ANSI filtering
+[2025-11-23 18:19:52.717] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:19:54.725] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:19:54.728] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:19:54.729] Sending single newline to trigger prompt
+[2025-11-23 18:19:56.273] Detected prompt: 'eng-rtr-1#'
+[2025-11-23 18:19:56.273] Expect prompt set to: 'eng-rtr-1#'
+[2025-11-23 18:19:56.273] SSHClient Message: Executing command: 'terminal length 0,show mac address-table,,'
+[2025-11-23 18:19:56.273] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:19:56.273] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:19:56.273] Waiting between sub-commands: 1s
+[2025-11-23 18:19:57.277] Sending command 2/4: 'show mac address-table'
+[2025-11-23 18:19:57.277] Waiting between sub-commands: 1s
+[2025-11-23 18:19:57.302] Detected prompt: 'eng-rtr-1#'
+[2025-11-23 18:19:57.304] Expect prompt set to: 'eng-rtr-1#'
+[2025-11-23 18:19:57.304] Detected prompt: 'eng-rtr-1#'
+[2025-11-23 18:19:57.304] SSHClient Message: Executing command: 'terminal length 0,show lldp neighbors detail,,'
+[2025-11-23 18:19:57.304] Expect prompt set to: 'eng-rtr-1#'
+[2025-11-23 18:19:57.304] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:19:57.304] SSHClient Message: Executing command: 'terminal length 0,show lldp neighbors detail,,'
+[2025-11-23 18:19:57.304] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:19:57.304] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:19:57.304] Waiting between sub-commands: 1s
+[2025-11-23 18:19:57.304] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:19:57.304] Waiting between sub-commands: 1s
+[2025-11-23 18:19:57.352] Connecting to 172.16.2.1:22...
+[2025-11-23 18:19:57.854] Connected to 172.16.2.1:22
+[2025-11-23 18:19:57.856] Creating shell stream with ANSI filtering
+[2025-11-23 18:19:57.908] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:19:58.278] Sending newline command 3/4
+[2025-11-23 18:19:58.278] Sending newline command 3/4
+[2025-11-23 18:19:58.278] Waiting between sub-commands: 1s
+[2025-11-23 18:19:58.309] Sending command 2/4: 'show lldp neighbors detail'
+[2025-11-23 18:19:58.309] Sending command 2/4: 'show lldp neighbors detail'
+[2025-11-23 18:19:58.309] Waiting between sub-commands: 1s
+[2025-11-23 18:19:58.309] Waiting between sub-commands: 1s
+[2025-11-23 18:19:59.283] Sending newline command 4/4
+[2025-11-23 18:19:59.283] Sending newline command 4/4
+[2025-11-23 18:19:59.283] Monitoring for EXACTLY 3 occurrences of: 'eng-rtr-1#'
+[2025-11-23 18:19:59.283] PROMPT DETECTED: 4/3
+[2025-11-23 18:19:59.283] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:19:59.283] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:19:59.283] Shell command execution completed
+[2025-11-23 18:19:59.283] Total shell command execution time: 3009.74ms
+[2025-11-23 18:19:59.283] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:19:59.312] Sending newline command 3/4
+[2025-11-23 18:19:59.312] Sending newline command 3/4
+[2025-11-23 18:19:59.313] Sending newline command 3/4
+[2025-11-23 18:19:59.313] Waiting between sub-commands: 1s
+[2025-11-23 18:19:59.314] Sending newline command 3/4
+[2025-11-23 18:19:59.314] Waiting between sub-commands: 1s
+[2025-11-23 18:19:59.916] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:19:59.916] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:19:59.916] Sending single newline to trigger prompt
+[2025-11-23 18:20:00.290] SSHClient Message: Command execution completed in 4016.90ms
+[2025-11-23 18:20:00.290] Disconnecting from device
+[2025-11-23 18:20:00.290] Successfully disconnected
+[2025-11-23 18:20:00.315] Sending newline command 4/4
+[2025-11-23 18:20:00.316] Sending newline command 4/4
+[2025-11-23 18:20:00.316] Sending newline command 4/4
+[2025-11-23 18:20:00.316] Sending newline command 4/4
+[2025-11-23 18:20:00.316] Monitoring for EXACTLY 3 occurrences of: 'eng-rtr-1#'
+[2025-11-23 18:20:00.316] Monitoring for EXACTLY 3 occurrences of: 'eng-rtr-1#'
+[2025-11-23 18:20:00.316] PROMPT DETECTED: 4/3
+[2025-11-23 18:20:00.321] PROMPT DETECTED: 4/3
+[2025-11-23 18:20:00.321] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:20:00.321] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:20:00.321] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:20:00.321] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:20:00.321] Shell command execution completed
+[2025-11-23 18:20:00.321] Shell command execution completed
+[2025-11-23 18:20:00.321] Total shell command execution time: 3017.46ms
+[2025-11-23 18:20:00.321] Total shell command execution time: 3017.46ms
+[2025-11-23 18:20:00.321] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:20:00.321] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:20:00.745] Detected prompt: 'eng-rtr-1#'
+[2025-11-23 18:20:00.745] Expect prompt set to: 'eng-rtr-1#'
+[2025-11-23 18:20:00.745] SSHClient Message: Executing command: 'terminal length 0,show ip route,,'
+[2025-11-23 18:20:00.745] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:20:00.745] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:20:00.748] Waiting between sub-commands: 1s
+[2025-11-23 18:20:01.329] SSHClient Message: Command execution completed in 4025.46ms
+[2025-11-23 18:20:01.329] SSHClient Message: Command execution completed in 4025.46ms
+[2025-11-23 18:20:01.329] Disconnecting from device
+[2025-11-23 18:20:01.329] Disconnecting from device
+[2025-11-23 18:20:01.329] Successfully disconnected
+[2025-11-23 18:20:01.329] Successfully disconnected
+[2025-11-23 18:20:01.748] Sending command 2/4: 'show ip route'
+[2025-11-23 18:20:01.748] Waiting between sub-commands: 1s
+[2025-11-23 18:20:02.750] Sending newline command 3/4
+[2025-11-23 18:20:02.750] Sending newline command 3/4
+[2025-11-23 18:20:02.750] Waiting between sub-commands: 1s
+[2025-11-23 18:20:03.756] Sending newline command 4/4
+[2025-11-23 18:20:03.756] Sending newline command 4/4
+[2025-11-23 18:20:03.758] Monitoring for EXACTLY 3 occurrences of: 'eng-rtr-1#'
+[2025-11-23 18:20:03.758] PROMPT DETECTED: 4/3
+[2025-11-23 18:20:03.758] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:20:03.758] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:20:03.758] Shell command execution completed
+[2025-11-23 18:20:03.758] Total shell command execution time: 3013.09ms
+[2025-11-23 18:20:03.758] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:20:04.768] SSHClient Message: Command execution completed in 4023.30ms
+[2025-11-23 18:20:04.768] Disconnecting from device
+[2025-11-23 18:20:04.768] Successfully disconnected
+[2025-11-23 18:20:05.935] Detected prompt: 'eng-rtr-1#'
+[2025-11-23 18:20:05.937] Expect prompt set to: 'eng-rtr-1#'
+[2025-11-23 18:20:05.937] SSHClient Message: Executing command: 'terminal length 0,show ip route,,'
+[2025-11-23 18:20:05.937] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:20:05.937] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:20:05.937] Waiting between sub-commands: 1s
+[2025-11-23 18:20:06.941] Sending command 2/4: 'show ip route'
+[2025-11-23 18:20:06.941] Waiting between sub-commands: 1s
+[2025-11-23 18:20:07.945] Sending newline command 3/4
+[2025-11-23 18:20:07.945] Sending newline command 3/4
+[2025-11-23 18:20:07.945] Waiting between sub-commands: 1s
+[2025-11-23 18:20:08.949] Sending newline command 4/4
+[2025-11-23 18:20:08.949] Sending newline command 4/4
+[2025-11-23 18:20:08.952] Monitoring for EXACTLY 3 occurrences of: 'eng-rtr-1#'
+[2025-11-23 18:20:08.954] PROMPT DETECTED: 4/3
+[2025-11-23 18:20:08.956] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:20:08.956] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:20:08.958] Shell command execution completed
+[2025-11-23 18:20:08.959] Total shell command execution time: 3021.77ms
+[2025-11-23 18:20:08.959] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:20:09.962] SSHClient Message: Command execution completed in 4024.85ms
+[2025-11-23 18:20:09.962] Disconnecting from device
+[2025-11-23 18:20:09.964] Successfully disconnected
+[2025-11-23 18:21:50.696] Connecting to 172.16.2.1:22...
+[2025-11-23 18:21:50.970] Connecting to 172.16.2.1:22...
+[2025-11-23 18:21:51.129] Connected to 172.16.2.1:22
+[2025-11-23 18:21:51.131] Creating shell stream with ANSI filtering
+[2025-11-23 18:21:51.177] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:21:51.480] Connected to 172.16.2.1:22
+[2025-11-23 18:21:51.480] Creating shell stream with ANSI filtering
+[2025-11-23 18:21:51.528] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:21:53.191] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:21:53.191] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:21:53.195] Sending single newline to trigger prompt
+[2025-11-23 18:21:53.545] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:21:53.545] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:21:53.545] Sending single newline to trigger prompt
+[2025-11-23 18:21:55.207] Connecting to 172.16.2.1:22...
+[2025-11-23 18:21:56.086] Connected to 172.16.2.1:22
+[2025-11-23 18:21:56.086] Creating shell stream with ANSI filtering
+[2025-11-23 18:21:56.149] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:21:57.618] Connecting to 172.16.2.1:22...
+[2025-11-23 18:21:58.156] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:21:58.156] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:21:58.156] Sending single newline to trigger prompt
+[2025-11-23 18:21:58.557] Connected to 172.16.2.1:22
+[2025-11-23 18:21:58.557] Creating shell stream with ANSI filtering
+[2025-11-23 18:21:58.609] SSHClient Message: Waiting for shell initialization (2000ms)
+[2025-11-23 18:21:59.211] Detected prompt: 'eng-rtr-1#'
+[2025-11-23 18:21:59.214] Expect prompt set to: 'eng-rtr-1#'
+[2025-11-23 18:21:59.214] SSHClient Message: Executing command: 'terminal length 0,show version,,'
+[2025-11-23 18:21:59.214] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:21:59.214] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:21:59.214] Waiting between sub-commands: 1s
+[2025-11-23 18:21:59.560] Detected prompt: 'eng-rtr-1#'
+[2025-11-23 18:21:59.560] Expect prompt set to: 'eng-rtr-1#'
+[2025-11-23 18:21:59.560] SSHClient Message: Executing command: 'terminal length 0,show version,,'
+[2025-11-23 18:21:59.560] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:21:59.560] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:21:59.560] Waiting between sub-commands: 1s
+[2025-11-23 18:22:00.220] Sending command 2/4: 'show version'
+[2025-11-23 18:22:00.220] Waiting between sub-commands: 1s
+[2025-11-23 18:22:00.567] Sending command 2/4: 'show version'
+[2025-11-23 18:22:00.567] Waiting between sub-commands: 1s
+[2025-11-23 18:22:00.620] WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!
+[2025-11-23 18:22:00.620] Attempting to auto-detect command prompt with ANSI filtering...
+[2025-11-23 18:22:00.621] Sending single newline to trigger prompt
+[2025-11-23 18:22:01.224] Sending newline command 3/4
+[2025-11-23 18:22:01.224] Sending newline command 3/4
+[2025-11-23 18:22:01.224] Waiting between sub-commands: 1s
+[2025-11-23 18:22:01.570] Sending newline command 3/4
+[2025-11-23 18:22:01.570] Sending newline command 3/4
+[2025-11-23 18:22:01.570] Waiting between sub-commands: 1s
+[2025-11-23 18:22:02.229] Sending newline command 4/4
+[2025-11-23 18:22:02.229] Sending newline command 4/4
+[2025-11-23 18:22:02.229] Monitoring for EXACTLY 3 occurrences of: 'eng-rtr-1#'
+[2025-11-23 18:22:02.229] PROMPT DETECTED: 4/3
+[2025-11-23 18:22:02.229] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:22:02.229] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:22:02.229] Shell command execution completed
+[2025-11-23 18:22:02.229] Total shell command execution time: 3015.29ms
+[2025-11-23 18:22:02.229] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:22:02.575] Sending newline command 4/4
+[2025-11-23 18:22:02.575] Sending newline command 4/4
+[2025-11-23 18:22:02.575] Monitoring for EXACTLY 3 occurrences of: 'eng-rtr-1#'
+[2025-11-23 18:22:02.577] PROMPT DETECTED: 4/3
+[2025-11-23 18:22:02.577] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:22:02.577] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:22:02.579] Shell command execution completed
+[2025-11-23 18:22:02.579] Total shell command execution time: 3018.79ms
+[2025-11-23 18:22:02.579] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:22:03.237] SSHClient Message: Command execution completed in 4023.47ms
+[2025-11-23 18:22:03.237] Disconnecting from device
+[2025-11-23 18:22:03.237] Successfully disconnected
+[2025-11-23 18:22:03.582] SSHClient Message: Command execution completed in 4021.41ms
+[2025-11-23 18:22:03.582] Disconnecting from device
+[2025-11-23 18:22:03.582] Successfully disconnected
+[2025-11-23 18:22:04.171] Detected prompt: 'eng-rtr-1#'
+[2025-11-23 18:22:04.171] Expect prompt set to: 'eng-rtr-1#'
+[2025-11-23 18:22:04.171] SSHClient Message: Executing command: 'enable,terminal length 0,show inventory,,'
+[2025-11-23 18:22:04.171] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:22:04.171] Sending command 1/5: 'enable'
+[2025-11-23 18:22:04.171] Waiting between sub-commands: 1s
+[2025-11-23 18:22:05.176] Sending command 2/5: 'terminal length 0'
+[2025-11-23 18:22:05.176] Waiting between sub-commands: 1s
+[2025-11-23 18:22:06.177] Sending command 3/5: 'show inventory'
+[2025-11-23 18:22:06.177] Waiting between sub-commands: 1s
+[2025-11-23 18:22:06.635] Detected prompt: 'eng-rtr-1#'
+[2025-11-23 18:22:06.635] Expect prompt set to: 'eng-rtr-1#'
+[2025-11-23 18:22:06.635] SSHClient Message: Executing command: 'terminal length 0,show inventory,,'
+[2025-11-23 18:22:06.635] Using shell mode for command execution with ANSI filtering
+[2025-11-23 18:22:06.641] Sending command 1/4: 'terminal length 0'
+[2025-11-23 18:22:06.641] Waiting between sub-commands: 1s
+[2025-11-23 18:22:07.178] Sending newline command 4/5
+[2025-11-23 18:22:07.178] Sending newline command 4/5
+[2025-11-23 18:22:07.178] Waiting between sub-commands: 1s
+[2025-11-23 18:22:07.644] Sending command 2/4: 'show inventory'
+[2025-11-23 18:22:07.644] Waiting between sub-commands: 1s
+[2025-11-23 18:22:08.183] Sending newline command 5/5
+[2025-11-23 18:22:08.183] Sending newline command 5/5
+[2025-11-23 18:22:08.183] Monitoring for EXACTLY 4 occurrences of: 'eng-rtr-1#'
+[2025-11-23 18:22:08.183] PROMPT DETECTED: 5/4
+[2025-11-23 18:22:08.183] TARGET REACHED: 5 prompts detected. STOPPING NOW.
+[2025-11-23 18:22:08.183] SUCCESS: Command execution completed with 5/4 prompts
+[2025-11-23 18:22:08.183] Shell command execution completed
+[2025-11-23 18:22:08.183] Total shell command execution time: 4012.04ms
+[2025-11-23 18:22:08.183] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:22:08.648] Sending newline command 3/4
+[2025-11-23 18:22:08.648] Sending newline command 3/4
+[2025-11-23 18:22:08.648] Waiting between sub-commands: 1s
+[2025-11-23 18:22:09.191] SSHClient Message: Command execution completed in 5019.59ms
+[2025-11-23 18:22:09.191] Disconnecting from device
+[2025-11-23 18:22:09.191] Successfully disconnected
+[2025-11-23 18:22:09.652] Sending newline command 4/4
+[2025-11-23 18:22:09.652] Sending newline command 4/4
+[2025-11-23 18:22:09.652] Monitoring for EXACTLY 3 occurrences of: 'eng-rtr-1#'
+[2025-11-23 18:22:09.652] PROMPT DETECTED: 4/3
+[2025-11-23 18:22:09.652] TARGET REACHED: 4 prompts detected. STOPPING NOW.
+[2025-11-23 18:22:09.652] SUCCESS: Command execution completed with 4/3 prompts
+[2025-11-23 18:22:09.652] Shell command execution completed
+[2025-11-23 18:22:09.652] Total shell command execution time: 3011.17ms
+[2025-11-23 18:22:09.652] SSHClient Message: Waiting between commands: 1s
+[2025-11-23 18:22:10.664] SSHClient Message: Command execution completed in 4028.92ms
+[2025-11-23 18:22:10.664] Disconnecting from device
+[2025-11-23 18:22:10.664] Successfully disconnected
