@@ -12,7 +12,7 @@ import os
 
 # Read version from velocitycmdb/__init__.py or cli.py
 
-VERSION = "0.10.1"
+VERSION = "0.10.2"
 
 # Read README for long description
 readme_path = Path(__file__).parent / "README.md"
@@ -154,6 +154,6 @@ setup(
 )
 
 print(f"\nVelocityCMDB v{VERSION} setup complete!")
-print("\nAfter installation, use these commands:")
-print("  python -m velocitycmdb.cli init              # Initialize databases")
-print("  python -m velocitycmdb.app.run             # Start web interface")
+print("\nAfter installation, run:")
+print("  velocitycmdb init    # Initialize data directory and databases")
+print("  velocitycmdb run     # Start web interface")

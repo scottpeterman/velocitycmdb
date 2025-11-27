@@ -233,18 +233,37 @@ def run_collection_task(app, job_id, device_ids, capture_types, credentials,
         try:
             logger.info(f"Starting collection job: {job_id}")
             logger.info(f"Capture types: {capture_types}")
+            if credentials.get('use_keys') and not credentials.get('ssh_key_path'):
+                credentials['ssh_key_path'] = str(Path.home() / '.ssh' / 'id_rsa')
+                logger.info(f"Using default SSH key: {credentials['ssh_key_path']}")
 
+            logger.info(f"Credentials: username={credentials.get('username')}, "
+                        f"use_keys={credentials.get('use_keys')}, "
+                        f"ssh_key_path={credentials.get('ssh_key_path')}")
             # Get data directory
             data_dir = Path(app.config['VELOCITYCMDB_DATA_DIR'])
 
             # Get sessions file - batch_spn.py uses this to know which devices to talk to
-            sessions_file = data_dir.parent / 'discovery' / 'sessions.yaml'
-            if not sessions_file.exists():
-                sessions_file = Path('pcng/sessions.yaml')
+            possible_paths = [
+                data_dir / 'sessions.yaml',  # ~/.velocitycmdb/data/sessions.yaml
+                data_dir.parent / 'discovery' / 'sessions.yaml',  # ~/.velocitycmdb/discovery/sessions.yaml
+                data_dir.parent / 'data' / 'sessions.yaml',  # alternate layout
+                Path('pcng/sessions.yaml'),  # ./pcng/sessions.yaml
+                Path('sessions.yaml'),  # ./sessions.yaml
+            ]
 
-            if not sessions_file.exists():
+            sessions_file = None
+            for path in possible_paths:
+                if path.exists():
+                    sessions_file = path
+                    logger.info(f"Found sessions file: {sessions_file}")
+                    break
+
+            if not sessions_file:
+                searched = [str(p) for p in possible_paths]
                 raise FileNotFoundError(
-                    f"Sessions file not found. Run discovery first or create pcng/sessions.yaml"
+                    f"Sessions file not found. Searched: {searched}. "
+                    f"Run discovery first or place sessions.yaml in {data_dir}"
                 )
 
             logger.info(f"Using sessions file: {sessions_file}")

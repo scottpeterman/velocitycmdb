@@ -1,0 +1,1 @@
+ python fingerprint_cli.py -s ~/.velocitycmdb/data/sessions.yaml -u speterman -k ~/.ssh/id_rsa -d ~/.velocitycmdb/data

@@ -142,6 +142,9 @@ class SimpleSPN:
         # Version
         parser.add_argument("--version", action="version",
                             version=f"Simplified SSHPassPython {self.VERSION}")
+        parser.add_argument("-k", "--key",
+                            default=os.getenv('PYSSH_KEY', ''),
+                            help="SSH private key file [Env: PYSSH_KEY]")
 
         return parser.parse_args()
 
@@ -156,23 +159,36 @@ class SimpleSPN:
         # Password: CLI > SSH_PASSWORD > CRED_1_PASS
         password = self.args.password or os.getenv('SSH_PASSWORD', '') or os.getenv('CRED_1_PASS', '')
 
+        # SSH Key: CLI > PYSSH_KEY
+        key_file = getattr(self.args, 'key', '') or os.getenv('PYSSH_KEY', '')
+
         # Validate required credentials
         missing = []
         if not host:
             missing.append("host (--host or SSH_HOST)")
         if not user:
             missing.append("username (--user or SSH_USER or CRED_1_USER)")
-        if not password:
-            missing.append("password (--password or SSH_PASSWORD or CRED_1_PASS)")
+        if not password and not key_file:
+            missing.append("password or ssh key (--password or --key or PYSSH_KEY)")
 
         if missing:
             print(f"Error: Missing required credentials: {', '.join(missing)}")
             sys.exit(1)
 
+        # Set environment variables for downstream components
+        os.environ['SSH_HOST'] = host
+        os.environ['SSH_USER'] = user
+        if password:
+            os.environ['SSH_PASSWORD'] = password
+            os.environ['PYSSH_PASS'] = password
+        if key_file:
+            os.environ['PYSSH_KEY'] = key_file
+
         return {
             'host': host,
             'user': user,
-            'password': password
+            'password': password,
+            'key_file': key_file
         }
 
     def parse_host_port(self, host_str):
@@ -267,7 +283,8 @@ class SimpleSPN:
             inter_command_time=self.args.inter_command_time,
             log_file=self.log_file,
             debug=self.args.debug,
-            expect_prompt_timeout=self.args.expect_prompt_timeout
+            expect_prompt_timeout=self.args.expect_prompt_timeout,
+            key_file=self.credentials.get('key_file'),
         )
 
         # Set output callback

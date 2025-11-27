@@ -3,6 +3,8 @@
 Fingerprint Database Loader
 Loads device fingerprint JSON files into the network asset management database
 Handles new devices, updates, and complex stack configurations
+
+FIXED: Properly handles yaml_display_name fallback for devices that don't report hostname
 """
 
 import json
@@ -20,6 +22,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 logger.setLevel("DEBUG")
+
+
 @dataclass
 class DeviceInfo:
     """Parsed device information from fingerprint JSON"""
@@ -131,6 +135,45 @@ class FingerprintLoader:
         }
 
         return driver_mapping.get(netmiko_driver, netmiko_driver or 'generic_ssh')
+
+    def extract_hostname_from_prompt(self, detected_prompt: str) -> Optional[str]:
+        """
+        Extract hostname from detected prompt with better parsing.
+
+        Handles formats like:
+        - "hostname#" or "hostname>"
+        - "username@hostname#" or "username@hostname>"
+        - "hostname(config)#"
+        - "speterman@edge1-01.fra1>"
+        """
+        if not detected_prompt:
+            return None
+
+        prompt = detected_prompt.strip()
+
+        # Remove trailing prompt characters (#, >, $, %, ), etc.)
+        prompt = re.sub(r'[\#\>\$\%\)\]]+\s*$', '', prompt)
+
+        # Remove config mode indicators like (config), (config-if), etc.
+        prompt = re.sub(r'\([^)]+\)\s*$', '', prompt)
+
+        # Handle username@hostname format (common in Juniper, Linux)
+        if '@' in prompt:
+            # Take everything after the @ as hostname
+            parts = prompt.split('@')
+            if len(parts) >= 2:
+                hostname = parts[-1].strip()
+                if hostname:
+                    logger.debug(f"Extracted hostname from user@host prompt: '{hostname}'")
+                    return hostname
+
+        # If no @, the remaining string is the hostname
+        hostname = prompt.strip()
+        if hostname:
+            logger.debug(f"Extracted hostname from prompt: '{hostname}'")
+            return hostname
+
+        return None
 
     def parse_stack_members_from_textfsm(self, textfsm_data: Dict) -> List[Dict[str, Any]]:
         """Parse stack member information from TextFSM data"""
@@ -265,7 +308,18 @@ class FingerprintLoader:
         return None
 
     def parse_fingerprint_json(self, fingerprint_path: Path) -> Optional[DeviceInfo]:
-        """Parse a fingerprint JSON file into DeviceInfo object"""
+        """
+        Parse a fingerprint JSON file into DeviceInfo object.
+
+        FIXED: Proper hostname extraction with yaml_display_name fallback.
+
+        Hostname priority order:
+        1. hostname field (from device detection)
+        2. yaml_display_name (from sessions.yaml inventory)
+        3. display_name (computed during fingerprinting)
+        4. Parsed from detected_prompt (with proper username handling)
+        5. IP address (last resort)
+        """
         try:
             with open(fingerprint_path, 'r') as f:
                 data = json.load(f)
@@ -274,34 +328,72 @@ class FingerprintLoader:
                 logger.warning(f"Fingerprint marked as failed: {fingerprint_path}")
                 return None
 
-            # Extract hostname with fallbacks
-            hostname = data.get('hostname', '')
+            additional_info = data.get('additional_info', {})
 
-            # Fallback 1: Parse from detected_prompt
+            # ================================================================
+            # FIXED: Extract hostname with proper fallback order
+            # ================================================================
+            hostname = None
+            hostname_source = None
+
+            # Priority 1: Direct hostname field (from device detection)
+            if data.get('hostname'):
+                hostname = data['hostname']
+                hostname_source = "hostname field"
+                logger.debug(f"Using hostname from fingerprint: '{hostname}'")
+
+            # Priority 2: yaml_display_name (from sessions.yaml - user provided)
+            if not hostname and additional_info.get('yaml_display_name'):
+                hostname = additional_info['yaml_display_name']
+                hostname_source = "yaml_display_name"
+                logger.debug(f"Using yaml_display_name: '{hostname}'")
+
+            # Priority 3: display_name (computed during fingerprinting)
+            if not hostname and additional_info.get('display_name'):
+                # Only use if it's not just the IP address
+                display_name = additional_info['display_name']
+                if display_name != data.get('host', ''):
+                    hostname = display_name
+                    hostname_source = "display_name"
+                    logger.debug(f"Using display_name: '{hostname}'")
+
+            # Priority 4: Parse from detected_prompt
             if not hostname:
                 detected_prompt = data.get('detected_prompt', '')
                 if detected_prompt:
-                    # Remove trailing prompt characters (#, >, $, %, etc.)
-                    hostname = re.sub(r'[#>$%]+\s*$', '', detected_prompt).strip()
-                    logger.debug(f"Extracted hostname from prompt: '{detected_prompt}' -> '{hostname}'")
+                    parsed_hostname = self.extract_hostname_from_prompt(detected_prompt)
+                    if parsed_hostname:
+                        hostname = parsed_hostname
+                        hostname_source = "detected_prompt"
+                        logger.debug(f"Extracted hostname from prompt: '{hostname}'")
 
-            # Fallback 2: Use management IP
+            # Priority 5: Use management IP (last resort)
             if not hostname:
                 hostname = data.get('host', '')
+                hostname_source = "IP address (fallback)"
                 logger.debug(f"Using IP as hostname: {hostname}")
 
             if not hostname:
                 logger.warning(f"No hostname found in {fingerprint_path}")
                 return None
 
+            logger.info(f"Final hostname: '{hostname}' (source: {hostname_source})")
+
             # Extract basic info
             normalized_name = self.normalize_hostname(hostname)
             site_code = self.extract_site_code(hostname)
             vendor_name = self.map_vendor_from_fingerprint(data)
             device_type_name = self.map_device_type_from_fingerprint(data)
-            model = data.get('model', '')
-            os_version = data.get('version', '')
+
+            # ================================================================
+            # FIXED: Ensure model and version are extracted properly
+            # ================================================================
+            model = data.get('model', '') or ''
+            os_version = data.get('version', '') or ''
             management_ip = data.get('host', '')
+
+            # Log what we're extracting
+            logger.debug(f"Extracted - Model: '{model}', Version: '{os_version}', Vendor: '{vendor_name}'")
 
             # Parse serial numbers
             serial_numbers = []
@@ -316,25 +408,25 @@ class FingerprintLoader:
 
             # Look for TextFSM parsing results
             command_outputs = data.get('command_outputs', {})
-            logger.info(f"Found {len(command_outputs)} command outputs to process")
+            logger.debug(f"Found {len(command_outputs)} command outputs to process")
 
             for cmd_name, cmd_data in command_outputs.items():
-                logger.info(f"Processing command: {cmd_name}")
+                logger.debug(f"Processing command: {cmd_name}")
                 if cmd_name.endswith('_textfsm') and isinstance(cmd_data, dict):
-                    logger.info(f"Found TextFSM data in {cmd_name}")
+                    logger.debug(f"Found TextFSM data in {cmd_name}")
                     # Extract uptime if not already found
                     if not uptime:
                         uptime = self.parse_uptime_from_textfsm(cmd_data)
                         if uptime:
-                            logger.info(f"Extracted uptime: {uptime}")
+                            logger.debug(f"Extracted uptime: {uptime}")
 
                     # Extract stack members
-                    logger.info(f"Calling parse_stack_members_from_textfsm for {cmd_name}")
+                    logger.debug(f"Calling parse_stack_members_from_textfsm for {cmd_name}")
                     members = self.parse_stack_members_from_textfsm(cmd_data)
-                    logger.info(f"Found {len(members)} stack members from {cmd_name}")
+                    logger.debug(f"Found {len(members)} stack members from {cmd_name}")
                     if members:
                         stack_members.extend(members)
-                        logger.info(f"Total stack members so far: {len(stack_members)}")
+                        logger.debug(f"Total stack members so far: {len(stack_members)}")
                 else:
                     logger.debug(f"Skipping {cmd_name} - not TextFSM data")
 
@@ -359,7 +451,10 @@ class FingerprintLoader:
 
         except Exception as e:
             logger.error(f"Error parsing {fingerprint_path}: {e}")
+            import traceback
+            traceback.print_exc()
             return None
+
     def get_or_create_vendor(self, conn: sqlite3.Connection, vendor_name: str) -> int:
         """Get or create vendor ID"""
         if vendor_name in self.vendor_cache:
@@ -433,8 +528,11 @@ class FingerprintLoader:
         device_type_id = self.get_or_create_device_type(conn, device_info.device_type_name)
         site_code = self.get_or_create_site(conn, device_info.site_code)
 
-        # Check if device exists
-        cursor.execute("SELECT id FROM devices WHERE normalized_name = ?", (device_info.normalized_name,))
+        # Check if device exists by normalized_name OR management_ip
+        cursor.execute("""
+            SELECT id FROM devices 
+            WHERE normalized_name = ? OR management_ip = ?
+        """, (device_info.normalized_name, device_info.management_ip))
         existing = cursor.fetchone()
 
         if existing:
@@ -442,12 +540,12 @@ class FingerprintLoader:
             # Update existing device
             cursor.execute("""
                 UPDATE devices SET
-                    name = ?, site_code = ?, vendor_id = ?, device_type_id = ?,
+                    name = ?, normalized_name = ?, site_code = ?, vendor_id = ?, device_type_id = ?,
                     model = ?, os_version = ?, uptime = ?, management_ip = ?,
                     is_stack = ?, timestamp = datetime('now')
                 WHERE id = ?
             """, (
-                device_info.hostname, site_code, vendor_id, device_type_id,
+                device_info.hostname, device_info.normalized_name, site_code, vendor_id, device_type_id,
                 device_info.model, device_info.os_version, device_info.uptime,
                 device_info.management_ip, device_info.is_stack, device_id
             ))
@@ -557,6 +655,7 @@ class FingerprintLoader:
             total_fields,
             command_count
         ))
+
     def load_fingerprint_file(self, fingerprint_path: Path) -> bool:
         """Load a single fingerprint file into the database"""
         try:
@@ -584,6 +683,8 @@ class FingerprintLoader:
 
         except Exception as e:
             logger.error(f"Error loading {fingerprint_path}: {e}")
+            import traceback
+            traceback.print_exc()
             return False
 
     def load_fingerprints_directory(self, fingerprints_dir: Path) -> Dict[str, int]:

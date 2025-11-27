@@ -114,7 +114,7 @@ class TextFSMAutoEngine:
                     if self.verbose:
                         click.echo(f" -> Failed to parse: {str(e)}")
                     continue
-
+        print(f"\nBest parsed output: {best_parsed_output}")
         return best_template, best_parsed_output, best_score
 
     def get_filtered_templates(self, connection: sqlite3.Connection, filter_string: Optional[str] = None):

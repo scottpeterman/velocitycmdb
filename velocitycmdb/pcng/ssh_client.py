@@ -36,27 +36,47 @@ def filter_ansi_sequences(text):
 class SSHClientOptions:
     """SSH Client Options - Password Authentication Only, Invoke Shell Only"""
 
-    def __init__(self, host, username, password, port=22,
+    def __init__(self, host, username, password=None, port=22,
+                 key_file=None, key_password=None,
                  expect_prompt=None, prompt=None, prompt_count=3, timeout=30,
                  shell_timeout=5, inter_command_time=1, log_file=None, debug=False,
                  expect_prompt_timeout=60, legacy_mode=False, invoke_shell=True):
+
+        # Connection parameters
         self.host = host
         self.port = port
         self.username = username
-        self.password = password
+
+        # Authentication - support password, key file, or environment variables
+        self.password = password or os.environ.get('PYSSH_PASS')
+        self.key_file = key_file or os.environ.get('PYSSH_KEY')
+        self.key_password = key_password or os.environ.get('PYSSH_KEY_PASS')
+        self._pkey = None  # Will hold loaded paramiko key object
+
+        # Validate: must have at least one authentication method
+        if not self.password and not self.key_file:
+            raise ValueError(
+                "Authentication required: provide password, key_file, or set "
+                "PYSSH_PASS/PYSSH_KEY environment variables"
+            )
 
         # ALWAYS INVOKE_SHELL MODE
         self.invoke_shell = True
 
+        # Prompt handling
         self.expect_prompt = expect_prompt
         self.prompt = prompt
         self.prompt_count = prompt_count
+
+        # Timeouts and timing
         self.timeout = timeout
         self.shell_timeout = shell_timeout
         self.inter_command_time = inter_command_time
+        self.expect_prompt_timeout = expect_prompt_timeout
+
+        # Logging
         self.log_file = log_file
         self.debug = debug
-        self.expect_prompt_timeout = expect_prompt_timeout
 
         # Legacy support options
         self.legacy_mode = legacy_mode
@@ -153,6 +173,7 @@ class LegacySSHClientEnhancements:
                 }
             })
 
+
         return connect_params
 
     @staticmethod
@@ -206,19 +227,128 @@ class SSHClient:
     """
 
     def __init__(self, options):
+        """
+        Initialize SSHClient with an SSHClientOptions object
+
+        Args:
+            options: SSHClientOptions instance containing all configuration
+        """
         self._options = options
         self._ssh_client = None
         self._shell = None
         self._output_buffer = StringIO()
         self._prompt_detected = False
+        self._pkey = None  # Will hold loaded paramiko key object
 
         # Validate required options
         if not options.host:
             raise ValueError("Host is required")
         if not options.username:
             raise ValueError("Username is required")
-        if not options.password:
-            raise ValueError("Password is required")
+
+        # Authentication validation happens in SSHClientOptions
+        # But double-check here as safety measure
+        if not options.password and not options.key_file:
+            raise ValueError(
+                "Authentication required: provide password, key_file, or set "
+                "PYSSH_PASS/PYSSH_KEY environment variables"
+            )
+
+    def _auto_detect_ssh_key(self):
+        """
+        Auto-detect SSH private key in standard locations.
+
+        Priority order:
+        1. id_rsa (most common)
+        2. id_ed25519 (modern, secure)
+        3. id_ecdsa
+        4. id_dsa (legacy)
+
+        Returns:
+            str: Path to first found key file, or None if no keys found
+        """
+        from pathlib import Path
+
+        ssh_dir = Path.home() / '.ssh'
+
+        # Check if .ssh directory exists
+        if not ssh_dir.exists():
+            return None
+
+        # Preferred order: id_rsa first (most common), then modern keys
+        key_names = ['id_rsa', 'id_ed25519', 'id_ecdsa', 'id_dsa']
+
+        for key_name in key_names:
+            key_path = ssh_dir / key_name
+            if key_path.exists():
+                return str(key_path)
+
+        return None
+
+    def _load_private_key(self):
+        """
+        Load and parse private key file.
+        Supports RSA, ECDSA, Ed25519 (and DSA if available) with optional password protection.
+        """
+        if not self._options.key_file:
+            return None
+
+        key_file = os.path.expanduser(self._options.key_file)
+        key_password = self._options.key_password
+
+        self._log_with_timestamp(f"Loading private key from: {key_file}")
+
+        if not os.path.exists(key_file):
+            raise ValueError(f"Key file not found: {key_file}")
+
+        # Try each key type in order
+        # Note: DSA is deprecated in Paramiko 3.0+ and removed for security reasons
+        key_types = [
+            ('Ed25519', paramiko.Ed25519Key),
+            ('RSA', paramiko.RSAKey),
+            ('ECDSA', paramiko.ECDSAKey),
+        ]
+
+        # Add DSA support only if available (older Paramiko versions)
+        if hasattr(paramiko, 'DSSKey'):
+            key_types.append(('DSA', paramiko.DSSKey))
+
+        last_exception = None
+
+        for key_name, key_class in key_types:
+            try:
+                if self._options.debug:
+                    self._log_with_timestamp(f"Attempting to load as {key_name} key")
+
+                if key_password:
+                    pkey = key_class.from_private_key_file(key_file, password=key_password)
+                else:
+                    pkey = key_class.from_private_key_file(key_file)
+
+                self._log_with_timestamp(f"Successfully loaded {key_name} key", True)
+                return pkey
+
+            except paramiko.ssh_exception.PasswordRequiredException:
+                self._log_with_timestamp(f"Key requires password but none provided")
+                raise ValueError(f"Private key {key_file} requires a password")
+
+            except paramiko.ssh_exception.SSHException as e:
+                # Key might be different type, continue trying
+                last_exception = e
+                if self._options.debug:
+                    self._log_with_timestamp(f"Not a {key_name} key: {str(e)}")
+                continue
+
+            except Exception as e:
+                last_exception = e
+                if self._options.debug:
+                    self._log_with_timestamp(f"Error loading {key_name} key: {str(e)}")
+                continue
+
+        # If we got here, none of the key types worked
+        raise ValueError(f"Could not load private key from {key_file}. "
+                         f"Make sure it's a valid RSA, ECDSA, or Ed25519 key. "
+                         f"Last error: {str(last_exception)}")
 
     def _recv_filtered(self, size=4096):
         """Receive data from shell with ANSI filtering applied immediately"""
@@ -649,8 +779,9 @@ class SSHClient:
             self._log_with_timestamp("Expect prompt set to: '{}'".format(prompt_string), True)
 
     def connect(self):
-        """Connect to device - PASSWORD ONLY, NO ROUTING"""
-        self._log_with_timestamp("Connecting to {}:{}...".format(self._options.host, self._options.port), True)
+        """Connect to device - PASSWORD OR KEY AUTH"""
+        self._log_with_timestamp(
+            f"Connecting to {self._options.host}:{self._options.port}...", True)
 
         try:
             self._ssh_client = paramiko.SSHClient()
@@ -660,18 +791,43 @@ class SSHClient:
             if self._options.legacy_mode:
                 LegacySSHClientEnhancements.configure_legacy_algorithms(self._ssh_client)
 
-            # PASSWORD AUTHENTICATION ONLY
-            self._ssh_client.connect(
-                hostname=self._options.host,
-                port=self._options.port,
-                username=self._options.username,
-                password=self._options.password,
-                timeout=self._options.timeout,
-                allow_agent=False,
-                look_for_keys=False
-            )
+            # Build connection parameters
+            connect_params = {
+                'hostname': self._options.host,
+                'port': self._options.port,
+                'username': self._options.username,
+                'timeout': self._options.timeout,
+                'allow_agent': False,
+                'look_for_keys': False,
+                'disabled_algorithms': {'pubkeys': ['rsa-sha2-512', 'rsa-sha2-256']}
 
-            self._log_with_timestamp("Connected to {}:{}".format(self._options.host, self._options.port), True)
+            }
+
+            # Add authentication method
+            if self._options.key_file:
+                # Key-based authentication
+                self._log_with_timestamp("Using key-based authentication", True)
+                pkey = self._load_private_key()
+                connect_params['pkey'] = pkey
+
+                # If password is also provided, it can be used as fallback
+                if self._options.password:
+                    self._log_with_timestamp("Password provided as fallback for key auth")
+                    connect_params['password'] = self._options.password
+
+            elif self._options.password:
+                # Password-only authentication
+                self._log_with_timestamp("Using password-based authentication", True)
+                connect_params['password'] = self._options.password
+
+            else:
+                raise ValueError("No authentication method available")
+
+            # Make connection
+            self._ssh_client.connect(**connect_params)
+
+            self._log_with_timestamp(
+                f"Connected to {self._options.host}:{self._options.port}", True)
 
             # ALWAYS create shell - invoke_shell is the only mode
             self._create_shell_stream()
@@ -679,11 +835,15 @@ class SSHClient:
             # Check if a prompt pattern is defined
             if not self._options.prompt and not self._options.expect_prompt:
                 self._log_with_timestamp(
-                    "WARNING: No prompt pattern or expect prompt defined. Shell commands may not work correctly!",
+                    "WARNING: No prompt pattern or expect prompt defined. "
+                    "Shell commands may not work correctly!",
                     True)
 
+        except paramiko.AuthenticationException as e:
+            self._log_with_timestamp(f"Authentication failed: {str(e)}", True)
+            raise
         except Exception as e:
-            self._log_with_timestamp("Connection error: {}".format(str(e)), True)
+            self._log_with_timestamp(f"Connection error: {str(e)}", True)
             raise
 
     def disconnect(self):

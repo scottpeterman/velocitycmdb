@@ -4,7 +4,7 @@
 
 ---
 
-## 🚀 Installation
+## Installation
 
 ### Step 1: Install via pip
 
@@ -16,7 +16,7 @@ That's it. No Docker, no PostgreSQL, no Redis, no Kubernetes.
 
 ---
 
-## 🔧 Step 2: Initialize
+## Step 2: Initialize
 
 ```bash
 velocitycmdb init
@@ -24,30 +24,53 @@ velocitycmdb init
 
 **What happens:**
 - Creates `~/.velocitycmdb/` directory
+- Creates `config.yaml` with database authentication enabled
 - Initializes SQLite databases (assets, users, ARP catalog)
 - Creates default admin user
 
 **Output:**
 ```
 ============================================================
-✓ VelocityCMDB initialized successfully!
+VelocityCMDB Initialization
 ============================================================
 
-Data directory: C:\Users\you\.velocitycmdb\data
+Set VELOCITYCMDB_DATA_DIR to: /home/you/.velocitycmdb/data
+Created config file: /home/you/.velocitycmdb/config.yaml
 
-Default credentials:
+Initializing databases in: /home/you/.velocitycmdb/data
+Creating directory structure...
+Initializing assets database...
+Initializing ARP database...
+Initializing users database...
+Default admin user created (admin/admin)
+
+------------------------------------------------------------
+Verification:
+------------------------------------------------------------
+  Config file: /home/you/.velocitycmdb/config.yaml (1847 bytes)
+  Users database: /home/you/.velocitycmdb/data/users.db (20480 bytes)
+  Assets database: /home/you/.velocitycmdb/data/assets.db (53248 bytes)
+  ARP database: /home/you/.velocitycmdb/data/arp_cat.db (16384 bytes)
+
+============================================================
+Initialization complete!
+============================================================
+
+Default admin credentials:
   Username: admin
   Password: admin
+  IMPORTANT: Change this password after first login!
 
-⚠️  CHANGE THE DEFAULT PASSWORD!
+Next step:
+  velocitycmdb run
 
-Next steps:
- python -m velocitycmdb.app.run
- ```
+Config file: ~/.velocitycmdb/config.yaml
+============================================================
+```
 
 ---
 
-## 🔐 Step 3: Configure Authentication (Optional)
+## Step 3: Configure Authentication (Optional)
 
 **Default**: VelocityCMDB uses local database authentication with admin/admin.
 
@@ -55,7 +78,7 @@ Next steps:
 
 ### Quick Setup - LDAP Authentication
 
-Create `config.yaml` in your VelocityCMDB directory:
+Edit `~/.velocitycmdb/config.yaml`:
 
 ```yaml
 authentication:
@@ -77,7 +100,7 @@ authentication:
 **How it works:**
 1. Users authenticate via your LDAP/Active Directory
 2. On first login, VelocityCMDB auto-creates a user account (non-admin)
-3. Admin promotes users to admin via **Admin → User Management**
+3. Admin promotes users to admin via **Admin > User Management**
 4. All permissions managed in VelocityCMDB database
 
 ### Quick Setup - Windows/Linux Local Authentication
@@ -103,12 +126,12 @@ Users log in with their Windows/Linux credentials. Admin rights controlled via V
 2. Restart VelocityCMDB
 3. Users log in with their LDAP/OS credentials
 4. System auto-creates user accounts (non-admin)
-5. Admin logs in, goes to Admin → User Management
+5. Admin logs in, goes to Admin > User Management
 6. Admin promotes specific users to admin role
 7. Promoted users get full admin access on next login
 ```
 
-**📖 Full Documentation**: See [Authentication Configuration Guide](README_Auth_Config.md) for complete setup including:
+**Full Documentation**: See [Authentication Configuration Guide](README_Auth_Config.md) for complete setup including:
 - LDAP/Active Directory configuration
 - Windows domain authentication
 - Linux/Unix PAM authentication
@@ -120,10 +143,10 @@ Users log in with their Windows/Linux credentials. Admin rights controlled via V
 
 ---
 
-## 🌐 Step 4: Launch
+## Step 4: Launch
 
 ```bash
-python -m velocitycmdb.app.run
+velocitycmdb run
 ```
 
 **What happens:**
@@ -131,13 +154,21 @@ python -m velocitycmdb.app.run
 - Browser opens automatically (or visit manually)
 - Login with admin/admin (or your LDAP/Local credentials)
 
+**Options:**
+```bash
+velocitycmdb run                      # Default: port 8086, no SSL
+velocitycmdb run -p 8443 --ssl        # Port 8443 with self-signed SSL
+velocitycmdb run --port 5000          # Port 5000, no SSL
+velocitycmdb run --host 127.0.0.1     # Bind to localhost only
+```
+
 ---
 
-## 🔍 Step 5: Discover Your Network
+## Step 5: Discover Your Network
 
 ### In the Web Interface:
 
-1. **Navigate to "Discovery" → "Coverage"**
+1. **Navigate to "Discovery" > "Coverage"**
 
 2. **Click "Network Discovery Wizard"**
 
@@ -172,27 +203,27 @@ python -m velocitycmdb.app.run
 
 ---
 
-## 🎉 You Now Have:
+## You Now Have:
 
-### ✅ Complete Device Inventory
+### Complete Device Inventory
 - All devices discovered via CDP/LLDP
 - Device names, IPs, management addresses
 - Sites automatically organized
 - Vendor information
 
-### ✅ Hardware Details
+### Hardware Details
 - Exact models (Cisco 9300, Arista 7050, etc.)
 - OS versions (IOS-XE 17.x, EOS 4.x, etc.)
 - Serial numbers
 - Component inventory (line cards, power supplies, transceivers)
 
-### ✅ Network Topology
+### Network Topology
 - Visual network diagram
 - Device connections and interfaces
-- Hierarchical layout (core → distribution → access)
+- Hierarchical layout (core > distribution > access)
 - Interactive map
 
-### ✅ Operational Intelligence
+### Operational Intelligence
 - Device roles (core, distribution, access, unknown)
 - Stack members identified
 - Change tracking ready
@@ -200,53 +231,53 @@ python -m velocitycmdb.app.run
 
 ---
 
-## 📊 What You Can Do Now
+## What You Can Do Now
 
 ### Browse Your Network
 ```
-Dashboard → View Devices
+Dashboard > View Devices
 ```
-See all 12 devices (or however many were discovered)
+See all discovered devices
 
 ### View Topology
 ```
-Network Maps → Secure Cartography
+Network Maps > Secure Cartography
 ```
 Interactive network diagram with all connections
 
 ### Search Devices
 ```
-Search & Analysis → Device Search
+Search & Analysis > Device Search
 ```
 Find devices by name, IP, model, vendor, site
 
 ### Track Changes
 ```
-Discovery → Changes
+Discovery > Changes
 ```
 See what changed since last discovery
 
 ### Explore Components
 ```
-Assets → Components
+Assets > Components
 ```
 Browse transceivers, power supplies, line cards
 
 ### SSH to Devices
 ```
-Devices → [Select Device] → SSH button
+Devices > [Select Device] > SSH button
 ```
 Browser-based terminal - no PuTTY needed!
 
 ### Manage Users (Admin Only)
 ```
-Admin → User Management
+Admin > User Management
 ```
 Create users, promote to admin, manage permissions
 
 ---
 
-## 🖥️ Built-in SSH Terminal
+## Built-in SSH Terminal
 
 VelocityCMDB includes a **jump host** right in the browser!
 
@@ -254,7 +285,7 @@ VelocityCMDB includes a **jump host** right in the browser!
 
 1. **Navigate to Device Inventory**
    ```
-   Assets → Devices
+   Assets > Devices
    ```
 
 2. **Select Any Device**
@@ -272,11 +303,11 @@ VelocityCMDB includes a **jump host** right in the browser!
 
 ### Perfect For:
 
-- ✅ **Quick troubleshooting** - See issue in CMDB, SSH immediately
-- ✅ **No external tools** - No PuTTY, SecureCRT, or terminal needed
-- ✅ **Centralized access** - All device access through one interface
-- ✅ **Credential management** - Credentials tied to your CMDB
-- ✅ **Session logging** - All access through one controlled point
+- **Quick troubleshooting** - See issue in CMDB, SSH immediately
+- **No external tools** - No PuTTY, SecureCRT, or terminal needed
+- **Centralized access** - All device access through one interface
+- **Credential management** - Credentials tied to your CMDB
+- **Session logging** - All access through one controlled point
 
 ### Example Workflow:
 
@@ -293,7 +324,7 @@ VelocityCMDB includes a **jump host** right in the browser!
 
 ---
 
-## 🎯 Real-World Example
+## Real-World Example
 
 Here's what happened in our lab test:
 
@@ -302,11 +333,11 @@ Here's what happened in our lab test:
 $ pip install velocitycmdb
 
 # Initialized
-$ python -m velocitycmdb.cli init
-✓ VelocityCMDB initialized successfully!
+$ velocitycmdb init
+VelocityCMDB initialized successfully!
 
 # Launched
-$ python -m velocitycmdb.app.run
+$ velocitycmdb run
 * Running on http://127.0.0.1:8086
 
 # In browser: Started discovery with seed IP 172.16.10.21
@@ -325,36 +356,36 @@ $ python -m velocitycmdb.app.run
 
 ---
 
-## 💡 Pro Tips
+## Pro Tips
 
-### 1. **Credentials Matter**
+### 1. Credentials Matter
 - Use a read-only account (privilege level 1-7)
 - Account needs SSH access
 - Must be able to run `show` commands
 
-### 2. **Seed Device Selection**
+### 2. Seed Device Selection
 - Pick a device connected to many others
 - Core switch or distribution router works best
 - Device must have CDP or LLDP enabled
 
-### 3. **Multi-Site Discovery**
+### 3. Multi-Site Discovery
 - Run discovery once per site
 - Use descriptive site names ("HQ", "Branch-NYC", "DC1")
 - Devices auto-organize by site
 
-### 4. **Re-Discovery**
+### 4. Re-Discovery
 - Run discovery again anytime
 - Updates existing devices
 - Detects changes
 - Finds new devices
 
-### 5. **Data Location**
+### 5. Data Location
 - **Linux/Mac**: `~/.velocitycmdb/data/`
 - **Windows**: `C:\Users\<you>\.velocitycmdb\data\`
 - Contains all databases and captured data
 - Backup this directory to preserve everything
 
-### 6. **Authentication Setup**
+### 6. Authentication Setup
 - Change default admin password immediately
 - Use LDAP/Local auth for teams
 - Auto-create users on first login
@@ -362,45 +393,47 @@ $ python -m velocitycmdb.app.run
 
 ---
 
-## 🔧 Command Reference
+## Command Reference
 
 ```bash
-# Initialize system
-python -m velocitycmdb.cli init
+# Initialize system (first time setup)
+velocitycmdb init
 
-# Start web interface
-python -m velocitycmdb.app.run
+# Re-initialize and overwrite config
+velocitycmdb init --force
 
-# Alternative launch (if first method has issues)
-python -m velocitycmdb.cli start
+# Start web interface (default: port 8086)
+velocitycmdb run
 
-# View system status
-python -m velocitycmdb.cli status
+# Start with SSL enabled
+velocitycmdb run --ssl
 
-# Create backup
-python -m velocitycmdb.cli backup
+# Start on custom port
+velocitycmdb run -p 8443
 
-# Clean temporary files (keeps databases)
-python -m velocitycmdb.cli clean
+# Start on custom host and port
+velocitycmdb run --host 127.0.0.1 --port 5000
 
-# Full reset (deletes everything)
-python -m velocitycmdb.cli reset
+# Disable debug mode (for production)
+velocitycmdb run --no-debug
 
 # Show help
-python -m velocitycmdb.cli --help
+velocitycmdb --help
+velocitycmdb init --help
+velocitycmdb run --help
 ```
 
 ---
 
-## 🌟 Common First-Time Workflows
+## Common First-Time Workflows
 
 ### Workflow 1: Lab Environment Discovery
 
 ```bash
 # Install and setup
 pip install velocitycmdb
-python -m velocitycmdb.cli init
-python -m velocitycmdb.app.run
+velocitycmdb init
+velocitycmdb run
 
 # In browser:
 # 1. Login (admin/admin)
@@ -420,8 +453,8 @@ python -m velocitycmdb.app.run
 ```bash
 # Install once
 pip install velocitycmdb
-python -m velocitycmdb.cli init
-python -m velocitycmdb.app.run
+velocitycmdb init
+velocitycmdb run
 
 # In browser (repeat for each site):
 # Site 1: HQ
@@ -468,19 +501,19 @@ python -m velocitycmdb.app.run
 ```bash
 # 1. Install and initialize
 pip install velocitycmdb
-python -m velocitycmdb.cli init
+velocitycmdb init
 
-# 2. Create config.yaml with LDAP settings
+# 2. Edit ~/.velocitycmdb/config.yaml with LDAP settings
 # (see Step 3 above)
 
 # 3. Launch
-python -m velocitycmdb.app.run
+velocitycmdb run
 
 # 4. Users log in with LDAP credentials
 # System auto-creates their accounts
 
 # 5. Admin promotes specific users:
-# Admin → User Management → Edit user → Check "Administrator"
+# Admin > User Management > Edit user > Check "Administrator"
 
 # 6. Promoted users get admin access on next login
 ```
@@ -489,25 +522,25 @@ python -m velocitycmdb.app.run
 
 ---
 
-## 🎓 Supported Platforms
+## Supported Platforms
 
 ### Automated Discovery (Works Out-of-Box):
 
 **Full Support:**
-- ✅ **Cisco IOS / IOS-XE** - Routers, switches, complete discovery
-- ✅ **Arista EOS** - All Arista platforms, complete discovery
+- **Cisco IOS / IOS-XE** - Routers, switches, complete discovery
+- **Arista EOS** - All Arista platforms, complete discovery
 
 **Basic Support:**
-- 🟡 **HP/Aruba ProCurve** - Access switches, basic discovery
+- **HP/Aruba ProCurve** - Access switches, basic discovery
 
 ### Manual Entry (Add to Inventory):
 
 You can manually add any SSH-capable device:
-- ✅ **Juniper JunOS** - Routers, switches, firewalls
-- ✅ **Cisco NX-OS** - Nexus switches  
-- ✅ **Palo Alto** - Firewalls
-- ✅ **F5 BIG-IP** - Load balancers
-- ✅ **Any device with SSH** - Will be inventoried
+- **Juniper JunOS** - Routers, switches, firewalls
+- **Cisco NX-OS** - Nexus switches  
+- **Palo Alto** - Firewalls
+- **F5 BIG-IP** - Load balancers
+- **Any device with SSH** - Will be inventoried
 
 **How it works:**
 - **Discovery** = Automatic CDP/LLDP crawling (Cisco/Arista optimized)
@@ -521,7 +554,7 @@ You can manually add any SSH-capable device:
 
 ---
 
-## 🚨 Troubleshooting
+## Troubleshooting
 
 ### "Authentication failed"
 - Verify SSH credentials work: `ssh user@device-ip`
@@ -531,7 +564,7 @@ You can manually add any SSH-capable device:
 ### "Can't login to VelocityCMDB"
 - Default credentials: admin/admin
 - If LDAP enabled, use your LDAP credentials
-- Check logs: `tail -f logs/velocitycmdb.log`
+- Check logs in terminal output
 - See [Authentication Guide](README_Auth_Config.md) for detailed troubleshooting
 
 ### "No devices discovered"
@@ -548,18 +581,18 @@ You can manually add any SSH-capable device:
 ### "Can't access web interface"
 - Check firewall: Port 8086 must be open
 - Try: http://127.0.0.1:8086 (not localhost)
-- Check logs: `velocitycmdb logs`
+- Check terminal output for errors
 
 ### "LDAP users can't become admin"
 - Users auto-created as non-admin on first login
-- Admin must promote them via Admin → User Management
-- Edit user → Check "Administrator" → Save
+- Admin must promote them via Admin > User Management
+- Edit user > Check "Administrator" > Save
 - User gets admin rights on next login
 - See [Shadow Users Guide](SHADOW_USERS_GUIDE.md) for details
 
 ---
 
-## 📚 Next Steps
+## Next Steps
 
 After your first successful discovery:
 
@@ -588,12 +621,12 @@ After your first successful discovery:
 
 ---
 
-## 🎯 The Bottom Line
+## The Bottom Line
 
 ```bash
 pip install velocitycmdb
 velocitycmdb init
-python -m velocitycmdb.app.run
+velocitycmdb run
 ```
 
 **Three commands. One seed IP. Five minutes.**
@@ -607,13 +640,13 @@ You now have a complete network CMDB with:
 - Multi-user support (optional)
 - Browser-based SSH terminal
 
-**No Docker. No PostgreSQL. No YAML files.**
+**No Docker. No PostgreSQL. No complex configuration.**
 
 Just install and discover.
 
 ---
 
-## 🔗 Resources
+## Resources
 
 - **Quick Start**: You're reading it!
 - **Authentication Setup**: [README_Auth_Config.md](README_Auth_Config.md)

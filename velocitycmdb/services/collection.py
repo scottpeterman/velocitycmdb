@@ -99,6 +99,7 @@ class CollectionOrchestrator:
             }
         """
         start_time = datetime.now()
+        logger.info(f"DEBUG credentials received: {credentials}")
 
         device_filters = device_filters or {}
         options = options or {}
@@ -115,8 +116,8 @@ class CollectionOrchestrator:
             # Validate credentials
             if not credentials.get('username'):
                 raise ValueError("Username is required")
-            if not credentials.get('password'):
-                raise ValueError("Password is required")
+            if not credentials.get('password') and not credentials.get('ssh_key_path'):
+                raise ValueError("Password or SSH key path is required")
 
             # Step 0: Generate sessions.yaml from database
             sessions_file = self._generate_sessions_file(
@@ -441,8 +442,14 @@ class CollectionOrchestrator:
         # Set for multiple credential IDs (some devices might use different creds)
         for cred_id in range(1, 11):
             env[f'CRED_{cred_id}_USER'] = credentials['username']
-            env[f'CRED_{cred_id}_PASS'] = credentials['password']
+            env[f'CRED_{cred_id}_PASS'] = credentials.get('password', '')
 
+        # SSH key support
+        if credentials.get('ssh_key_path'):
+            env['PYSSH_KEY'] = str(credentials['ssh_key_path'])
+            logger.info(f"Set PYSSH_KEY={credentials['ssh_key_path']}")
+        else:
+            logger.info("DEBUG: No ssh_key_path in credentials")
         # Build command
         cmd = [
             sys.executable,

@@ -2,12 +2,12 @@
 
 **Tactical, highly portable network CMDB with automated discovery, change detection, and operational intelligence for Windows, Mac or Linux**
 
-## ⚠️ Important Notice
+## Important Notice
 VelocityCMDB is currently in Proof of Concept (POC) stage and is under active development. While functional, it is not yet recommended for production environments. The codebase and features are subject to significant changes. Feel free to test, contribute, and provide feedback, but please exercise caution in production or security-critical environments.
 
-[![Python Version](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/downloads/)
+[![Python Version](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-GPLv3-green.svg)](LICENSE)
-[![PyPI](https://img.shields.io/badge/pypi-coming%20soon-orange)](https://pypi.org/project/velocitycmdb/)
+[![PyPI](https://img.shields.io/pypi/v/velocitycmdb)](https://pypi.org/project/velocitycmdb/)
 
 > **New site onboarded in under 1 hour** - Automated discovery, configuration capture, and topology visualization out of the box.
 
@@ -20,21 +20,21 @@ VelocityCMDB is currently in Proof of Concept (POC) stage and is under active de
 VelocityCMDB is a **pip-installable network CMDB** that combines asset management, automated discovery, configuration tracking, and operational intelligence in a unified platform.
 
 **Key Features:**
-- 🔍 **Automated Discovery** - LLDP/CDP-based topology mapping
-- 📊 **Device Inventory** - Complete asset tracking with components, sites, vendors, roles
-- 🔄 **Change Detection** - Real-time configuration and other cli captured information monitoring with severity classification
-- 🗺️ **Topology Visualization** - Interactive maps with export to GraphML/DrawIO/PNG
-- - **Map Library** - Import existing Visio/DrawIO diagrams organized by folder
-- 🔍 **Operational Search** - Full-text search across 8,891+ captures (Config, Arp, Mac, Inventory and more)
-- 📝 **Integrated Documentation** - Wiki-style notes linked to devices
-- 🖥️ **Web SSH Terminal** - Browser-based device access with authentication
-- 👥 **Multi-Auth** - LDAP, local database, and OS authentication
+- **Automated Discovery** - LLDP/CDP-based topology mapping
+- **Device Inventory** - Complete asset tracking with components, sites, vendors, roles
+- **Change Detection** - Real-time configuration and other CLI captured information monitoring with severity classification
+- **Topology Visualization** - Interactive maps with export to GraphML/DrawIO/PNG
+- **Map Library** - Import existing Visio/DrawIO diagrams organized by folder
+- **Operational Search** - Full-text search across 8,891+ captures (Config, ARP, MAC, Inventory and more)
+- **Integrated Documentation** - Wiki-style notes linked to devices
+- **Web SSH Terminal** - Browser-based device access with authentication
+- **Multi-Auth** - LDAP, local database, and OS authentication
 
 **Why VelocityCMDB?**
-- ⚡ **Fast Setup** - `pip install velocitycmdb && init command, then start the app`
-- 🎯 **Wizard-Driven** - Discovery and collection wizards guide deployment
-- 🏢 **Enterprise Friendly** - Basic Role-based access, audit logging, backup/restore
-- 🔧 **Engineer-Focused** - CLI tools, REST API, and scriptable workflows, run locally or on a server
+- **Fast Setup** - `pip install velocitycmdb && velocitycmdb init && velocitycmdb run`
+- **Wizard-Driven** - Discovery and collection wizards guide deployment
+- **Enterprise Friendly** - Basic role-based access, audit logging, backup/restore
+- **Engineer-Focused** - CLI tools, REST API, and scriptable workflows, run locally or on a server
 
 ---
 
@@ -43,25 +43,24 @@ VelocityCMDB is a **pip-installable network CMDB** that combines asset managemen
 ### Installation
 
 ```bash
-# Install from PyPI (coming soon)
+# Install from PyPI
 pip install velocitycmdb
 
-# Initialize databases and directories
-python -m velocitycmdb.cli init
-
-# Create first admin user
-python -m velocitycmdb.cli create-admin
+# Initialize databases, directories, config, and admin user
+velocitycmdb init
 
 # Start the web server
-python -m velocitycmdb.app.run
+velocitycmdb run
 ```
 
 Access the dashboard at `http://localhost:8086`
 
+Default credentials: **admin / admin** (change after first login)
+
 ### Onboard Your First Site
 
 **Step 1: Run Discovery Wizard** (15 minutes)
-- Navigate to Discovery → Wizard
+- Navigate to Discovery > Wizard
 - Enter seed device credentials
 - Let LLDP/CDP discover your network
 - Review topology map
@@ -72,7 +71,7 @@ Access the dashboard at `http://localhost:8086`
 - Execute concurrent collection
 - Review capture status
 
-**Total Time: ~45 minutes** ✅
+**Total Time: ~45 minutes**
 
 ---
 
@@ -81,7 +80,7 @@ Access the dashboard at `http://localhost:8086`
 VelocityCMDB is built on proven open-source components:
 
 **Foundation:**
-- [Secure Cartography](https://github.com/scottpeterman/secure_cartography) - Network discovery (134⭐, 21 forks)
+- [Secure Cartography](https://github.com/scottpeterman/secure_cartography) - Network discovery (134+ stars, 21 forks)
 - Paramiko - SSH automation
 - TextFSM - Multi-vendor parsing (100+ templates)
 - Flask + SocketIO - Real-time web interface
@@ -120,7 +119,7 @@ velocitycmdb/
 - **Sites/Vendors/Roles** - Complete taxonomy management
 - **Bulk Operations** - Preview-commit workflow for batch changes
 
-### Discovery & Topology
+### Discovery and Topology
 - **Automated Discovery** - LLDP/CDP-based network mapping
 - **Topology Maps** - Interactive visualization with export
 - **Secure Cartography** - Enhanced topology with vendor icons
@@ -171,7 +170,7 @@ Maps with an SVG file appear automatically in the UI. Optional companion files (
 - **Internal Linking** - `[[Note Title]]` syntax for knowledge graphs
 - **Full-Text Search** - Unified search across notes + captures
 
-### Security & Administration
+### Security and Administration
 - **Multi-Auth Backend** - LDAP, database, OS authentication
 - **Role-Based Access** - Admin, operator, viewer groups
 - **Audit Logging** - Track all administrative actions
@@ -244,12 +243,12 @@ Maps with an SVG file appear automatically in the UI. Optional companion files (
 ## Proven at Scale
 
 **Production Deployment Stats:**
-- ✅ 357 devices managed
-- ✅ 53 sites across infrastructure  
-- ✅ 126 switch stacks tracked
-- ✅ 1,684 hardware components
-- ✅ 8,891 successful captures
-- ✅ 99.3% device classification accuracy
+- 357 devices managed
+- 53 sites across infrastructure  
+- 126 switch stacks tracked
+- 1,684 hardware components
+- 8,891 successful captures
+- 99.3% device classification accuracy
 
 **Performance:**
 - Discovery: 45-60 min for 295 devices
@@ -271,50 +270,49 @@ Maps with an SVG file appear automatically in the UI. Optional companion files (
 Comprehensive guides for every component:
 
 **Getting Started:**
-- [Installation Guide](docs/installation.md)
-- [Quick Start Tutorial](docs/quickstart.md)
-- [Configuration Guide](docs/configuration.md)
+- [Quick Start Guide](QUICKSTART.md)
+- [Authentication Configuration](README_Auth_Config.md)
+- [Shadow Users Guide](SHADOW_USERS_GUIDE.md)
 
 **Core Workflows:**
-- [Network Discovery](docs/discovery.md)
-- [Data Collection](docs/collection.md)
-- [Change Detection](docs/changes.md)
-- [Topology Visualization](docs/topology.md)
+- Network Discovery - See Quick Start
+- Data Collection - See Quick Start
+- Change Detection - Built-in, automatic
 
 **Administration:**
-- [User Management](docs/admin.md)
-- [Authentication Setup](docs/authentication.md)
-- [Backup & Restore](docs/backup.md)
-- [Database Management](docs/database.md)
-
-**Development:**
-- [API Documentation](docs/api.md)
-- [Plugin Development](docs/plugins.md)
-- [Contributing Guide](CONTRIBUTING.md)
+- User Management - Admin > User Management
+- Backup/Restore - Admin > Maintenance
 
 ---
 
 ## CLI Reference
 
 ```bash
-# Initialize system
-velocitycmdb init                    # Create databases and directories
-velocitycmdb create-admin            # Create first admin user
+# Initialize system (first time setup)
+velocitycmdb init
 
-# Server management  
-velocitycmdb run                     # Start web server (port 8086)
-velocitycmdb run --port 5000        # Custom port
+# Re-initialize and overwrite config
+velocitycmdb init --force
 
-# Database operations
-velocitycmdb backup                  # Create system backup
-velocitycmdb restore backup.zip      # Restore from backup
-velocitycmdb db-check               # Validate database health
+# Start web server (default: port 8086)
+velocitycmdb run
 
-# Discovery operations
-velocitycmdb discover --seed 10.0.1.1 --username admin
+# Start with SSL enabled
+velocitycmdb run --ssl
 
-# Bulk operations
-velocitycmdb collect --site "ENG Site" --capture configs
+# Start on custom port
+velocitycmdb run -p 8443
+
+# Start on custom host and port
+velocitycmdb run --host 127.0.0.1 --port 5000
+
+# Disable debug mode (for production)
+velocitycmdb run --no-debug
+
+# Show help
+velocitycmdb --help
+velocitycmdb init --help
+velocitycmdb run --help
 ```
 
 ---
@@ -322,11 +320,11 @@ velocitycmdb collect --site "ENG Site" --capture configs
 ## Roadmap
 
 ### v1.0 - Foundation (Current)
-- ✅ Pip-installable package
-- ✅ Wizard-driven workflows
-- ✅ 13+ feature modules
-- ✅ Multi-auth backend
-- ✅ Material Design 3 UI
+- [x] Pip-installable package
+- [x] Wizard-driven workflows
+- [x] 13+ feature modules
+- [x] Multi-auth backend
+- [x] Material Design 3 UI
 
 ### v1.1 - Enhanced Automation (Q1 2026)
 - [ ] Job scheduler UI
@@ -348,13 +346,12 @@ velocitycmdb collect --site "ENG Site" --capture configs
 
 ---
 
-## Community & Support
+## Community and Support
 
 **Resources:**
-- 📖 [Documentation](https://velocitycmdb.readthedocs.io)
-- 💬 [Discussions](https://github.com/scottpeterman/velocitycmdb/discussions)
-- 🐛 [Issue Tracker](https://github.com/scottpeterman/velocitycmdb/issues)
-- 📧 [Mailing List](https://groups.google.com/g/velocitycmdb)
+- [Documentation](QUICKSTART.md)
+- [Discussions](https://github.com/scottpeterman/velocitycmdb/discussions)
+- [Issue Tracker](https://github.com/scottpeterman/velocitycmdb/issues)
 
 **Contributing:**
 We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
@@ -377,7 +374,7 @@ Part of the VelociTerm ecosystem:
 
 ## License
 
-MIT License - See [LICENSE](LICENSE) for details.
+GPLv3 License - See [LICENSE](LICENSE) for details.
 
 ---
 
@@ -386,11 +383,11 @@ MIT License - See [LICENSE](LICENSE) for details.
 Created by [Scott Peterman](https://github.com/scottpeterman)
 
 Built with:
-- Flask & SocketIO
+- Flask and SocketIO
 - Cytoscape.js
 - Material Design 3
-- TextFSM & Paramiko
-- NetworkX & SQLite
+- TextFSM and Paramiko
+- NetworkX and SQLite
 
 **Acknowledgments:**
 - NetBox Labs for community support
@@ -400,5 +397,3 @@ Built with:
 ---
 
 *VelocityCMDB v1.0 - Production Ready | November 2025*
-
----

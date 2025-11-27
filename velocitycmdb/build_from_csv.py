@@ -314,7 +314,7 @@ def main():
     parser.add_argument(
         '--domain-suffix',
         default='',
-        help='Domain suffix to append to hostnames for FQDN (e.g., kentik.com)'
+        help='Domain suffix to append to hostnames for FQDN (e.g., company.com)'
     )
 
     args = parser.parse_args()

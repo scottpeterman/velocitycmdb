@@ -22,6 +22,15 @@
   sessions:
   - DeviceType: arista_eos_ssh
     Model: vEOS-lab
+    SerialNumber: BD466EB6AC9F330960C86507DE3C89E6
+    SoftwareVersion: ''
+    Vendor: Arista Networks
+    credsid: '2'
+    display_name: usa-spine-1
+    host: 172.16.10.2
+    port: '22'
+  - DeviceType: arista_eos_ssh
+    Model: vEOS-lab
     SerialNumber: 051724A990DDC1A3B29B961A96B88718
     SoftwareVersion: ''
     Vendor: Arista Networks

@@ -202,7 +202,7 @@ class JobExecutor:
         return env_vars
 
     def execute_job(self, job_config: Dict[str, Any], job_name: str) -> Dict[str, Any]:
-        """Execute a single job configuration"""
+        """Execute a single job configuration with CONCURRENT device execution"""
         start_time = time.time()
 
         try:
@@ -234,14 +234,18 @@ class JobExecutor:
 
             execution_config = job_config.get('execution', {})
             prompt_count = execution_config.get('prompt_count', 1)
-            timeout = execution_config.get('timeout', 15)
+            timeout = execution_config.get('timeout', 60)
             expect_prompt_timeout = execution_config.get('expect_prompt_timeout', 30000)
+
+            # NEW: Get max concurrent devices from job config or default to 10
+            max_device_workers = execution_config.get('max_device_workers', 10)
 
             output_config = job_config.get('output', {})
             output_file = output_config.get('file', '')
 
             self.log(f"Vendor: {vendor}, Auto-paging: {auto_paging}")
             self.log(f"Session file: {session_file}")
+            self.log(f"Concurrent device workers: {max_device_workers}")
 
             # Build commands with paging disable if enabled
             if auto_paging:
@@ -266,23 +270,46 @@ class JobExecutor:
             # Get credential environment variables
             cred_env_vars = self.get_credential_env_vars(job_config)
 
-            # Execute against each device
+            # Execute against each device - CONCURRENT
             commands_str += ",,"
             device_results = []
-            for device in session_data:
-                device_result = self._execute_on_device(
-                    device=device,
-                    commands=commands_str,
-                    output_file=output_file,
-                    prompt_count=prompt_count,
-                    timeout=timeout,
-                    expect_prompt_timeout=expect_prompt_timeout,
-                    cred_env_vars=cred_env_vars
-                )
-                device_results.append(device_result)
+
+            from concurrent.futures import ThreadPoolExecutor, as_completed
+
+            with ThreadPoolExecutor(max_workers=max_device_workers) as device_pool:
+                # Submit all device tasks
+                futures = {
+                    device_pool.submit(
+                        self._execute_on_device,
+                        device=device,
+                        commands=commands_str,
+                        output_file=output_file,
+                        prompt_count=prompt_count,
+                        timeout=timeout,
+                        expect_prompt_timeout=expect_prompt_timeout,
+                        cred_env_vars=cred_env_vars
+                    ): device
+                    for device in session_data
+                }
+
+                # Collect results as they complete
+                for future in as_completed(futures):
+                    device = futures[future]
+                    hostname = (device.get('hostname') or device.get('display_name') or
+                                device.get('name') or 'unknown')
+                    try:
+                        device_result = future.result()
+                        device_results.append(device_result)
+                    except Exception as e:
+                        self.log(f"  ✗ {hostname} exception: {e}", "ERROR")
+                        device_results.append({
+                            'success': False,
+                            'device': hostname,
+                            'error': str(e)
+                        })
 
             # Calculate success
-            successful_devices = sum(1 for r in device_results if r['success'])
+            successful_devices = sum(1 for r in device_results if r.get('success', False))
             success = successful_devices == len(device_results)
 
             execution_time = time.time() - start_time

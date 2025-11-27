@@ -6,12 +6,12 @@ import json
 import traceback
 from enum import Enum, auto
 
-from device_info import DeviceInfo, DeviceType
-from ssh_client import SSHClient, SSHClientOptions
+from velocitycmdb.pcng.device_info import DeviceInfo, DeviceType
+from velocitycmdb.pcng.ssh_client import SSHClient, SSHClientOptions
 
 # Import TextFSM engine if available
 try:
-    from tfsm_fire import TextFSMAutoEngine
+    from velocitycmdb.pcng.tfsm_fire import TextFSMAutoEngine
 
     TEXTFSM_AVAILABLE = True
 except ImportError:
@@ -68,11 +68,13 @@ class DeviceFingerprint:
     """Enhanced device fingerprinting with TextFSM integration - backwards compatible"""
 
     def __init__(self, host, port, username, password, output_callback=None,
-                 debug=False, verbose=False, connection_timeout=5000, textfsm_db_path=None):
+                 debug=False, verbose=False, connection_timeout=5000, textfsm_db_path=None,
+                 ssh_key_path=None):
         self._device_info = DeviceInfo(
             host=host,
             port=port,
-            username=username
+            username=username,
+
         )
         self._device_info.password = password  # Store password for reporting if needed
         self._output_buffer = []
@@ -99,16 +101,17 @@ class DeviceFingerprint:
         # Configure SSH client for fingerprinting with broader compatibility
         ssh_options = SSHClientOptions(
             host=host,
-            port=port,
             username=username,
             password=password,
+            port=port,
+            key_file=ssh_key_path,  # Use key_file parameter name (not ssh_key_path)
             invoke_shell=True,
             # Start with a very broad prompt pattern
             prompt="[#>$\\]\\):]",
             expect_prompt=None,
             prompt_count=1,
             shell_timeout=2,
-            inter_command_time=0,
+            inter_command_time=.5,
             expect_prompt_timeout=5000,
             debug=debug
         )
@@ -124,9 +127,11 @@ class DeviceFingerprint:
             )
         else:
             ssh_options.output_callback = buffer_callback
-
-        self._ssh_client = SSHClient(ssh_options)
-
+        try:
+            self._ssh_client = SSHClient(ssh_options)
+        except Exception as e:
+            traceback.print_exc()
+            raise e
     def _ensure_textfsm_engine(self):
         """
         Ensure TextFSM engine is available, create one if needed.
@@ -648,7 +653,7 @@ class DeviceFingerprint:
                             }
 
 
-                            extraction_success = self._extract_from_textfsm(textfsm_results)
+                            extraction_success = self._extract_from_textfsm(textfsm_results,command=cmd)
 
                             if self._debug:
                                 post_textfsm_state = {
@@ -861,343 +866,317 @@ class DeviceFingerprint:
 
         return filter_attempts
 
+    # !/usr/bin/env python3
+    """
+    SIMPLIFIED _parse_with_textfsm and _strip_command_echo methods for device_fingerprint.py
+
+    KEY INSIGHT: tfsm_fire's find_best_template() already:
+      - Iterates through all matching templates
+      - Parses output with each template
+      - Scores results
+      - Returns: (template_name, parsed_data_as_list_of_dicts, score)
+
+    We were redundantly iterating and re-parsing, which caused confusion.
+
+    INSTRUCTIONS:
+    1. Add the _strip_command_echo method to your DeviceFingerprint class
+    2. Replace your existing _parse_with_textfsm method with the simplified one below
+    3. Add/update the _extract_from_textfsm method to use the new result format
+    """
+
+    def _strip_command_echo(self, output, command):
+        """
+        Strip the echoed command and prompt artifacts from command output.
+
+        SSH shell mode echoes the command back, which breaks TextFSM parsing.
+        Example input:
+            show version
+            Hostname: edge1-01.fra1
+            Model: mx10003
+            ...
+            {master}
+            speterman@edge1-01.fra1>
+
+        Example output (cleaned):
+            Hostname: edge1-01.fra1
+            Model: mx10003
+            ...
+        """
+        if not output:
+            return output
+
+        lines = output.splitlines(keepends=True)
+        if not lines:
+            return output
+
+        # Strip leading empty lines and whitespace-only lines
+        while lines and not lines[0].strip():
+            lines.pop(0)
+
+        if not lines:
+            return output
+
+        # Check if first line is the command echo
+        first_line = lines[0].strip()
+        cmd_normalized = command.strip()
+
+        # Match exact command or command with trailing whitespace
+        if first_line == cmd_normalized or first_line.rstrip() == cmd_normalized:
+            lines.pop(0)
+            if self._debug:
+                print(f"  Stripped command echo: '{cmd_normalized}'")
+
+        # Strip trailing prompt lines (may have {master} prefix on Juniper)
+        # Work backwards to remove prompt and any preceding tags like {master}
+        while lines:
+            last_line = lines[-1].strip()
+
+            # Skip empty lines at end
+            if not last_line:
+                lines.pop()
+                continue
+
+            # Check for prompt
+            if self._device_info.detected_prompt:
+                if last_line.endswith(self._device_info.detected_prompt) or \
+                        last_line == self._device_info.detected_prompt:
+                    lines.pop()
+                    if self._debug:
+                        print(f"  Stripped trailing prompt line")
+                    continue
+
+            # Check for Juniper {master} tag or similar
+            if last_line.startswith('{') and last_line.endswith('}'):
+                lines.pop()
+                if self._debug:
+                    print(f"  Stripped Juniper tag: '{last_line}'")
+                continue
+
+            # No more lines to strip
+            break
+
+        return ''.join(lines)
+
     def _parse_with_textfsm(self, output, command):
         """
-        Parse command output with TextFSM, then normalize each row into a sane dict:
-          - Empty strings -> None
-          - HARDWARE, SERIAL, MAC_ADDRESS -> always lists, deduped, order preserved
-          - Other list fields: singletons collapse to scalars, multi-item lists preserved
-          - UPTIME_* coerced to ints when possible; add UPTIME_TOTAL_MINUTES
-          - Build STACK_MEMBERS with aligned {index, model, serial}
+        Parse command output with TextFSM using tfsm_fire's find_best_template.
+
+        find_best_template() handles all the heavy lifting:
+          - Iterates through matching templates
+          - Parses output with each template
+          - Scores results
+          - Returns: (template_name, parsed_data_as_list_of_dicts, score)
         """
         self._ensure_textfsm_engine()
 
-        # ---- helpers (no comprehensions) ----
-        def _is_int_string(value):
-            if value is None:
-                return False
-            try:
-                int(value)
-                return True
-            except Exception:
-                return False
-
-        def _to_list(value):
-            if value is None:
-                return []
-            if isinstance(value, list):
-                return value
-            if value == "":
-                return []
-            return [value]
-
-        def _dedupe_preserve_order(items):
-            seen = set()
-            result = []
-            i = 0
-            n = len(items)
-            while i < n:
-                item = items[i]
-                if item not in seen:
-                    result.append(item)
-                    seen.add(item)
-                i += 1
-            return result
-
-        def _sanitize_scalar_or_list(value, force_list, lowercase=False):
-            items = _to_list(value)
-
-            cleaned = []
-            i = 0
-            while i < len(items):
-                v = items[i]
-                if v is None:
-                    i += 1
-                    continue
-                s = str(v).strip()
-                if s == "":
-                    i += 1
-                    continue
-                if lowercase:
-                    s = s.lower()
-                cleaned.append(s)
-                i += 1
-
-            cleaned = _dedupe_preserve_order(cleaned)
-
-            if force_list:
-                return cleaned
-
-            if len(cleaned) == 0:
-                return None
-            if len(cleaned) == 1:
-                return cleaned[0]
-            return cleaned
-
-        def _coerce_int_fields(d, keys):
-            i = 0
-            length = len(keys)
-            while i < length:
-                k = keys[i]
-                v = d.get(k)
-                if isinstance(v, str) and _is_int_string(v):
-                    d[k] = int(v)
-                i += 1
-
-        def _compute_uptime_minutes(d):
-            years = d.get("UPTIME_YEARS")
-            weeks = d.get("UPTIME_WEEKS")
-            days = d.get("UPTIME_DAYS")
-            hours = d.get("UPTIME_HOURS")
-            minutes = d.get("UPTIME_MINUTES")
-
-            if years is None:
-                years = 0
-            if weeks is None:
-                weeks = 0
-            if days is None:
-                days = 0
-            if hours is None:
-                hours = 0
-            if minutes is None:
-                minutes = 0
-
-            try:
-                total_minutes = (((years * 52) + weeks) * 7 + days) * 24 * 60
-                total_minutes = total_minutes + (hours * 60) + minutes
-                d["UPTIME_TOTAL_MINUTES"] = total_minutes
-            except Exception:
-                d["UPTIME_TOTAL_MINUTES"] = None
-
-        def _build_stack_members(d):
-            hardware_list = d.get("HARDWARE")
-            serial_list = d.get("SERIAL")
-
-            if not isinstance(hardware_list, list):
-                hardware_list = _to_list(hardware_list)
-            if not isinstance(serial_list, list):
-                serial_list = _to_list(serial_list)
-
-            m = len(hardware_list)
-            n = len(serial_list)
-            limit = m if m < n else n
-
-            members = []
-            idx = 0
-            while idx < limit:
-                entry = {"index": idx + 1, "model": hardware_list[idx], "serial": serial_list[idx]}
-                members.append(entry)
-                idx += 1
-
-            d["STACK_MEMBERS"] = members
-
-            if m > limit:
-                extra_models = []
-                i = limit
-                while i < m:
-                    extra_models.append(hardware_list[i])
-                    i += 1
-                d["HARDWARE_UNMATCHED"] = extra_models
-
-            if n > limit:
-                extra_serials = []
-                i = limit
-                while i < n:
-                    extra_serials.append(serial_list[i])
-                    i += 1
-                d["SERIAL_UNMATCHED"] = extra_serials
-
-        def _row_to_sane_dict(headers, row):
-            result = {}
-
-            force_list_keys = set()
-            force_list_keys.add("HARDWARE")
-            force_list_keys.add("SERIAL")
-            force_list_keys.add("MAC_ADDRESS")
-
-            idx = 0
-            max_len = len(headers) if len(headers) < len(row) else len(row)
-            while idx < max_len:
-                key = headers[idx]
-                value = row[idx]
-
-                if key == "MAC_ADDRESS":
-                    result[key] = _sanitize_scalar_or_list(value, force_list=True, lowercase=True)
-                elif key in force_list_keys:
-                    result[key] = _sanitize_scalar_or_list(value, force_list=True)
-                else:
-                    if value == "":
-                        result[key] = None
-                    else:
-                        result[key] = _sanitize_scalar_or_list(value, force_list=False)
-                idx += 1
-
-            int_fields = []
-            int_fields.append("UPTIME_YEARS")
-            int_fields.append("UPTIME_WEEKS")
-            int_fields.append("UPTIME_DAYS")
-            int_fields.append("UPTIME_HOURS")
-            int_fields.append("UPTIME_MINUTES")
-            _coerce_int_fields(result, int_fields)
-
-            _compute_uptime_minutes(result)
-            _build_stack_members(result)
-            return result
-
-        def _normalize_parsed_data(headers, parsed_rows):
-            """
-            Accepts:
-              - parsed_rows: list[list[Any]] (standard TextFSM rows)
-              - OR list[dict] (if your engine already maps headers)
-            Returns:
-              - records: list[dict] of normalized rows
-            """
-            records = []
-
-            # If already list of dicts, still pass each through normalization
-            if len(parsed_rows) > 0 and isinstance(parsed_rows[0], dict):
-                i = 0
-                while i < len(parsed_rows):
-                    row_dict = parsed_rows[i]
-                    # rebuild a row aligned to headers if we can; else use keys order
-                    aligned_row = []
-                    if headers:
-                        j = 0
-                        while j < len(headers):
-                            aligned_row.append(row_dict.get(headers[j]))
-                            j += 1
-                    else:
-                        # fall back to row_dict values in insertion order
-                        for k in row_dict.keys():
-                            aligned_row.append(row_dict.get(k))
-                    sane = _row_to_sane_dict(headers if headers else list(row_dict.keys()), aligned_row)
-                    records.append(sane)
-                    i += 1
-                return records
-
-            # Else assume list of lists with provided headers
-            i = 0
-            while i < len(parsed_rows):
-                sane = _row_to_sane_dict(headers, parsed_rows[i])
-                records.append(sane)
-                i += 1
-            return records
-
-        def _discover_headers_from_engine():
-            """
-            Try multiple ways to get TextFSM headers, since engines differ.
-            Implement/adjust these hooks to match your TextFSM wrapper.
-            """
-            # 1) Preferred: engine exposes last headers directly
-            try:
-                hdrs = None
-                if hasattr(self._textfsm_engine, "get_last_headers"):
-                    hdrs = self._textfsm_engine.get_last_headers()
-                elif hasattr(self._textfsm_engine, "last_headers"):
-                    hdrs = self._textfsm_engine.last_headers
-                if hdrs:
-                    return list(hdrs)
-            except Exception:
-                pass
+        if not self._textfsm_engine:
+            if self._debug:
+                print("TextFSM engine not available")
             return None
 
-        # ---- main logic ----
         try:
-            filter_attempts = self._create_textfsm_filter(output, command)
-            print(f"searching tfsmfire with filter: {filter_attempts}")
+            # ================================================================
+            # Strip command echo before parsing
+            # SSH shell mode echoes the command, breaking TextFSM templates
+            # ================================================================
+            cleaned_output = self._strip_command_echo(output, command)
+            if self._debug:
+                orig_len = len(output)
+                clean_len = len(cleaned_output)
+                print(f"Output after stripping echo/prompts: {orig_len} -> {clean_len} bytes")
+
+                # Show first line change if any
+                orig_first = output.split('\n')[0][:60] if output else ''
+                clean_first = cleaned_output.split('\n')[0][:60] if cleaned_output else ''
+                if orig_first != clean_first:
+                    print(f"  Was: {orig_first!r}")
+                    print(f"  Now: {clean_first!r}")
+
+            # ================================================================
+            # Create filter strings to try (e.g., "juniper_junos_show_version")
+            # ================================================================
+            filter_attempts = self._create_textfsm_filter(cleaned_output, command)
+            if self._debug:
+                print(f"Filter attempts: {filter_attempts}")
 
             best_result = None
             best_score = 0
 
-            i = 0
-            total = len(filter_attempts)
-            while i < total:
-                filter_string = filter_attempts[i]
-                try:
-                    if self._debug:
-                        print("Trying filter {}/{}: '{}'".format(i + 1, total, filter_string))
-
-                    self._ensure_textfsm_engine()
-                    template, parsed_data, score, template_content = self._textfsm_engine.find_best_template(
-                        output, filter_string
-                    )
-
-                    # Attempt to get headers
-                    headers = _discover_headers_from_engine()
-                    if (headers is None) and hasattr(self._textfsm_engine, "headers"):
-                        try:
-                            headers = list(self._textfsm_engine.headers)
-                        except Exception:
-                            headers = None
-
-                    # If still None, try to infer from parsed_data of dicts
-                    if headers is None and parsed_data and isinstance(parsed_data[0], dict):
-                        headers = []
-                        # take keys from the first record in order
-                        for k in parsed_data[0].keys():
-                            headers.append(k)
-
-                    # Final guard: if headers still None, cannot normalize reliably
-                    if headers is None:
-                        headers = []
-
-                    # Normalize rows into sane dicts
-                    records = []
-                    if parsed_data:
-                        records = _normalize_parsed_data(headers, parsed_data)
-
-                    if self._debug:
-                        count = len(parsed_data) if parsed_data else 0
-                        print("  Result: template='{}', score={:.1f}, records={}".format(template, score, count))
-                        if len(records) > 0:
-                            print("  Sample sane row keys:", list(records[0].keys()))
-                            print("  Sample STACK_MEMBERS:", records[0].get("STACK_MEMBERS"))
-
-                    if score > best_score:
-                        best_score = score
-                        best_result = {
-                            "template_name": template,
-                            "score": score,
-                            "headers": headers,
-                            "records": records,  # normalized rows here
-                            "raw_rows": parsed_data,  # keep original rows if you need them
-                            "filter_used": filter_string,
-                            "filter_rank": i + 1,
-                            "field_analysis": self._analyze_textfsm_fields(parsed_data) if parsed_data else {}
-                        }
-
-                        if self._debug:
-                            print("  New best match!")
-                            if len(records) > 0:
-                                print("  Sample sane data:", records[0])
-
-                    # short-circuit on high confidence
-                    if score > 50:
-                        if self._debug:
-                            print("  High confidence match, stopping search")
-                        break
-
-                except Exception as e:
-                    if self._debug:
-                        print("  Filter '{}' failed: {}".format(filter_string, e))
-                i += 1
-
-            if best_result:
+            # ================================================================
+            # Try each filter - find_best_template does ALL the work
+            # ================================================================
+            for i, filter_string in enumerate(filter_attempts):
                 if self._debug:
-                    print("Best result: {} (filter: {}, rank: {})".format(
-                        best_result["template_name"], best_result["filter_used"], best_result["filter_rank"]
-                    ))
+                    print(f"\nTrying filter {i + 1}/{len(filter_attempts)}: '{filter_string}'")
+
+                # find_best_template iterates all matching templates internally
+                # Returns: (template_name: str, parsed_data: List[Dict], score: float)
+                template_name, parsed_data, score = self._textfsm_engine.find_best_template(
+                    cleaned_output, filter_string
+                )
+
+                if self._debug:
+                    record_count = len(parsed_data) if parsed_data else 0
+                    print(f"  Result: template='{template_name}', score={score:.1f}, records={record_count}")
+
+                if score > best_score:
+                    best_score = score
+                    best_result = {
+                        "template_name": template_name,
+                        "score": score,
+                        "records": parsed_data or [],  # Already List[Dict] from tfsm_fire!
+                        "filter_used": filter_string,
+                        "filter_rank": i + 1,
+                    }
+
+                    if self._debug:
+                        print(f"  New best match!")
+                        if parsed_data and len(parsed_data) > 0:
+                            # Show key fields from first record
+                            sample = parsed_data[0]
+                            print(f"  Fields: {list(sample.keys())}")
+                            for key in ['HOSTNAME', 'MODEL', 'VERSION', 'SERIAL', 'HARDWARE', 'JUNOS_VERSION']:
+                                if key in sample and sample[key]:
+                                    print(f"    {key}: {sample[key]}")
+
+                # Short-circuit on high confidence match
+                if score > 50:
+                    if self._debug:
+                        print("  High confidence match, stopping filter search")
+                    break
+
+            # ================================================================
+            # Return best result if we found anything useful
+            # ================================================================
+            if best_result and best_result["score"] > 0:
+                if self._debug:
+                    print(f"\nBest result: {best_result['template_name']} "
+                          f"(filter: {best_result['filter_used']}, score: {best_result['score']:.1f})")
                 return best_result
 
             if self._debug:
-                print("No successful TextFSM matches found")
+                print("\nNo successful TextFSM matches found")
+            return None
 
         except Exception as e:
             if self._debug:
-                print("TextFSM parsing failed for {}: {}".format(command, e))
+                print(f"TextFSM parsing failed for {command}: {e}")
+                import traceback
+                traceback.print_exc()
+            return None
 
-        return None
+    def _extract_from_textfsm(self, textfsm_result, command):
+        """
+        Extract device info from TextFSM parsed results.
 
+        textfsm_result structure:
+        {
+            "template_name": "juniper_junos_show_version",
+            "score": 30.0,
+            "records": [{"HOSTNAME": "router1", "MODEL": "MX480", ...}],
+            "filter_used": "juniper_junos_show_version"
+        }
+        """
+        if not textfsm_result or not textfsm_result.get("records"):
+            return
+
+        records = textfsm_result["records"]
+        if not records:
+            return
+
+        # Use first record for device-level info
+        record = records[0]
+
+        if self._debug:
+            print(f"Extracting from TextFSM result: {textfsm_result['template_name']}")
+            print(f"  Available fields: {list(record.keys())}")
+
+        # ================================================================
+        # Extract hostname
+        # ================================================================
+        hostname_fields = ['HOSTNAME', 'HOST_NAME', 'DEVICE_NAME', 'SWITCHNAME', 'NAME']
+        for field in hostname_fields:
+            value = record.get(field)
+            if value and not self._device_info.hostname:
+                # Validate it's not a garbage value
+                invalid_hostnames = {
+                    'host-name', 'hostname', 'name', 'device', 'switch', 'router',
+                    'description', 'chassis', 'system', 'none', 'null', 'unknown'
+                }
+                if value.lower() not in invalid_hostnames:
+                    self._device_info.hostname = value
+                    if self._debug:
+                        print(f"  Set hostname: {value} (from {field})")
+                    break
+
+        # ================================================================
+        # Extract model
+        # ================================================================
+        model_fields = ['MODEL', 'HARDWARE', 'PLATFORM', 'CHASSIS', 'DEVICE_MODEL']
+        for field in model_fields:
+            value = record.get(field)
+            if value and not self._device_info.model:
+                # Handle list values (e.g., stack members)
+                if isinstance(value, list):
+                    value = value[0] if value else None
+                if value:
+                    self._device_info.model = value
+                    if self._debug:
+                        print(f"  Set model: {value} (from {field})")
+                    break
+
+        # ================================================================
+        # Extract version
+        # ================================================================
+        version_fields = ['VERSION', 'JUNOS_VERSION', 'OS_VERSION', 'SOFTWARE_VERSION',
+                          'RUNNING_IMAGE', 'SYSTEM_IMAGE', 'ROMMON', 'BOOTLDR']
+        for field in version_fields:
+            value = record.get(field)
+            if value and not self._device_info.version:
+                self._device_info.version = value
+                if self._debug:
+                    print(f"  Set version: {value} (from {field})")
+                break
+
+        # ================================================================
+        # Extract serial number
+        # ================================================================
+        serial_fields = ['SERIAL', 'SERIAL_NUMBER', 'CHASSIS_SERIAL', 'SYSTEM_SERIAL_NUMBER']
+        for field in serial_fields:
+            value = record.get(field)
+            if value and not self._device_info.serial_number:
+                # Handle list values
+                if isinstance(value, list):
+                    value = value[0] if value else None
+                # Validate it's not a garbage value
+                invalid_serials = {'description', 'serial', 'serial_number', 'sn', 'chassis', 'none', 'n/a'}
+                if value and value.lower() not in invalid_serials:
+                    self._device_info.serial_number = value
+                    if self._debug:
+                        print(f"  Set serial: {value} (from {field})")
+                    break
+
+        # ================================================================
+        # Extract uptime if available
+        # ================================================================
+        uptime_fields = ['UPTIME', 'UPTIME_DAYS', 'UPTIME_HOURS', 'UPTIME_MINUTES']
+        for field in uptime_fields:
+            value = record.get(field)
+            if value and not self._device_info.uptime:
+                self._device_info.uptime = str(value)
+                if self._debug:
+                    print(f"  Set uptime: {value} (from {field})")
+                break
+
+        # ================================================================
+        # Store raw TextFSM data in additional_info for later use
+        # ================================================================
+        self._device_info.additional_info['textfsm_result'] = {
+            'template': textfsm_result.get('template_name'),
+            'score': textfsm_result.get('score'),
+            'record_count': len(records),
+            'fields': list(record.keys())
+        }
     def _analyze_textfsm_fields_enhanced(self, headers, raw_data, parsed_dict_data):
         """Enhanced field analysis using both raw TextFSM data and parsed dictionaries"""
         if not headers or not raw_data:
@@ -1611,8 +1590,29 @@ class DeviceFingerprint:
         vendor = NetmikoDriverMap.get_vendor_name(self._device_info.device_type)
         self._device_info.additional_info['vendor'] = vendor
 
-        # Set display name
-        display_name = self._device_info.hostname if self._device_info.hostname else self._device_info.host
+        # ================================================================
+        # FIX: Validate hostname - reject obvious parsing errors
+        # ================================================================
+        invalid_hostnames = {
+            'host-name', 'hostname', 'name', 'device', 'switch', 'router',
+            'description', 'chassis', 'system', 'none', 'null', 'unknown'
+        }
+
+        if self._device_info.hostname and self._device_info.hostname.lower() in invalid_hostnames:
+            # Bad parse - clear it so we fall back to yaml_display_name
+            self._device_info.hostname = None
+
+        # ================================================================
+        # Set display name with proper fallback order
+        # ================================================================
+        yaml_display_name = self._device_info.additional_info.get('yaml_display_name')
+        if yaml_display_name:
+            display_name = yaml_display_name
+        elif self._device_info.hostname:
+            display_name = self._device_info.hostname
+        else:
+            display_name = self._device_info.host
+
         self._device_info.additional_info['display_name'] = display_name
 
         # Store connection info

@@ -457,7 +457,11 @@
                 <!-- Device Filters -->
                 <div class="form-group">
                     <label>Filter Devices</label>
-                    <input type="text" id="vendorFilter" placeholder="Vendor (e.g., Cisco)" value="Cisco">
+                    <select id="vendorFilter" onchange="refreshDevices()">
+                        <option value="Cisco" selected>Cisco</option>
+                        <option value="Arista">Arista</option>
+                        <option value="Juniper">Juniper</option>
+                    </select>
                 </div>
 
                 <div class="device-preview">
@@ -469,11 +473,18 @@
                 </div>
 
                 <!-- Command Selection -->
-                <div style="margin-top: 32px;">
-                    <label style="font: var(--md-typescale-title-medium); display: block; margin-bottom: 16px;">
-                        Commands to Collect
-                    </label>
-                    <div class="command-grid" id="commandGrid">
+                <!-- Command Selection -->
+                    <div style="margin-top: 32px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <label style="font: var(--md-typescale-title-medium);">
+                                Commands to Collect
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="selectAllCommands" onclick="toggleAllCommands(this)">
+                                <span style="font: var(--md-typescale-body-medium);">Select All</span>
+                            </label>
+                        </div>
+                        <div class="command-grid" id="commandGrid">
                         <div class="command-checkbox">
                             <input type="checkbox" id="cmd-configs" value="configs" checked>
                             <label for="cmd-configs">Configuration (show running-config)</label>
@@ -975,5 +986,16 @@ function showResults(data) {
     document.getElementById('currentStatus').textContent =
         `✓ Collection complete! ${stats.completed} succeeded, ${stats.failed} failed`;
 }
+function toggleAllCommands(source) {
+    const checkboxes = document.querySelectorAll('#commandGrid input[type="checkbox"]');
+    checkboxes.forEach(cb => cb.checked = source.checked);
+}
+    document.querySelectorAll('#commandGrid input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', function() {
+        const all = document.querySelectorAll('#commandGrid input[type="checkbox"]');
+        const checked = document.querySelectorAll('#commandGrid input[type="checkbox"]:checked');
+        document.getElementById('selectAllCommands').checked = (all.length === checked.length);
+    });
+});
 </script>
 {% endblock %}

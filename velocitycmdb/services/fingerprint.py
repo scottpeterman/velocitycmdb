@@ -226,20 +226,26 @@ class FingerprintOrchestrator:
         output_file = self.fingerprints_dir / f'{device_name}.json'
 
         try:
-            # Create fingerprinter
+            # Create fingerprinter with SSH key support
             fingerprinter = DeviceFingerprint(
                 host=device_ip,
                 port=22,
                 username=username,
                 password=password,
+                ssh_key_path=ssh_key_path,  # Pass SSH key if provided
                 debug=False,
                 verbose=False,
                 connection_timeout=10000,
                 textfsm_db_path=str(self.textfsm_db) if self.textfsm_db else None
             )
 
+            # Store the display_name from YAML before fingerprinting
+            # This ensures we preserve the user-provided name
+            fingerprinter._device_info.additional_info['yaml_display_name'] = device_name
+
             # Run fingerprinting
             device_info = fingerprinter.fingerprint()
+            print(f"DEBUG: fingerprint() returned, building result dict")  # ADD THIS
 
             # Convert to JSON
             result = {
@@ -267,9 +273,10 @@ class FingerprintOrchestrator:
             }
 
             # Save to JSON file
+            print(f"DEBUG: Saving JSON to {output_file}")
             with open(output_file, 'w') as f:
                 json.dump(result, f, indent=2)
-
+                print(f"DEBUG: Saved successfully -> {output_file}")
             return {
                 'success': True,
                 'fingerprint_file': output_file,
