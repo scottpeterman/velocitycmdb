@@ -162,9 +162,9 @@ scmaps:
   data_dir: ~/.velocitycmdb/discovery/maps
 
 # Getting Started:
-# 1. Run: velocitycmdb init
+# 1. Run: python -m velocitycmdb.cli init
 # 2. Run: velocitycmdb create-admin
-# 3. Run: velocitycmdb run
+# 3. Run: python -m velocitycmdb.app.run
 # 4. Login with admin/admin (change password after first login)
 """
 
@@ -185,9 +185,9 @@ scmaps:
             print(f"✓ Created default configuration file: {abs_path}")
             print(f"✓ Default authentication method: database")
             print(f"✓ Next steps:")
-            print(f"  1. Run: velocitycmdb init")
+            print(f"  1. Run: python -m velocitycmdb.cli init")
             print(f"  2. Run: velocitycmdb create-admin")
-            print(f"  3. Run: velocitycmdb run")
+            print(f"  3. Run: python -m velocitycmdb.app.run")
 
         except Exception as e:
             logger.error(f"Failed to create default config file: {e}")

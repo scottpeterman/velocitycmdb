@@ -77,8 +77,8 @@ scmaps:
   data_dir: ~/.velocitycmdb/discovery/maps
 
 # Getting Started:
-# 1. Run: velocitycmdb init
-# 2. Run: velocitycmdb run
+# 1. Run: python -m velocitycmdb.cli init
+# 2. Run: python -m velocitycmdb.app.run
 # 3. Login with your configured admin credentials
 """
 
@@ -148,7 +148,7 @@ def cmd_init(args):
     config_dir = Path.home() / '.velocitycmdb'
 
     print("\n" + "=" * 60)
-    print("VelocityCMDB Initialization")
+    print("python -m velocitycmdb.cli initialization")
     print("=" * 60)
 
     # Check if config exists and we're not forcing
@@ -226,7 +226,7 @@ def cmd_init(args):
             print(f"\nDefault network username: {default_username}")
             print("  (Used by collection jobs - stored in config.yaml)")
             print("\nNext step:")
-            print("  velocitycmdb run")
+            print("  python -m velocitycmdb.app.run")
             print("\nConfig file: ~/.velocitycmdb/config.yaml")
             print("=" * 60 + "\n")
         else:
@@ -243,7 +243,7 @@ def cmd_run(args):
     config_path = Path.home() / '.velocitycmdb' / 'config.yaml'
     if not config_path.exists():
         print("\nError: VelocityCMDB has not been initialized.")
-        print("Please run: velocitycmdb init\n")
+        print("Please run: python -m velocitycmdb.cli init\n")
         return
 
     from velocitycmdb.app import create_app
@@ -328,10 +328,10 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  velocitycmdb init                                    # Interactive prompts
-  velocitycmdb init --default-username speterman      # Set network username
-  velocitycmdb init --admin-password secret123        # Non-interactive admin setup
-  velocitycmdb init -u netadmin -p secret --force     # Full non-interactive
+  python -m velocitycmdb.cli init                                    # Interactive prompts
+  python -m velocitycmdb.cli init --default-username speterman      # Set network username
+  python -m velocitycmdb.cli init --admin-password secret123        # Non-interactive admin setup
+  python -m velocitycmdb.cli init -u netadmin -p secret --force     # Full non-interactive
         """
     )
     init_parser.add_argument(
@@ -362,10 +362,10 @@ Examples:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  velocitycmdb run                      # Default: port 8086, no SSL
-  velocitycmdb run -p 8443 --ssl        # Port 8443 with self-signed SSL
-  velocitycmdb run --port 5000          # Port 5000, no SSL
-  velocitycmdb run --ssl                # Default port with SSL
+  python -m velocitycmdb.app.run                      # Default: port 8086, no SSL
+  python -m velocitycmdb.app.run -p 8443 --ssl        # Port 8443 with self-signed SSL
+  python -m velocitycmdb.app.run --port 5000          # Port 5000, no SSL
+  python -m velocitycmdb.app.run --ssl                # Default port with SSL
         """
     )
     run_parser.add_argument(
@@ -400,8 +400,8 @@ Examples:
     else:
         print("VelocityCMDB - Network Configuration Management Database\n")
         print("Quick start:")
-        print("  velocitycmdb init    # Initialize (first time setup)")
-        print("  velocitycmdb run     # Start the server\n")
+        print("  python -m velocitycmdb.cli init    # Initialize (first time setup)")
+        print("  python -m velocitycmdb.app.run     # Start the server\n")
         parser.print_help()
 
 

@@ -19,7 +19,7 @@ That's it. No Docker, no PostgreSQL, no Redis, no Kubernetes.
 ## Step 2: Initialize
 
 ```bash
-velocitycmdb init
+python -m velocitycmdb.cli init
 ```
 
 **What happens:**
@@ -31,7 +31,7 @@ velocitycmdb init
 **Output:**
 ```
 ============================================================
-VelocityCMDB Initialization
+python -m velocitycmdb.cli initialization
 ============================================================
 
 Set VELOCITYCMDB_DATA_DIR to: /home/you/.velocitycmdb/data
@@ -62,7 +62,7 @@ Default admin credentials:
   IMPORTANT: Change this password after first login!
 
 Next step:
-  velocitycmdb run
+  python -m velocitycmdb.app.run
 
 Config file: ~/.velocitycmdb/config.yaml
 ============================================================
@@ -146,7 +146,7 @@ Users log in with their Windows/Linux credentials. Admin rights controlled via V
 ## Step 4: Launch
 
 ```bash
-velocitycmdb run
+python -m velocitycmdb.app.run
 ```
 
 **What happens:**
@@ -156,10 +156,10 @@ velocitycmdb run
 
 **Options:**
 ```bash
-velocitycmdb run                      # Default: port 8086, no SSL
-velocitycmdb run -p 8443 --ssl        # Port 8443 with self-signed SSL
-velocitycmdb run --port 5000          # Port 5000, no SSL
-velocitycmdb run --host 127.0.0.1     # Bind to localhost only
+python -m velocitycmdb.app.run                      # Default: port 8086, no SSL
+python -m velocitycmdb.app.run -p 8443 --ssl        # Port 8443 with self-signed SSL
+python -m velocitycmdb.app.run --port 5000          # Port 5000, no SSL
+python -m velocitycmdb.app.run --host 127.0.0.1     # Bind to localhost only
 ```
 
 ---
@@ -333,11 +333,11 @@ Here's what happened in our lab test:
 $ pip install velocitycmdb
 
 # Initialized
-$ velocitycmdb init
-VelocityCMDB initialized successfully!
+$ python -m velocitycmdb.cli init
+python -m velocitycmdb.cli initialized successfully!
 
 # Launched
-$ velocitycmdb run
+$ python -m velocitycmdb.app.run
 * Running on http://127.0.0.1:8086
 
 # In browser: Started discovery with seed IP 172.16.10.21
@@ -397,30 +397,30 @@ $ velocitycmdb run
 
 ```bash
 # Initialize system (first time setup)
-velocitycmdb init
+python -m velocitycmdb.cli init
 
 # Re-initialize and overwrite config
-velocitycmdb init --force
+python -m velocitycmdb.cli init --force
 
 # Start web interface (default: port 8086)
-velocitycmdb run
+python -m velocitycmdb.app.run
 
 # Start with SSL enabled
-velocitycmdb run --ssl
+python -m velocitycmdb.app.run --ssl
 
 # Start on custom port
-velocitycmdb run -p 8443
+python -m velocitycmdb.app.run -p 8443
 
 # Start on custom host and port
-velocitycmdb run --host 127.0.0.1 --port 5000
+python -m velocitycmdb.app.run --host 127.0.0.1 --port 5000
 
 # Disable debug mode (for production)
-velocitycmdb run --no-debug
+python -m velocitycmdb.app.run --no-debug
 
 # Show help
 velocitycmdb --help
-velocitycmdb init --help
-velocitycmdb run --help
+python -m velocitycmdb.cli init --help
+python -m velocitycmdb.app.run --help
 ```
 
 ---
@@ -432,8 +432,8 @@ velocitycmdb run --help
 ```bash
 # Install and setup
 pip install velocitycmdb
-velocitycmdb init
-velocitycmdb run
+python -m velocitycmdb.cli init
+python -m velocitycmdb.app.run
 
 # In browser:
 # 1. Login (admin/admin)
@@ -453,8 +453,8 @@ velocitycmdb run
 ```bash
 # Install once
 pip install velocitycmdb
-velocitycmdb init
-velocitycmdb run
+python -m velocitycmdb.cli init
+python -m velocitycmdb.app.run
 
 # In browser (repeat for each site):
 # Site 1: HQ
@@ -501,13 +501,13 @@ velocitycmdb run
 ```bash
 # 1. Install and initialize
 pip install velocitycmdb
-velocitycmdb init
+python -m velocitycmdb.cli init
 
 # 2. Edit ~/.velocitycmdb/config.yaml with LDAP settings
 # (see Step 3 above)
 
 # 3. Launch
-velocitycmdb run
+python -m velocitycmdb.app.run
 
 # 4. Users log in with LDAP credentials
 # System auto-creates their accounts
@@ -625,8 +625,8 @@ After your first successful discovery:
 
 ```bash
 pip install velocitycmdb
-velocitycmdb init
-velocitycmdb run
+python -m velocitycmdb.cli init
+python -m velocitycmdb.app.run
 ```
 
 **Three commands. One seed IP. Five minutes.**

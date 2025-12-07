@@ -879,7 +879,7 @@ velocitycmdb/
 pip install velocitycmdb
 
 # Initialize
-velocitycmdb init
+python -m velocitycmdb.cli init
 # Output:
 # ✓ Created C:\Users\Scott\.velocitycmdb
 # ✓ Initialized databases

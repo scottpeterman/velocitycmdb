@@ -2,7 +2,7 @@
 velocitycmdb reset --yes
 
 # Initialize fresh databases
-velocitycmdb init
+python -m velocitycmdb.cli init
 
 # Start the web interface
 velocitycmdb start

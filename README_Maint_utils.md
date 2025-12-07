@@ -623,7 +623,7 @@ return {'success': False, 'error': 'Operation failed'}
 # ✅ Good: Specific error
 return {
     'success': False,
-    'error': f'Database not found: {db_path}\n\nRun "velocitycmdb init" to create it.'
+    'error': f'Database not found: {db_path}\n\nRun "python -m velocitycmdb.cli init" to create it.'
 }
 
 # ✅ Best: Actionable error with context
@@ -635,7 +635,7 @@ return {
         'path_readable': os.access(db_path, os.R_OK),
         'path_writable': os.access(db_path, os.W_OK)
     },
-    'suggested_action': 'Check file permissions or run "velocitycmdb init"'
+    'suggested_action': 'Check file permissions or run "python -m velocitycmdb.cli init"'
 }
 ```
 

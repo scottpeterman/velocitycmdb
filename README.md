@@ -31,7 +31,7 @@ VelocityCMDB is a **pip-installable network CMDB** that combines asset managemen
 - **Multi-Auth** - LDAP, local database, and OS authentication
 
 **Why VelocityCMDB?**
-- **Fast Setup** - `pip install velocitycmdb && velocitycmdb init && velocitycmdb run`
+- **Fast Setup** - `pip install velocitycmdb && python -m velocitycmdb.cli init && python -m velocitycmdb.app.run`
 - **Wizard-Driven** - Discovery and collection wizards guide deployment
 - **Enterprise Friendly** - Basic role-based access, audit logging, backup/restore
 - **Engineer-Focused** - CLI tools, REST API, and scriptable workflows, run locally or on a server
@@ -47,10 +47,10 @@ VelocityCMDB is a **pip-installable network CMDB** that combines asset managemen
 pip install velocitycmdb
 
 # Initialize databases, directories, config, and admin user
-velocitycmdb init
+python -m velocitycmdb.cli init
 
 # Start the web server
-velocitycmdb run
+python -m velocitycmdb.app.run
 ```
 
 Access the dashboard at `http://localhost:8086`
@@ -289,30 +289,30 @@ Comprehensive guides for every component:
 
 ```bash
 # Initialize system (first time setup)
-velocitycmdb init
+python -m velocitycmdb.cli init
 
 # Re-initialize and overwrite config
-velocitycmdb init --force
+python -m velocitycmdb.cli init --force
 
 # Start web server (default: port 8086)
-velocitycmdb run
+python -m velocitycmdb.app.run
 
 # Start with SSL enabled
-velocitycmdb run --ssl
+python -m velocitycmdb.app.run --ssl
 
 # Start on custom port
-velocitycmdb run -p 8443
+python -m velocitycmdb.app.run -p 8443
 
 # Start on custom host and port
-velocitycmdb run --host 127.0.0.1 --port 5000
+python -m velocitycmdb.app.run --host 127.0.0.1 --port 5000
 
 # Disable debug mode (for production)
-velocitycmdb run --no-debug
+python -m velocitycmdb.app.run --no-debug
 
 # Show help
 velocitycmdb --help
-velocitycmdb init --help
-velocitycmdb run --help
+python -m velocitycmdb.cli init --help
+python -m velocitycmdb.app.run --help
 ```
 
 ---

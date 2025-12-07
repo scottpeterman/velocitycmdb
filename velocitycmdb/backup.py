@@ -63,7 +63,7 @@ class VelocityCMDBBackup:
         if not self.data_dir.exists():
             raise RuntimeError(
                 f"Data directory not found: {self.data_dir}\n"
-                f"Run 'velocitycmdb init' to initialize the system."
+                f"Run 'python -m velocitycmdb.cli init' to initialize the system."
             )
 
     def get_table_counts(self, db_path: Path) -> Dict[str, int]:

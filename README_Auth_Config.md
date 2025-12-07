@@ -43,7 +43,7 @@ authentication:
 
 Create your first user:
 ```bash
-velocitycmdb init            # Creates database structure
+python -m velocitycmdb.cli init            # Creates database structure
 velocitycmdb create-admin    # Creates admin user (default: admin/admin)
 ```
 
@@ -165,7 +165,7 @@ authentication:
 
 ```bash
 # 1. Initialize database
-velocitycmdb init
+python -m velocitycmdb.cli init
 
 # 2. Create first admin user
 velocitycmdb create-admin    # Default: admin/admin
@@ -569,7 +569,7 @@ velocitycmdb create-admin
 
 # Or recreate database
 rm ~/.velocitycmdb/data/users.db
-velocitycmdb init
+python -m velocitycmdb.cli init
 velocitycmdb create-admin
 ```
 
