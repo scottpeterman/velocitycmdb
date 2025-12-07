@@ -1,0 +1,960 @@
+{% extends "base.html" %}
+
+{% block title %}{{ site_name }} Maps - Network Management{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb Navigation -->
+<nav class="breadcrumb">
+    <a href="{{ url_for('maps.index') }}">??? Network Maps</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">{{ site_name }}</span>
+</nav>
+
+<div class="page-header">
+    <div class="page-header-content">
+        <h1>??? {{ site_name }}</h1>
+        <p>{{ site_data.maps|length }} topology map{% if site_data.maps|length != 1 %}s{% endif %} available</p>
+    </div>
+    <div class="page-actions">
+        <div class="refresh-control">
+            <div class="refresh-select-wrapper">
+                <i data-lucide="refresh-cw" class="refresh-icon" id="refresh-icon"></i>
+                <select id="refresh-interval" class="refresh-select" title="Auto-refresh interval">
+                    <option value="0">Auto-refresh: Off</option>
+                    <option value="5">Every 5 min</option>
+                    <option value="15">Every 15 min</option>
+                    <option value="60">Every 60 min</option>
+                </select>
+            </div>
+            <span class="refresh-countdown" id="refresh-countdown" style="display: none;">
+                <i data-lucide="clock" size="12"></i>
+                <span id="countdown-text">--:--</span>
+            </span>
+        </div>
+        <a href="{{ url_for('maps.index') }}" class="md-button md-button-outlined">
+            <i data-lucide="arrow-left"></i>
+            All Sites
+        </a>
+    </div>
+</div>
+
+<!-- Site Info Banner -->
+<div class="site-info-banner">
+    <div class="site-stats">
+        <div class="stat-item">
+            <i data-lucide="map"></i>
+            <span class="stat-value">{{ site_data.maps|length }}</span>
+            <span class="stat-label">Maps</span>
+        </div>
+        {% if site_data.last_modified %}
+        <div class="stat-item">
+            <i data-lucide="clock"></i>
+            <span class="stat-value">{{ site_data.last_modified.strftime('%Y-%m-%d') }}</span>
+            <span class="stat-label">Last Updated</span>
+        </div>
+        {% endif %}
+        <div class="stat-item">
+            <i data-lucide="folder"></i>
+            <span class="stat-value">{{ maps_base_dir }}/{{ site_name }}</span>
+            <span class="stat-label">Location</span>
+        </div>
+    </div>
+</div>
+
+<div class="md-card">
+    <div class="card-header">
+        <h2>Available Maps</h2>
+        <div class="view-toggle">
+            <button id="grid-view-btn" class="view-btn active" title="Grid view">
+                <i data-lucide="grid"></i>
+            </button>
+            <button id="list-view-btn" class="view-btn" title="List view">
+                <i data-lucide="list"></i>
+            </button>
+        </div>
+    </div>
+    <div class="card-content">
+        {% if site_data.maps %}
+        <!-- Grid View -->
+        <div class="maps-thumbnail-grid" id="grid-view">
+            {% for map_data in site_data.maps %}
+            <div class="map-card">
+                <div class="map-thumbnail-large">
+                    <a href="{{ url_for('maps.view_map', site_name=site_name, map_name=map_data.name) }}">
+                        <img
+                            src="{{ url_for('maps.api_thumbnail', site_name=site_name, map_name=map_data.name) }}"
+                            alt="{{ map_data.name }} thumbnail"
+                            loading="lazy"
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                        >
+                        <div class="thumbnail-fallback" style="display: none;">
+                            <i data-lucide="map" size="48"></i>
+                        </div>
+                        <div class="thumbnail-overlay">
+                            <i data-lucide="eye" size="24"></i>
+                            <span>View Map</span>
+                        </div>
+                    </a>
+                </div>
+                <div class="map-card-content">
+                    <h3 class="map-card-title">
+                        <a href="{{ url_for('maps.view_map', site_name=site_name, map_name=map_data.name) }}">
+                            {{ map_data.name }}
+                        </a>
+                    </h3>
+                    <div class="map-card-meta">
+                        {% if map_data.created %}
+                        <span class="meta-item">
+                            <i data-lucide="calendar" size="14"></i>
+                            {{ map_data.created.strftime('%Y-%m-%d %H:%M') }}
+                        </span>
+                        {% endif %}
+                        {% if map_data.size_mb %}
+                        <span class="meta-item">
+                            <i data-lucide="hard-drive" size="14"></i>
+                            {{ "%.1f"|format(map_data.size_mb) }} MB
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="map-card-formats">
+                        {% for ext in map_data.files.keys() %}
+                        <span class="format-badge">{{ ext.upper().lstrip('.') }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="map-card-actions">
+                    <a href="{{ url_for('maps.view_map', site_name=site_name, map_name=map_data.name) }}"
+                       class="md-button md-button-filled md-button-small">
+                        <i data-lucide="eye" size="14"></i>
+                        View
+                    </a>
+                    <div class="download-dropdown">
+                        <button class="md-button md-button-outlined md-button-small dropdown-trigger">
+                            <i data-lucide="download" size="14"></i>
+                            Download
+                            <i data-lucide="chevron-down" size="12"></i>
+                        </button>
+                        <div class="dropdown-menu">
+                            {% for ext, file_info in map_data.files.items() %}
+                            <a href="{{ url_for('maps.download_map', site_name=site_name, map_name=map_data.name, format=ext.lstrip('.')) }}"
+                               class="dropdown-item">
+                                <i data-lucide="file" size="14"></i>
+                                {{ ext.upper().lstrip('.') }}
+                                <span class="file-size">({{ (file_info.size_bytes / 1024 / 1024)|round(1) }}MB)</span>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- List View -->
+        <div class="maps-list-view" id="list-view" style="display: none;">
+            <table class="maps-table">
+                <thead>
+                    <tr>
+                        <th>Preview</th>
+                        <th>Name</th>
+                        <th>Created</th>
+                        <th>Size</th>
+                        <th>Formats</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for map_data in site_data.maps %}
+                    <tr>
+                        <td class="preview-cell">
+                            <a href="{{ url_for('maps.view_map', site_name=site_name, map_name=map_data.name) }}">
+                                <img
+                                    src="{{ url_for('maps.api_thumbnail', site_name=site_name, map_name=map_data.name) }}"
+                                    alt="{{ map_data.name }}"
+                                    class="list-thumbnail"
+                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                >
+                                <div class="list-thumbnail-fallback" style="display: none;">
+                                    <i data-lucide="map" size="20"></i>
+                                </div>
+                            </a>
+                        </td>
+                        <td class="name-cell">
+                            <a href="{{ url_for('maps.view_map', site_name=site_name, map_name=map_data.name) }}">
+                                {{ map_data.name }}
+                            </a>
+                        </td>
+                        <td class="date-cell">
+                            {{ map_data.created.strftime('%Y-%m-%d %H:%M') if map_data.created else 'N/A' }}
+                        </td>
+                        <td class="size-cell">
+                            {{ "%.1f"|format(map_data.size_mb) if map_data.size_mb else '0' }} MB
+                        </td>
+                        <td class="formats-cell">
+                            {% for ext in map_data.files.keys() %}
+                            <span class="format-badge format-badge-small">{{ ext.upper().lstrip('.') }}</span>
+                            {% endfor %}
+                        </td>
+                        <td class="actions-cell">
+                            <a href="{{ url_for('maps.view_map', site_name=site_name, map_name=map_data.name) }}"
+                               class="action-btn" title="View">
+                                <i data-lucide="eye" size="16"></i>
+                            </a>
+                            {% if '.svg' in map_data.files %}
+                            <a href="{{ url_for('maps.download_map', site_name=site_name, map_name=map_data.name, format='svg') }}"
+                               class="action-btn" title="Download SVG">
+                                <i data-lucide="download" size="16"></i>
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i data-lucide="map" size="48"></i>
+            <h3>No maps found</h3>
+            <p>No topology maps found for this site.</p>
+            <a href="{{ url_for('maps.index') }}" class="md-button md-button-filled">
+                <i data-lucide="arrow-left"></i>
+                Back to All Sites
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+/* Breadcrumb Navigation */
+.breadcrumb {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.breadcrumb a {
+    color: var(--md-primary);
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+.breadcrumb-separator {
+    color: var(--md-on-surface-variant);
+}
+
+.breadcrumb-current {
+    color: var(--md-on-surface);
+    font-weight: 500;
+}
+
+/* Page Header */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+    gap: 20px;
+}
+
+.page-header-content h1 {
+    margin: 0 0 8px 0;
+    color: var(--md-on-surface);
+}
+
+.page-header-content p {
+    margin: 0;
+    color: var(--md-on-surface-variant);
+}
+
+.page-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* Auto-refresh Controls */
+.refresh-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.refresh-select-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--md-surface-container);
+    border: 1px solid var(--md-outline-variant);
+    border-radius: 8px;
+    padding: 6px 12px;
+}
+
+.refresh-icon {
+    width: 16px;
+    height: 16px;
+    color: var(--md-on-surface-variant);
+    transition: all 0.3s ease;
+}
+
+.refresh-icon.spinning {
+    animation: spin 1s linear infinite;
+    color: var(--md-primary);
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.refresh-select {
+    border: none;
+    background: transparent;
+    color: var(--md-on-surface);
+    font-size: 13px;
+    cursor: pointer;
+    outline: none;
+    padding-right: 4px;
+}
+
+.refresh-select option {
+    background: var(--md-surface-container);
+    color: var(--md-on-surface);
+}
+
+.refresh-countdown {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--md-on-surface-variant);
+    background: var(--md-surface-variant);
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+.refresh-countdown.soon {
+    color: var(--md-primary);
+    background: var(--md-primary-container);
+}
+
+/* Site Info Banner */
+.site-info-banner {
+    background: var(--md-surface-container);
+    border: 1px solid var(--md-outline-variant);
+    border-radius: var(--md-shape-corner-medium);
+    padding: 16px 24px;
+    margin-bottom: 24px;
+}
+
+.site-stats {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--md-on-surface-variant);
+}
+
+.stat-item i {
+    color: var(--md-primary);
+}
+
+.stat-value {
+    font-weight: 600;
+    color: var(--md-on-surface);
+}
+
+.stat-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Card Styles */
+.md-card {
+    background: var(--md-surface-container);
+    border: 1px solid var(--md-outline-variant);
+    border-radius: var(--md-shape-corner-medium);
+    overflow: hidden;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--md-outline-variant);
+}
+
+.card-header h2 {
+    margin: 0;
+    font-size: 18px;
+    color: var(--md-on-surface);
+}
+
+.card-content {
+    padding: 24px;
+}
+
+/* View Toggle */
+.view-toggle {
+    display: flex;
+    gap: 4px;
+    background: var(--md-surface-variant);
+    border-radius: 8px;
+    padding: 4px;
+}
+
+.view-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    color: var(--md-on-surface-variant);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.view-btn:hover {
+    background: var(--md-surface-container-highest);
+}
+
+.view-btn.active {
+    background: var(--md-primary);
+    color: var(--md-on-primary);
+}
+
+/* Grid View */
+.maps-thumbnail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+}
+
+.map-card {
+    background: var(--md-surface-container-high);
+    border: 1px solid var(--md-outline-variant);
+    border-radius: var(--md-shape-corner-medium);
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.map-card:hover {
+    border-color: var(--md-primary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.map-thumbnail-large {
+    position: relative;
+    width: 100%;
+    height: 180px;
+    background: var(--md-surface-container-lowest);
+    overflow: hidden;
+}
+
+.map-thumbnail-large a {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.map-thumbnail-large img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: var(--md-surface-container-lowest);
+}
+
+.map-thumbnail-large .thumbnail-fallback {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--md-on-surface-variant);
+    background: var(--md-surface-variant);
+}
+
+.thumbnail-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: white;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.map-thumbnail-large:hover .thumbnail-overlay {
+    opacity: 1;
+}
+
+.map-card-content {
+    padding: 16px;
+}
+
+.map-card-title {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.map-card-title a {
+    color: var(--md-on-surface);
+    text-decoration: none;
+}
+
+.map-card-title a:hover {
+    color: var(--md-primary);
+}
+
+.map-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.map-card-meta .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--md-on-surface-variant);
+}
+
+.map-card-formats {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.format-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--md-primary-container);
+    color: var(--md-on-primary-container);
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.format-badge-small {
+    padding: 1px 6px;
+    font-size: 10px;
+}
+
+.map-card-actions {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--md-outline-variant);
+    background: var(--md-surface-container);
+}
+
+/* Dropdown */
+.download-dropdown {
+    position: relative;
+}
+
+.dropdown-trigger {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.dropdown-menu {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    min-width: 160px;
+    background: var(--md-surface-container-high);
+    border: 1px solid var(--md-outline-variant);
+    border-radius: 8px;
+    padding: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+    transition: all 0.2s ease;
+    z-index: 100;
+}
+
+.download-dropdown:hover .dropdown-menu,
+.download-dropdown:focus-within .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(-4px);
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    color: var(--md-on-surface);
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.dropdown-item:hover {
+    background: var(--md-surface-variant);
+}
+
+.dropdown-item .file-size {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--md-on-surface-variant);
+}
+
+/* List View */
+.maps-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.maps-table th,
+.maps-table td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--md-outline-variant);
+}
+
+.maps-table th {
+    font-weight: 600;
+    color: var(--md-on-surface-variant);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: var(--md-surface-container);
+}
+
+.maps-table tbody tr:hover {
+    background: var(--md-surface-container-high);
+}
+
+.preview-cell {
+    width: 80px;
+}
+
+.list-thumbnail {
+    width: 60px;
+    height: 40px;
+    object-fit: contain;
+    border-radius: 4px;
+    background: var(--md-surface-variant);
+}
+
+.list-thumbnail-fallback {
+    width: 60px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--md-surface-variant);
+    border-radius: 4px;
+    color: var(--md-on-surface-variant);
+}
+
+.name-cell a {
+    color: var(--md-on-surface);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.name-cell a:hover {
+    color: var(--md-primary);
+}
+
+.date-cell, .size-cell {
+    color: var(--md-on-surface-variant);
+    font-size: 14px;
+}
+
+.actions-cell {
+    display: flex;
+    gap: 8px;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    color: var(--md-on-surface-variant);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    background: var(--md-primary);
+    color: var(--md-on-primary);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--md-on-surface-variant);
+}
+
+.empty-state i {
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    margin: 0 0 8px 0;
+    color: var(--md-on-surface);
+}
+
+.empty-state p {
+    margin: 0 0 24px 0;
+}
+
+/* Buttons */
+.md-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.md-button-small {
+    padding: 6px 12px;
+    font-size: 13px;
+}
+
+.md-button-outlined {
+    background: transparent;
+    border: 1px solid var(--md-outline);
+    color: var(--md-primary);
+}
+
+.md-button-outlined:hover {
+    background: var(--md-surface-variant);
+}
+
+.md-button-filled {
+    background: var(--md-primary);
+    color: var(--md-on-primary);
+}
+
+.md-button-filled:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .page-actions {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+
+    .refresh-control {
+        flex-wrap: wrap;
+    }
+
+    .site-stats {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .maps-thumbnail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .maps-table {
+        font-size: 12px;
+    }
+
+    .maps-table th,
+    .maps-table td {
+        padding: 8px;
+    }
+
+    .preview-cell {
+        display: none;
+    }
+}
+</style>
+
+<script>
+// Auto-refresh timer variables
+let refreshInterval = null;
+let countdownInterval = null;
+let nextRefreshTime = null;
+
+// Initialize Lucide icons
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+
+    // Initialize auto-refresh
+    initAutoRefresh();
+
+    // View toggle functionality
+    const gridViewBtn = document.getElementById('grid-view-btn');
+    const listViewBtn = document.getElementById('list-view-btn');
+    const gridView = document.getElementById('grid-view');
+    const listView = document.getElementById('list-view');
+
+    if (gridViewBtn && listViewBtn) {
+        gridViewBtn.addEventListener('click', function() {
+            gridView.style.display = 'grid';
+            listView.style.display = 'none';
+            gridViewBtn.classList.add('active');
+            listViewBtn.classList.remove('active');
+            localStorage.setItem('mapsViewPreference', 'grid');
+        });
+
+        listViewBtn.addEventListener('click', function() {
+            gridView.style.display = 'none';
+            listView.style.display = 'block';
+            listViewBtn.classList.add('active');
+            gridViewBtn.classList.remove('active');
+            localStorage.setItem('mapsViewPreference', 'list');
+        });
+
+        // Restore view preference
+        const savedView = localStorage.getItem('mapsViewPreference');
+        if (savedView === 'list') {
+            listViewBtn.click();
+        }
+    }
+});
+
+// Auto-refresh functions
+function initAutoRefresh() {
+    const select = document.getElementById('refresh-interval');
+
+    // Restore saved preference from localStorage
+    const savedInterval = localStorage.getItem('mapsAutoRefresh');
+    if (savedInterval && ['0', '5', '15', '60'].includes(savedInterval)) {
+        select.value = savedInterval;
+        const minutes = parseInt(savedInterval);
+        if (minutes > 0) {
+            setRefreshTimer(minutes);
+        }
+    }
+
+    select.addEventListener('change', function() {
+        const minutes = parseInt(this.value);
+        localStorage.setItem('mapsAutoRefresh', this.value);
+        setRefreshTimer(minutes);
+    });
+}
+
+function setRefreshTimer(minutes) {
+    // Clear existing timers
+    if (refreshInterval) {
+        clearTimeout(refreshInterval);
+        refreshInterval = null;
+    }
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+    }
+
+    const countdownEl = document.getElementById('refresh-countdown');
+    const refreshIcon = document.getElementById('refresh-icon');
+
+    if (minutes === 0) {
+        // Turn off auto-refresh
+        countdownEl.style.display = 'none';
+        nextRefreshTime = null;
+        return;
+    }
+
+    // Set next refresh time
+    nextRefreshTime = Date.now() + (minutes * 60 * 1000);
+    countdownEl.style.display = 'flex';
+
+    // Update countdown every second
+    updateCountdown();
+    countdownInterval = setInterval(updateCountdown, 1000);
+
+    // Set the refresh timer
+    refreshInterval = setTimeout(function() {
+        // Show spinning icon briefly before refresh
+        refreshIcon.classList.add('spinning');
+        setTimeout(() => {
+            location.reload();
+        }, 500);
+    }, minutes * 60 * 1000);
+}
+
+function updateCountdown() {
+    if (!nextRefreshTime) return;
+
+    const countdownEl = document.getElementById('refresh-countdown');
+    const countdownText = document.getElementById('countdown-text');
+    const remaining = nextRefreshTime - Date.now();
+
+    if (remaining <= 0) {
+        countdownText.textContent = 'Refreshing...';
+        return;
+    }
+
+    const minutes = Math.floor(remaining / 60000);
+    const seconds = Math.floor((remaining % 60000) / 1000);
+
+    countdownText.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+    // Add visual indicator when refresh is soon (under 30 seconds)
+    if (remaining < 30000) {
+        countdownEl.classList.add('soon');
+    } else {
+        countdownEl.classList.remove('soon');
+    }
+}
+
+// Manual refresh function (can be called from console or added as button)
+function manualRefresh() {
+    const refreshIcon = document.getElementById('refresh-icon');
+    refreshIcon.classList.add('spinning');
+    setTimeout(() => {
+        location.reload();
+    }, 500);
+}
+</script>
+{% endblock %}

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Fix normalized_name in devices table to match capture file format
-Adds dot before site suffix: tor2-103fra1 -> tor2-103.fra1
+Adds dot before site suffix: tor2-103fra1 -> tor2-103
 """
 
 import sqlite3

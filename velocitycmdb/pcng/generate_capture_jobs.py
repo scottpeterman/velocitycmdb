@@ -7,8 +7,42 @@ Generate vendor-specific job files for network capture automation
 import json
 import os
 import sys
+import yaml
 from datetime import datetime
 from pathlib import Path
+
+
+def get_configured_username() -> str:
+    """
+    Get username from VelocityCMDB config file.
+    Falls back to environment variable or 'admin' if not configured.
+    """
+    config_path = Path.home() / '.velocitycmdb' / 'config.yaml'
+
+    if config_path.exists():
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = yaml.safe_load(f) or {}
+
+            # Check common config locations for username
+            # credentials.username or collection.username or default_username
+            creds = config.get('credentials', {})
+            if creds.get('username'):
+                return creds['username']
+
+            collection = config.get('collection', {})
+            if collection.get('username'):
+                return collection['username']
+
+            if config.get('default_username'):
+                return config['default_username']
+
+        except Exception as e:
+            print(f"Warning: Could not read config file: {e}", file=sys.stderr)
+
+    # Fallback to environment variable
+    return os.environ.get('VELOCITYCMDB_USERNAME', 'admin')
+
 
 # Vendor-specific paging disable commands
 PAGING_DISABLE = {
@@ -262,7 +296,7 @@ def generate_job_file(vendor, capture_type, job_id, output_dir="Anguis/gnet_jobs
             "auto_paging": True
         },
         "credentials": {
-            "username": "el-speterman",
+            "username": get_configured_username(),
             "credential_system": "Auto-detect from script",
             "password_provided": False,
             "enable_password_provided": False

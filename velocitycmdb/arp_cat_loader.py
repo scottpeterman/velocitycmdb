@@ -643,8 +643,9 @@ class ArpCaptureLoader:
                     context_id = arp_util.get_or_create_context(device_id, **context_info)
                     capture_timestamp = self._normalize_timestamp(capture.get('capture_timestamp'))
 
-                    snapshot_id = arp_util.create_snapshot(
-                        device_id, context_id, capture_timestamp,
+                    # Check for existing snapshot and handle duplicates
+                    snapshot_id = self._get_or_replace_snapshot(
+                        arp_util, device_id, context_id, capture_timestamp,
                         source_file=file_path,
                         source_command='show arp',
                         processing_status='processed'
@@ -729,6 +730,54 @@ class ArpCaptureLoader:
             return dt.isoformat()
         except:
             return datetime.now().isoformat()
+
+    def _get_or_replace_snapshot(self, arp_util, device_id: int, context_id: int,
+                                 capture_timestamp: str, **kwargs) -> int:
+        """
+        Get existing snapshot or create new one, replacing if exists.
+
+        This handles the UNIQUE constraint on (device_id, context_id, capture_timestamp)
+        by checking for existing snapshots and deleting old data before re-import.
+        """
+        conn = arp_util.conn
+        cursor = conn.cursor()
+
+        # Check if snapshot already exists
+        cursor.execute('''
+            SELECT id FROM arp_snapshots 
+            WHERE device_id = ? AND context_id = ? AND capture_timestamp = ?
+        ''', (device_id, context_id, capture_timestamp))
+
+        existing = cursor.fetchone()
+
+        if existing:
+            snapshot_id = existing[0]
+            logger.info(f"Found existing snapshot {snapshot_id}, replacing entries...")
+
+            # Delete existing ARP entries for this snapshot
+            cursor.execute('''
+                DELETE FROM arp_entries 
+                WHERE device_id = ? AND context_id = ? AND capture_timestamp = ?
+            ''', (device_id, context_id, capture_timestamp))
+
+            deleted_count = cursor.rowcount
+            logger.debug(f"Deleted {deleted_count} existing ARP entries")
+
+            # Update the snapshot metadata
+            cursor.execute('''
+                UPDATE arp_snapshots 
+                SET source_file = ?, source_command = ?, processing_status = ?
+                WHERE id = ?
+            ''', (kwargs.get('source_file'), kwargs.get('source_command'),
+                  kwargs.get('processing_status'), snapshot_id))
+
+            conn.commit()
+            return snapshot_id
+        else:
+            # Create new snapshot
+            return arp_util.create_snapshot(
+                device_id, context_id, capture_timestamp, **kwargs
+            )
 
     def load_all_captures(self, max_files: int = None, device_filter: str = None) -> Dict[str, int]:
         """Load all ARP captures from assets database"""

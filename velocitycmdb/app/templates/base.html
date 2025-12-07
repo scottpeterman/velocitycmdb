@@ -171,6 +171,8 @@
             top: 64px;
             bottom: 0;
             padding: 16px;
+            display: flex;
+            flex-direction: column;
         }
 
         /* Navigation Sections */
@@ -333,6 +335,220 @@
             .sidebar-backdrop.show {
                 display: block;
             }
+        }
+
+        /* ===== ENVIRONMENT MODAL STYLES ===== */
+        .env-modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .env-modal-backdrop.show {
+            display: flex;
+        }
+
+        .env-modal {
+            background: var(--md-surface);
+            border-radius: var(--md-shape-corner-large);
+            box-shadow: var(--md-elevation-3);
+            max-width: 700px;
+            width: 90%;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .env-modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--md-outline-variant);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .env-modal-title {
+            font: var(--md-typescale-headline-small);
+            color: var(--md-on-surface);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .env-modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .env-modal-close {
+            background: none;
+            border: none;
+            color: var(--md-on-surface-variant);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: var(--md-shape-corner-small);
+        }
+
+        .env-modal-close:hover {
+            background: var(--md-surface-container);
+        }
+
+        .env-section {
+            margin-bottom: 24px;
+        }
+
+        .env-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .env-section-title {
+            font: var(--md-typescale-title-small);
+            color: var(--md-on-surface);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .env-item {
+            background: var(--md-surface-container);
+            border-radius: var(--md-shape-corner-small);
+            padding: 12px 16px;
+            margin-bottom: 8px;
+        }
+
+        .env-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .env-item-label {
+            font: var(--md-typescale-body-medium);
+            color: var(--md-on-surface);
+            font-weight: 500;
+        }
+
+        .env-item-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font: var(--md-typescale-label-small);
+            padding: 4px 10px;
+            border-radius: 12px;
+        }
+
+        .env-item-status.ok {
+            background: var(--md-success-container, #d4edda);
+            color: var(--md-on-success-container, #155724);
+        }
+
+        .env-item-status.warning {
+            background: var(--md-warning-container, #fff3cd);
+            color: var(--md-on-warning-container, #856404);
+        }
+
+        .env-item-status.error,
+        .env-item-status.missing {
+            background: var(--md-error-container);
+            color: var(--md-on-error-container);
+        }
+
+        .env-item-path {
+            font: var(--md-typescale-body-small);
+            color: var(--md-on-surface-variant);
+            margin-top: 6px;
+            word-break: break-all;
+            font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+        }
+
+        .env-item-details {
+            font: var(--md-typescale-label-small);
+            color: var(--md-on-surface-variant);
+            margin-top: 4px;
+        }
+
+        .env-summary {
+            display: flex;
+            gap: 16px;
+            padding: 16px;
+            background: var(--md-surface-container);
+            border-radius: var(--md-shape-corner-small);
+            margin-bottom: 24px;
+        }
+
+        .env-summary-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .env-summary-count {
+            font: var(--md-typescale-headline-small);
+            font-weight: 600;
+        }
+
+        .env-summary-count.ok { color: var(--md-success, #28a745); }
+        .env-summary-count.warning { color: var(--md-warning, #ffc107); }
+        .env-summary-count.error { color: var(--md-error); }
+
+        .env-summary-label {
+            font: var(--md-typescale-body-small);
+            color: var(--md-on-surface-variant);
+        }
+
+        .env-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 48px;
+            color: var(--md-on-surface-variant);
+        }
+
+        .env-loading i {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Sidebar Footer with Environment Button */
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 16px;
+            border-top: 1px solid var(--md-outline-variant);
+        }
+
+        .env-button {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            border-radius: var(--md-shape-corner-small);
+            background: transparent;
+            color: var(--md-on-surface-variant);
+            font: var(--md-typescale-body-medium);
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .env-button:hover {
+            background: var(--md-surface-container);
+            color: var(--md-on-surface);
         }
     </style>
 
@@ -585,6 +801,14 @@
                     </li>
                 </ul>
             </div>
+
+            <!-- Sidebar Footer with Environment Button -->
+            <div class="sidebar-footer">
+                <button class="env-button" id="env-button" type="button" title="Environment Diagnostics">
+                    <i data-lucide="settings-2" size="18"></i>
+                    Environment
+                </button>
+            </div>
         </aside>
 
         <!-- Main Content -->
@@ -604,6 +828,27 @@
 
             {% block content %}{% endblock %}
         </main>
+    </div>
+
+    <!-- Environment Modal -->
+    <div class="env-modal-backdrop" id="env-modal-backdrop">
+        <div class="env-modal">
+            <div class="env-modal-header">
+                <h2 class="env-modal-title">
+                    <i data-lucide="settings-2" size="24"></i>
+                    Environment Diagnostics
+                </h2>
+                <button class="env-modal-close" id="env-modal-close" type="button">
+                    <i data-lucide="x" size="20"></i>
+                </button>
+            </div>
+            <div class="env-modal-body" id="env-modal-body">
+                <div class="env-loading">
+                    <i data-lucide="loader-2" size="24"></i>
+                    <span style="margin-left: 12px;">Loading environment data...</span>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -682,6 +927,207 @@
 
                 document.addEventListener('click', function() {
                     userMenu.classList.remove('open');
+                });
+            }
+
+            // ===== ENVIRONMENT MODAL =====
+            const envButton = document.getElementById('env-button');
+            const envModalBackdrop = document.getElementById('env-modal-backdrop');
+            const envModalClose = document.getElementById('env-modal-close');
+            const envModalBody = document.getElementById('env-modal-body');
+
+            function formatEnvData(data) {
+                let html = '';
+
+                // Summary
+                const s = data.summary;
+                html += `
+                    <div class="env-summary">
+                        <div class="env-summary-item">
+                            <span class="env-summary-count ok">${s.ok_count}</span>
+                            <span class="env-summary-label">OK</span>
+                        </div>
+                        <div class="env-summary-item">
+                            <span class="env-summary-count warning">${s.warning_count}</span>
+                            <span class="env-summary-label">Warnings</span>
+                        </div>
+                        <div class="env-summary-item">
+                            <span class="env-summary-count error">${s.error_count}</span>
+                            <span class="env-summary-label">Errors</span>
+                        </div>
+                    </div>
+                `;
+
+                // System Info
+                html += `
+                    <div class="env-section">
+                        <div class="env-section-title">
+                            <i data-lucide="monitor" size="16"></i>
+                            System
+                        </div>
+                        <div class="env-item">
+                            <div class="env-item-path">
+                                ${data.system.platform} ${data.system.platform_release} •
+                                Python ${data.system.python_version} •
+                                ${data.system.hostname}
+                            </div>
+                            <div class="env-item-details">
+                                Flask Env: ${data.system.flask_env} •
+                                Debug: ${data.system.debug_mode}
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Directories
+                html += `<div class="env-section">
+                    <div class="env-section-title">
+                        <i data-lucide="folder" size="16"></i>
+                        Directories
+                    </div>`;
+                for (const [key, item] of Object.entries(data.directories)) {
+                    const statusIcon = item.status === 'ok' ? 'check-circle' :
+                                      item.status === 'warning' ? 'alert-triangle' : 'x-circle';
+                    const fileInfo = item.file_count !== undefined ?
+                        ` • ${item.file_count} ${item.file_note || 'files'}` : '';
+                    html += `
+                        <div class="env-item">
+                            <div class="env-item-header">
+                                <span class="env-item-label">${item.label}</span>
+                                <span class="env-item-status ${item.status}">
+                                    <i data-lucide="${statusIcon}" size="12"></i>
+                                    ${item.message}
+                                </span>
+                            </div>
+                            <div class="env-item-path">${item.path || 'Not configured'}</div>
+                            ${item.description ? `<div class="env-item-details">${item.description}${fileInfo}</div>` : ''}
+                        </div>
+                    `;
+                }
+                html += '</div>';
+
+                // Databases
+                html += `<div class="env-section">
+                    <div class="env-section-title">
+                        <i data-lucide="database" size="16"></i>
+                        Databases
+                    </div>`;
+                for (const [key, item] of Object.entries(data.databases)) {
+                    const statusIcon = item.status === 'ok' ? 'check-circle' :
+                                      item.status === 'warning' ? 'alert-triangle' : 'x-circle';
+                    const sizeInfo = item.size_human ? ` • ${item.size_human}` : '';
+                    const tableInfo = item.table_count !== undefined ? ` • ${item.table_count} tables` : '';
+                    html += `
+                        <div class="env-item">
+                            <div class="env-item-header">
+                                <span class="env-item-label">${item.label}</span>
+                                <span class="env-item-status ${item.status}">
+                                    <i data-lucide="${statusIcon}" size="12"></i>
+                                    ${item.message}
+                                </span>
+                            </div>
+                            <div class="env-item-path">${item.path || 'Not configured'}</div>
+                            <div class="env-item-details">${item.description}${sizeInfo}${tableInfo}</div>
+                        </div>
+                    `;
+                }
+                html += '</div>';
+
+                // Config Files
+                html += `<div class="env-section">
+                    <div class="env-section-title">
+                        <i data-lucide="file-text" size="16"></i>
+                        Configuration
+                    </div>`;
+                for (const [key, item] of Object.entries(data.config_files)) {
+                    const statusIcon = item.status === 'ok' ? 'check-circle' :
+                                      item.status === 'warning' ? 'alert-triangle' : 'x-circle';
+                    html += `
+                        <div class="env-item">
+                            <div class="env-item-header">
+                                <span class="env-item-label">${item.label}</span>
+                                <span class="env-item-status ${item.status}">
+                                    <i data-lucide="${statusIcon}" size="12"></i>
+                                    ${item.message}
+                                </span>
+                            </div>
+                            <div class="env-item-path">${item.path || 'Not configured'}</div>
+                        </div>
+                    `;
+                }
+                html += '</div>';
+
+                // Environment Variables
+                html += `<div class="env-section">
+                    <div class="env-section-title">
+                        <i data-lucide="terminal" size="16"></i>
+                        Environment Variables
+                    </div>`;
+                for (const [key, value] of Object.entries(data.environment_variables)) {
+                    html += `
+                        <div class="env-item">
+                            <div class="env-item-header">
+                                <span class="env-item-label">${key}</span>
+                            </div>
+                            <div class="env-item-path">${value}</div>
+                        </div>
+                    `;
+                }
+                html += '</div>';
+
+                return html;
+            }
+
+            async function loadEnvironmentData() {
+                envModalBody.innerHTML = `
+                    <div class="env-loading">
+                        <i data-lucide="loader-2" size="24"></i>
+                        <span style="margin-left: 12px;">Loading environment data...</span>
+                    </div>
+                `;
+                lucide.createIcons();
+
+                try {
+                    const response = await fetch('/environment/check');
+                    if (!response.ok) throw new Error('Failed to load environment data');
+                    const data = await response.json();
+                    envModalBody.innerHTML = formatEnvData(data);
+                    lucide.createIcons();
+                } catch (error) {
+                    envModalBody.innerHTML = `
+                        <div class="env-item">
+                            <div class="env-item-header">
+                                <span class="env-item-label">Error</span>
+                                <span class="env-item-status error">
+                                    <i data-lucide="x-circle" size="12"></i>
+                                    Failed
+                                </span>
+                            </div>
+                            <div class="env-item-path">${error.message}</div>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                }
+            }
+
+            if (envButton) {
+                envButton.addEventListener('click', function() {
+                    envModalBackdrop.classList.add('show');
+                    loadEnvironmentData();
+                });
+            }
+
+            if (envModalClose) {
+                envModalClose.addEventListener('click', function() {
+                    envModalBackdrop.classList.remove('show');
+                });
+            }
+
+            if (envModalBackdrop) {
+                envModalBackdrop.addEventListener('click', function(e) {
+                    if (e.target === envModalBackdrop) {
+                        envModalBackdrop.classList.remove('show');
+                    }
                 });
             }
 

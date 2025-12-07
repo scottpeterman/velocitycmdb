@@ -1,0 +1,1 @@
+python multi_map_monitor.py --interval 500

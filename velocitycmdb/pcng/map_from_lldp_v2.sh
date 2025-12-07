@@ -1,0 +1,1 @@
+ python map_from_lldp_v2.py ~/.velocitycmdb/data/assets.db qfx.iad1 -d .company.com --fp "debian,linux" -o ~/Downloads/equinix_lldp_v2.json

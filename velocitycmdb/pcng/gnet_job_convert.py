@@ -303,7 +303,7 @@ class SQLQueryParser:
                 "auto_paging": True
             },
             "credentials": {
-                "username": "el-speterman",  # Default - user may need to adjust
+                "username": "el-admin",  # Default - user may need to adjust
                 "credential_system": "Auto-detect from script",
                 "password_provided": False,
                 "enable_password_provided": False
@@ -525,8 +525,8 @@ Note: You may need to manually review and adjust:
 
     parser.add_argument(
         '--username', '-u',
-        default='el-speterman',
-        help='Default username for job credentials (default: el-speterman)'
+        default='el-admin',
+        help='Default username for job credentials (default: el-admin)'
     )
 
     parser.add_argument(
@@ -567,7 +567,7 @@ Note: You may need to manually review and adjust:
         converter = JobConverter()
 
         # Update default username if provided
-        if args.username != 'el-speterman':
+        if args.username != 'el-admin':
             converter.parser.default_username = args.username
 
         print(f"Loading legacy job definitions from {args.legacy_file}...")

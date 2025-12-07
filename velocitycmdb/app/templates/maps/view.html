@@ -5,7 +5,7 @@
 {% block content %}
 <!-- Breadcrumb Navigation -->
 <nav class="breadcrumb">
-    <a href="{{ url_for('maps.index') }}">🗺️ Network Maps</a>
+    <a href="{{ url_for('maps.index') }}">??? Network Maps</a>
     <span class="breadcrumb-separator">/</span>
     <a href="{{ url_for('maps.site_maps', site_name=site_name) }}">{{ site_name }}</a>
     <span class="breadcrumb-separator">/</span>
@@ -15,7 +15,7 @@
 <div class="map-header">
     <div class="map-header-content">
         <div class="map-title-section">
-            <h1>🗺️ {{ map_name }}</h1>
+            <h1>??? {{ map_name }}</h1>
             <div class="map-meta">
                 {% if map_data.created %}
                 <span class="meta-item">
@@ -39,6 +39,22 @@
         </div>
 
         <div class="map-actions">
+            <div class="refresh-control">
+                <div class="refresh-select-wrapper">
+                    <i data-lucide="refresh-cw" class="refresh-icon" id="refresh-icon"></i>
+                    <select id="refresh-interval" class="refresh-select" title="Auto-refresh interval">
+                        <option value="0">Auto-refresh: Off</option>
+                        <option value="5">Every 5 min</option>
+                        <option value="15">Every 15 min</option>
+                        <option value="60">Every 60 min</option>
+                    </select>
+                </div>
+                <span class="refresh-countdown" id="refresh-countdown" style="display: none;">
+                    <i data-lucide="clock" size="12"></i>
+                    <span id="countdown-text">--:--</span>
+                </span>
+            </div>
+
             <div class="download-group">
                 {% for ext, file_info in map_data.files.items() %}
                 <a href="{{ url_for('maps.download_map', site_name=site_name, map_name=map_name, format=ext.lstrip('.')) }}"
@@ -223,6 +239,71 @@
 .download-group, .view-controls {
     display: flex;
     gap: 8px;
+}
+
+/* Auto-refresh Controls */
+.refresh-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.refresh-select-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--md-surface-container-high);
+    border: 1px solid var(--md-outline-variant);
+    border-radius: 8px;
+    padding: 6px 12px;
+}
+
+.refresh-icon {
+    width: 16px;
+    height: 16px;
+    color: var(--md-on-surface-variant);
+    transition: all 0.3s ease;
+}
+
+.refresh-icon.spinning {
+    animation: spin 1s linear infinite;
+    color: var(--md-primary);
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.refresh-select {
+    border: none;
+    background: transparent;
+    color: var(--md-on-surface);
+    font-size: 13px;
+    cursor: pointer;
+    outline: none;
+    padding-right: 4px;
+}
+
+.refresh-select option {
+    background: var(--md-surface-container);
+    color: var(--md-on-surface);
+}
+
+.refresh-countdown {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--md-on-surface-variant);
+    background: var(--md-surface-variant);
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+.refresh-countdown.soon {
+    color: var(--md-primary);
+    background: var(--md-primary-container);
 }
 
 /* Map Viewer */
@@ -481,6 +562,11 @@
     .map-actions {
         width: 100%;
         justify-content: space-between;
+        flex-wrap: wrap;
+    }
+
+    .refresh-control {
+        flex-wrap: wrap;
     }
 
     .download-group, .view-controls {
@@ -510,6 +596,11 @@
         gap: 12px;
     }
 
+    .refresh-control {
+        width: 100%;
+        justify-content: center;
+    }
+
     .download-group, .view-controls {
         justify-content: center;
     }
@@ -524,11 +615,19 @@ let currentPan = { x: 0, y: 0 };
 let lastWheelTime = 0;
 let accumulatedDelta = 0;
 
+// Auto-refresh timer variables
+let refreshInterval = null;
+let countdownInterval = null;
+let nextRefreshTime = null;
+
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize Lucide icons
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
+
+    // Initialize auto-refresh
+    initAutoRefresh();
 
     // Initialize map viewer
     initMapViewer();
@@ -860,5 +959,99 @@ document.addEventListener('keydown', function(e) {
             break;
     }
 });
+
+// Auto-refresh functions
+function initAutoRefresh() {
+    const select = document.getElementById('refresh-interval');
+
+    // Restore saved preference from localStorage
+    const savedInterval = localStorage.getItem('mapsAutoRefresh');
+    if (savedInterval && ['0', '5', '15', '60'].includes(savedInterval)) {
+        select.value = savedInterval;
+        const minutes = parseInt(savedInterval);
+        if (minutes > 0) {
+            setRefreshTimer(minutes);
+        }
+    }
+
+    select.addEventListener('change', function() {
+        const minutes = parseInt(this.value);
+        localStorage.setItem('mapsAutoRefresh', this.value);
+        setRefreshTimer(minutes);
+    });
+}
+
+function setRefreshTimer(minutes) {
+    // Clear existing timers
+    if (refreshInterval) {
+        clearTimeout(refreshInterval);
+        refreshInterval = null;
+    }
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+    }
+
+    const countdownEl = document.getElementById('refresh-countdown');
+    const refreshIcon = document.getElementById('refresh-icon');
+
+    if (minutes === 0) {
+        // Turn off auto-refresh
+        countdownEl.style.display = 'none';
+        nextRefreshTime = null;
+        return;
+    }
+
+    // Set next refresh time
+    nextRefreshTime = Date.now() + (minutes * 60 * 1000);
+    countdownEl.style.display = 'flex';
+
+    // Update countdown every second
+    updateCountdown();
+    countdownInterval = setInterval(updateCountdown, 1000);
+
+    // Set the refresh timer
+    refreshInterval = setTimeout(function() {
+        // Show spinning icon briefly before refresh
+        refreshIcon.classList.add('spinning');
+        setTimeout(() => {
+            location.reload();
+        }, 500);
+    }, minutes * 60 * 1000);
+}
+
+function updateCountdown() {
+    if (!nextRefreshTime) return;
+
+    const countdownEl = document.getElementById('refresh-countdown');
+    const countdownText = document.getElementById('countdown-text');
+    const remaining = nextRefreshTime - Date.now();
+
+    if (remaining <= 0) {
+        countdownText.textContent = 'Refreshing...';
+        return;
+    }
+
+    const minutes = Math.floor(remaining / 60000);
+    const seconds = Math.floor((remaining % 60000) / 1000);
+
+    countdownText.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+    // Add visual indicator when refresh is soon (under 30 seconds)
+    if (remaining < 30000) {
+        countdownEl.classList.add('soon');
+    } else {
+        countdownEl.classList.remove('soon');
+    }
+}
+
+// Manual refresh function (can be called from console or added as button)
+function manualRefresh() {
+    const refreshIcon = document.getElementById('refresh-icon');
+    refreshIcon.classList.add('spinning');
+    setTimeout(() => {
+        location.reload();
+    }, 500);
+}
 </script>
 {% endblock %}

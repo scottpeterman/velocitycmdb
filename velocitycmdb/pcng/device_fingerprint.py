@@ -891,14 +891,14 @@ class DeviceFingerprint:
         SSH shell mode echoes the command back, which breaks TextFSM parsing.
         Example input:
             show version
-            Hostname: edge1-01.fra1
+            Hostname: edge1-01
             Model: mx10003
             ...
             {master}
-            speterman@edge1-01.fra1>
+            admin@edge1-01>
 
         Example output (cleaned):
-            Hostname: edge1-01.fra1
+            Hostname: edge1-01
             Model: mx10003
             ...
         """

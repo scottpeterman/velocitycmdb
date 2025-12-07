@@ -3,6 +3,7 @@
 VelocityCMDB CLI - Command Line Interface
 """
 import argparse
+import getpass
 import json
 import os
 import secrets
@@ -44,9 +45,15 @@ authentication:
     user_dn_template: null
     search_groups: false
     group_base_dn: null
-    group_filter: "(&(objectClass=group)(member={{user_dn}}))"
+    group_filter: "(&(objectClass=group)(member={{{{user_dn}}}}))"
     timeout: 10
     max_retries: 3
+
+# Default Credentials for Network Device Access
+# Used by collection jobs and automation scripts
+credentials:
+  username: {default_username}
+  # Password is never stored here - retrieved at runtime from credential system
 
 # Flask Settings
 flask:
@@ -72,7 +79,7 @@ scmaps:
 # Getting Started:
 # 1. Run: velocitycmdb init
 # 2. Run: velocitycmdb run
-# 3. Login with admin / admin (change password after first login)
+# 3. Login with your configured admin credentials
 """
 
 
@@ -85,6 +92,56 @@ def setup_data_dir():
     return Path(os.environ['VELOCITYCMDB_DATA_DIR'])
 
 
+def prompt_credentials(args) -> tuple[str, str, str]:
+    """
+    Prompt for credentials interactively or use CLI arguments.
+
+    Returns:
+        tuple: (default_username, admin_username, admin_password)
+    """
+    print("\n" + "-" * 60)
+    print("Credential Configuration")
+    print("-" * 60)
+
+    # Default username for network device access
+    if args.default_username:
+        default_username = args.default_username
+        print(f"• Default network username: {default_username} (from --default-username)")
+    else:
+        current_user = getpass.getuser()
+        default_username = input(f"Default network device username [{current_user}]: ").strip()
+        if not default_username:
+            default_username = current_user
+
+    # Admin username for web UI
+    if args.admin_username:
+        admin_username = args.admin_username
+        print(f"• Admin username: {admin_username} (from --admin-username)")
+    else:
+        admin_username = input("Admin username for web UI [admin]: ").strip()
+        if not admin_username:
+            admin_username = 'admin'
+
+    # Admin password
+    if args.admin_password:
+        admin_password = args.admin_password
+        print("• Admin password: (from --admin-password)")
+    else:
+        while True:
+            admin_password = getpass.getpass(f"Admin password for '{admin_username}': ")
+            if not admin_password:
+                print("  Password cannot be empty.")
+                continue
+            confirm_password = getpass.getpass("Confirm admin password: ")
+            if admin_password != confirm_password:
+                print("  Passwords do not match. Try again.")
+                continue
+            break
+
+    print("-" * 60 + "\n")
+    return default_username, admin_username, admin_password
+
+
 def cmd_init(args):
     """Initialize the VelocityCMDB data directory, config, databases, and admin user."""
     data_dir = setup_data_dir()
@@ -92,19 +149,35 @@ def cmd_init(args):
 
     print("\n" + "=" * 60)
     print("VelocityCMDB Initialization")
-    print("=" * 60 + "\n")
+    print("=" * 60)
 
-    # Create config.yaml if it doesn't exist
+    # Check if config exists and we're not forcing
     config_path = config_dir / 'config.yaml'
     if config_path.exists() and not args.force:
-        print(f"• Config file already exists: {config_path}")
+        print(f"\n• Config file already exists: {config_path}")
         print("  (Use --force to overwrite)")
+
+        # Still prompt for admin credentials if database doesn't exist
+        users_db = data_dir / 'users.db'
+        if not users_db.exists():
+            print("\n  Database not found - will create with new credentials.")
+            default_username, admin_username, admin_password = prompt_credentials(args)
+        else:
+            print("  Skipping credential setup (use --force to reconfigure)")
+            return
     else:
+        # Get credentials (interactive or from args)
+        default_username, admin_username, admin_password = prompt_credentials(args)
+
         # Ensure config directory exists
         config_dir.mkdir(parents=True, exist_ok=True)
 
+        # Generate config with credentials
         secret_key = secrets.token_hex(32)
-        config_content = DEFAULT_CONFIG.format(secret_key=secret_key)
+        config_content = DEFAULT_CONFIG.format(
+            secret_key=secret_key,
+            default_username=default_username
+        )
 
         with open(config_path, 'w') as f:
             f.write(config_content)
@@ -115,7 +188,11 @@ def cmd_init(args):
 
     print(f"\nInitializing databases in: {data_dir}")
     initializer = DatabaseInitializer(str(data_dir))
-    success, message = initializer.initialize_all(admin_password='admin')
+
+    success, message = initializer.initialize_all(
+        admin_username=admin_username,
+        admin_password=admin_password
+    )
 
     if success:
         # Verify files were created
@@ -143,10 +220,11 @@ def cmd_init(args):
             print("\n" + "=" * 60)
             print("Initialization complete!")
             print("=" * 60)
-            print("\nDefault admin credentials:")
-            print("  Username: admin")
-            print("  Password: admin")
-            print("  ⚠ IMPORTANT: Change this password after first login!")
+            print(f"\nAdmin credentials:")
+            print(f"  Username: {admin_username}")
+            print(f"  Password: {'*' * len(admin_password)}")
+            print(f"\nDefault network username: {default_username}")
+            print("  (Used by collection jobs - stored in config.yaml)")
             print("\nNext step:")
             print("  velocitycmdb run")
             print("\nConfig file: ~/.velocitycmdb/config.yaml")
@@ -246,12 +324,35 @@ def main():
     # init subcommand
     init_parser = subparsers.add_parser(
         'init',
-        help='Initialize config, databases, and default admin user'
+        help='Initialize config, databases, and admin user',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  velocitycmdb init                                    # Interactive prompts
+  velocitycmdb init --default-username speterman      # Set network username
+  velocitycmdb init --admin-password secret123        # Non-interactive admin setup
+  velocitycmdb init -u netadmin -p secret --force     # Full non-interactive
+        """
     )
     init_parser.add_argument(
         '--force', '-f',
         action='store_true',
         help='Overwrite existing config file'
+    )
+    init_parser.add_argument(
+        '--default-username', '-u',
+        type=str,
+        help='Default username for network device access (used by collection jobs)'
+    )
+    init_parser.add_argument(
+        '--admin-username',
+        type=str,
+        help='Admin username for web UI (default: admin)'
+    )
+    init_parser.add_argument(
+        '--admin-password', '-p',
+        type=str,
+        help='Admin password for web UI (prompts if not provided)'
     )
 
     # run subcommand

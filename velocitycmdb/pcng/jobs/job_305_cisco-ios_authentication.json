@@ -14,7 +14,7 @@
   },
   "authentication": {
     "use_keys": false,
-    "ssh_key_path": "~/.ssh/speterman/id_rsa"
+    "ssh_key_path": "~/.ssh/admin/id_rsa"
   },
   "filters": {
     "folder": "",

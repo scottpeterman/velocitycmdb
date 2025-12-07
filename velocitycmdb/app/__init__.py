@@ -10,7 +10,7 @@ from flask import Flask
 from flask_socketio import SocketIO
 import os
 from pathlib import Path
-
+from velocitycmdb.app.config_loader import load_config, get_config_path
 from velocitycmdb.app.blueprints.admin import admin_bp
 from velocitycmdb.app.blueprints.arp import arp_bp
 from velocitycmdb.app.blueprints.auth.routes import init_auth_manager
@@ -19,6 +19,7 @@ from velocitycmdb.app.blueprints.bulk import bulk_bp
 from velocitycmdb.app.blueprints.capture import capture_bp
 from velocitycmdb.app.blueprints.changes import changes_bp
 from velocitycmdb.app.blueprints.collection.routes import collection_bp
+from velocitycmdb.app.blueprints.environment import environment_bp
 from velocitycmdb.app.blueprints.maps import maps_bp
 from velocitycmdb.app.blueprints.notes import notes_bp
 from velocitycmdb.app.blueprints.osversions import osversions_bp
@@ -32,29 +33,12 @@ from velocitycmdb.app.blueprints.scmaps import scmaps_bp
 socketio = SocketIO()
 
 
-def load_scmaps_config(app):
-    """Load SCMAPS_DIR from config.yaml"""
-    import yaml
-    config_path = os.path.join(os.path.dirname(os.path.dirname(app.root_path)), 'config.yaml')
+def expand_path(path_str: str) -> str:
+    """Expand ~ and make path absolute"""
+    if path_str:
+        return os.path.abspath(os.path.expanduser(path_str))
+    return path_str
 
-    app.logger.info(f"[SCMAPS] Looking for config at: {config_path}")
-
-    if os.path.exists(config_path):
-        with open(config_path, 'r') as f:
-            config = yaml.safe_load(f)
-
-        scmaps_dir = config.get('scmaps', {}).get('data_dir', 'scmaps_data')
-
-        if scmaps_dir.startswith('~'):
-            scmaps_dir = os.path.expanduser(scmaps_dir)
-
-        if not os.path.isabs(scmaps_dir):
-            project_root = os.path.dirname(os.path.dirname(app.root_path))
-            scmaps_dir = os.path.join(project_root, scmaps_dir)
-
-        app.config['SCMAPS_DIR'] = scmaps_dir
-        app.logger.info(f"[SCMAPS] Configured SCMAPS_DIR: {scmaps_dir}")
-        os.makedirs(scmaps_dir, exist_ok=True)
 
 def create_app(config_name='development'):
     """
@@ -68,33 +52,69 @@ def create_app(config_name='development'):
     """
     app = Flask(__name__)
 
-    # Get data directory from environment (set by CLI or run.py)
-    data_dir = os.environ.get('VELOCITYCMDB_DATA_DIR',
-                              os.path.join(os.path.expanduser('~'), '.velocitycmdb', 'data'))
+    # Load configuration from ~/.velocitycmdb/config.yaml
+    config_path = get_config_path()
+    config = load_config(config_path)
+
+    # Store config file path for diagnostics
+    app.config['CONFIG_FILE'] = config_path
+
+    # Get paths from config (with fallbacks to defaults)
+    paths_config = config.get('paths', {})
+
+    # Data directory - can also be set via environment variable
+    data_dir = os.environ.get(
+        'VELOCITYCMDB_DATA_DIR',
+        expand_path(paths_config.get('data_dir', '~/.velocitycmdb/data'))
+    )
 
     # Basic configuration
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+    flask_config = config.get('flask', {})
+    app.config['SECRET_KEY'] = os.environ.get(
+        'SECRET_KEY',
+        flask_config.get('secret_key') or 'dev-secret-key-change-in-production'
+    )
+
+    # Database paths (always relative to data_dir)
     app.config['DATABASE'] = os.path.join(data_dir, 'assets.db')
     app.config['ARP_DATABASE'] = os.path.join(data_dir, 'arp_cat.db')
     app.config['USERS_DATABASE'] = os.path.join(data_dir, 'users.db')
     app.config['VELOCITYCMDB_DATA_DIR'] = data_dir
 
-    # NEW: Capture and jobs directories for collection system
-    app.config['CAPTURE_DIR'] = os.path.join(data_dir, 'capture')
-    app.config['JOBS_DIR'] = os.path.join(data_dir, 'jobs')
-    app.config['FINGERPRINTS_DIR'] = os.path.join(data_dir, 'fingerprints')
-    app.config['DISCOVERY_DIR'] = os.path.join(os.path.dirname(data_dir), 'discovery')
-    app.config['SCMAPS_DIR'] = os.path.join(os.path.dirname(data_dir), 'discovery', 'maps')
+    # Directory paths from config (with defaults)
+    app.config['CAPTURE_DIR'] = expand_path(
+        paths_config.get('capture_dir', os.path.join(data_dir, 'capture'))
+    )
+    app.config['JOBS_DIR'] = expand_path(
+        paths_config.get('jobs_dir', os.path.join(data_dir, 'jobs'))
+    )
+    app.config['FINGERPRINTS_DIR'] = expand_path(
+        paths_config.get('fingerprints_dir', os.path.join(data_dir, 'fingerprints'))
+    )
+    app.config['DISCOVERY_DIR'] = expand_path(
+        paths_config.get('discovery_dir', os.path.join(os.path.dirname(data_dir), 'discovery'))
+    )
+    app.config['SCMAPS_DIR'] = expand_path(
+        paths_config.get('scmaps_dir') or
+        config.get('scmaps', {}).get('data_dir') or
+        os.path.join(os.path.dirname(data_dir), 'discovery', 'maps')
+    )
+    app.config['MAPS_BASE'] = expand_path(
+        paths_config.get('maps_dir', os.path.join(data_dir, 'maps'))
+    )
 
-    # Ensure data directory exists
-    try:
-        os.makedirs(data_dir, exist_ok=True)
-    except OSError:
-        pass
+    # Ensure critical directories exist
+    for dir_key in ['VELOCITYCMDB_DATA_DIR', 'CAPTURE_DIR', 'JOBS_DIR',
+                    'FINGERPRINTS_DIR', 'DISCOVERY_DIR', 'SCMAPS_DIR', 'MAPS_BASE']:
+        dir_path = app.config.get(dir_key)
+        if dir_path:
+            try:
+                os.makedirs(dir_path, exist_ok=True)
+            except OSError as e:
+                app.logger.warning(f"Could not create directory {dir_path}: {e}")
 
     # Initialize SocketIO
     socketio.init_app(app, cors_allowed_origins="*")
-    load_scmaps_config(app)
 
     # Register SocketIO event handlers
     from velocitycmdb.app.blueprints.admin.maintenance_socktio import register_maintenance_socketio_handlers
@@ -129,20 +149,15 @@ def create_app(config_name='development'):
     app.register_blueprint(discovery_bp, url_prefix='/discovery')
     app.register_blueprint(collection_bp, url_prefix='/collection')
     app.register_blueprint(scmaps_bp, url_prefix='/scmaps')
+    app.register_blueprint(environment_bp)
 
-    from velocitycmdb.app.config_loader import load_config
-    config = load_config('./config.yaml')
+    # Initialize authentication
     auth_config = config.get('authentication', {})
     auth_manager = init_auth_manager(auth_config)
     init_admin(auth_manager)
 
     # DEPRECATED: Legacy paths - keep for backwards compatibility
-    # These are being phased out in favor of the paths above
     app.config['SESSIONS_YAML'] = 'pcng/sessions.yaml'
-
-    # NOTE: Don't use these hardcoded pcng paths - use the config paths above
-    # app.config['CAPTURE_DIR'] = 'pcng/capture'  # OLD - don't use
-    # app.config['FINGERPRINTS_DIR'] = 'pcng/fingerprints'  # OLD - don't use
 
     # Root route redirect
     @app.route('/')

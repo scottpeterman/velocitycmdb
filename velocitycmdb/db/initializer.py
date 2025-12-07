@@ -37,6 +37,7 @@ class DatabaseInitializer:
             self.data_dir / 'fingerprints',
             self.data_dir / 'logs',
             self.data_dir / 'jobs',
+            self.data_dir / 'maps',
 
             # Capture directories - organized by data type
             self.data_dir / 'capture' / 'arp',
@@ -79,9 +80,14 @@ class DatabaseInitializer:
         logger.info(f"✓ Directory structure complete ({created_count} new directories)")
         return True
 
-    def initialize_all(self, admin_password='admin'):
+    def initialize_all(self, admin_username='admin', admin_password='admin'):
         """
         Initialize all three databases
+
+        Args:
+            admin_username: Username for admin account (default: 'admin')
+            admin_password: Password for admin account (default: 'admin')
+
         Returns: (success: bool, message: str)
         """
         try:
@@ -102,7 +108,7 @@ class DatabaseInitializer:
 
             # 3. Users database
             logger.info("Initializing users database...")
-            self._init_users_db(admin_password)
+            self._init_users_db(admin_username, admin_password)
             logger.info("✓ Users database initialized")
 
             logger.info("All databases initialized successfully")
@@ -233,7 +239,10 @@ class DatabaseInitializer:
             )
         """)
 
-        # Components
+        # ================================================================
+        # COMPONENTS TABLE (hardware inventory)
+        # ================================================================
+
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS components (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -251,44 +260,11 @@ class DatabaseInitializer:
             )
         """)
 
-        # Fingerprint extractions
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS fingerprint_extractions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                device_id INTEGER NOT NULL,
-                extraction_timestamp TEXT NOT NULL,
-                fingerprint_file_path TEXT,
-                template_used TEXT,
-                template_score REAL,
-                extraction_success BOOLEAN DEFAULT 1,
-                fields_extracted INTEGER,
-                total_fields_available INTEGER,
-                command_count INTEGER,
-                extraction_duration_ms INTEGER,
-                FOREIGN KEY (device_id) REFERENCES devices(id)
-            )
-        """)
-
         # ================================================================
-        # CAPTURE TABLES
+        # CAPTURE SYSTEM TABLES
         # ================================================================
 
-        # Capture snapshots
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS capture_snapshots (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                device_id INTEGER NOT NULL,
-                capture_type TEXT NOT NULL,
-                captured_at TIMESTAMP NOT NULL,
-                file_path TEXT NOT NULL,
-                file_size INTEGER,
-                content TEXT NOT NULL,
-                content_hash TEXT NOT NULL,
-                FOREIGN KEY (device_id) REFERENCES devices(id)
-            )
-        """)
-
-        # Device captures current
+        # Current captures (one per device per capture type)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS device_captures_current (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -304,7 +280,22 @@ class DatabaseInitializer:
             )
         """)
 
-        # Capture changes
+        # Capture snapshots (historical captures with content)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS capture_snapshots (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                device_id INTEGER NOT NULL,
+                capture_type TEXT NOT NULL,
+                captured_at TIMESTAMP NOT NULL,
+                file_path TEXT NOT NULL,
+                file_size INTEGER,
+                content TEXT NOT NULL,
+                content_hash TEXT NOT NULL,
+                FOREIGN KEY (device_id) REFERENCES devices(id)
+            )
+        """)
+
+        # Capture changes (diff tracking between snapshots)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS capture_changes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -324,7 +315,45 @@ class DatabaseInitializer:
         """)
 
         # ================================================================
-        # NOTES SYSTEM
+        # FINGERPRINT EXTRACTIONS
+        # ================================================================
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS fingerprint_extractions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                device_id INTEGER NOT NULL,
+                extraction_timestamp TEXT NOT NULL,
+                fingerprint_file_path TEXT,
+                template_used TEXT,
+                template_score REAL,
+                extraction_success BOOLEAN DEFAULT 1,
+                fields_extracted INTEGER,
+                total_fields_available INTEGER,
+                command_count INTEGER,
+                extraction_duration_ms INTEGER,
+                FOREIGN KEY (device_id) REFERENCES devices(id)
+            )
+        """)
+
+        # ================================================================
+        # BULK OPERATIONS TRACKING
+        # ================================================================
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS bulk_operations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                operation_type TEXT NOT NULL,
+                filters TEXT NOT NULL,
+                operation_values TEXT NOT NULL,
+                affected_count INTEGER NOT NULL,
+                executed_by TEXT,
+                executed_at TIMESTAMP NOT NULL,
+                can_rollback BOOLEAN DEFAULT 0
+            )
+        """)
+
+        # ================================================================
+        # NOTES SYSTEM (Knowledge Management)
         # ================================================================
 
         cursor.execute("""
@@ -364,20 +393,317 @@ class DatabaseInitializer:
         """)
 
         # ================================================================
-        # BULK OPERATIONS
+        # FULL TEXT SEARCH - Notes
         # ================================================================
 
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS bulk_operations (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                operation_type TEXT NOT NULL,
-                filters TEXT NOT NULL,
-                operation_values TEXT NOT NULL,
-                affected_count INTEGER NOT NULL,
-                executed_by TEXT,
-                executed_at TIMESTAMP NOT NULL,
-                can_rollback BOOLEAN DEFAULT 0
+            CREATE VIRTUAL TABLE IF NOT EXISTS note_fts USING fts5(
+                title,
+                content,
+                tags,
+                content=notes,
+                content_rowid=id
             )
+        """)
+
+        # ================================================================
+        # FULL TEXT SEARCH - Capture Content
+        # ================================================================
+
+        cursor.execute("""
+            CREATE VIRTUAL TABLE IF NOT EXISTS capture_fts USING fts5(
+                content,
+                content=capture_snapshots,
+                content_rowid=id
+            )
+        """)
+
+        # ================================================================
+        # INDEXES
+        # ================================================================
+
+        indexes = [
+            # Devices indexes
+            "CREATE INDEX IF NOT EXISTS idx_devices_vendor ON devices(vendor_id)",
+            "CREATE INDEX IF NOT EXISTS idx_devices_device_type ON devices(device_type_id)",
+            "CREATE INDEX IF NOT EXISTS idx_devices_role ON devices(role_id)",
+
+            # Device serials index
+            "CREATE INDEX IF NOT EXISTS idx_device_serials_serial ON device_serials(serial)",
+
+            # Stack members index
+            "CREATE INDEX IF NOT EXISTS idx_stack_members_serial ON stack_members(serial)",
+
+            # Components index
+            "CREATE INDEX IF NOT EXISTS idx_components_device ON components(device_id)",
+
+            # Device captures current index
+            "CREATE INDEX IF NOT EXISTS idx_current_timestamp ON device_captures_current(capture_timestamp)",
+
+            # Capture snapshots indexes
+            "CREATE INDEX IF NOT EXISTS idx_snapshots_device_type_time ON capture_snapshots(device_id, capture_type, captured_at)",
+            "CREATE INDEX IF NOT EXISTS idx_snapshots_hash ON capture_snapshots(content_hash)",
+
+            # Capture changes index
+            "CREATE INDEX IF NOT EXISTS idx_changes_device_time ON capture_changes(device_id, detected_at)",
+
+            # Fingerprint extractions indexes
+            "CREATE INDEX IF NOT EXISTS idx_extractions_device_timestamp ON fingerprint_extractions(device_id, extraction_timestamp)",
+            "CREATE INDEX IF NOT EXISTS idx_extractions_success ON fingerprint_extractions(extraction_success)",
+
+            # Bulk operations index
+            "CREATE INDEX IF NOT EXISTS idx_bulk_ops_timestamp ON bulk_operations(executed_at)",
+
+            # Notes indexes
+            "CREATE INDEX IF NOT EXISTS idx_notes_type ON notes(note_type)",
+            "CREATE INDEX IF NOT EXISTS idx_notes_created ON notes(created_at DESC)",
+            "CREATE INDEX IF NOT EXISTS idx_notes_updated ON notes(updated_at DESC)",
+
+            # Note associations indexes
+            "CREATE INDEX IF NOT EXISTS idx_assoc_note ON note_associations(note_id)",
+            "CREATE INDEX IF NOT EXISTS idx_assoc_entity ON note_associations(entity_type, entity_id)",
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_assoc_unique ON note_associations(note_id, entity_type, entity_id)",
+
+            # Note attachments index
+            "CREATE INDEX IF NOT EXISTS idx_attach_note ON note_attachments(note_id)",
+        ]
+
+        for idx_sql in indexes:
+            try:
+                cursor.execute(idx_sql)
+            except sqlite3.OperationalError as e:
+                logger.debug(f"Index creation note: {e}")
+
+        # ================================================================
+        # TRIGGERS - Device timestamp update
+        # ================================================================
+
+        cursor.execute("""
+            CREATE TRIGGER IF NOT EXISTS tr_devices_update_timestamp 
+            AFTER UPDATE ON devices
+            FOR EACH ROW
+            BEGIN
+                UPDATE devices 
+                SET timestamp = datetime('now') 
+                WHERE id = NEW.id;
+            END
+        """)
+
+        # ================================================================
+        # TRIGGERS - Device serials -> have_sn flag
+        # ================================================================
+
+        cursor.execute("""
+            CREATE TRIGGER IF NOT EXISTS tr_device_serials_update_have_sn_insert
+            AFTER INSERT ON device_serials
+            FOR EACH ROW
+            BEGIN
+                UPDATE devices 
+                SET have_sn = 1 
+                WHERE id = NEW.device_id;
+            END
+        """)
+
+        cursor.execute("""
+            CREATE TRIGGER IF NOT EXISTS tr_device_serials_update_have_sn_delete
+            AFTER DELETE ON device_serials
+            FOR EACH ROW
+            BEGIN
+                UPDATE devices 
+                SET have_sn = CASE 
+                    WHEN (SELECT COUNT(*) FROM device_serials WHERE device_id = OLD.device_id) > 0 
+                    THEN 1 ELSE 0 
+                END
+                WHERE id = OLD.device_id;
+            END
+        """)
+
+        # ================================================================
+        # TRIGGERS - Stack members -> is_stack and stack_count
+        # ================================================================
+
+        cursor.execute("""
+            CREATE TRIGGER IF NOT EXISTS tr_stack_members_update_count_insert
+            AFTER INSERT ON stack_members
+            FOR EACH ROW
+            BEGIN
+                UPDATE devices 
+                SET 
+                    stack_count = (SELECT COUNT(*) FROM stack_members WHERE device_id = NEW.device_id),
+                    is_stack = 1
+                WHERE id = NEW.device_id;
+            END
+        """)
+
+        cursor.execute("""
+            CREATE TRIGGER IF NOT EXISTS tr_stack_members_update_count_delete
+            AFTER DELETE ON stack_members
+            FOR EACH ROW
+            BEGIN
+                UPDATE devices 
+                SET 
+                    stack_count = (SELECT COUNT(*) FROM stack_members WHERE device_id = OLD.device_id),
+                    is_stack = CASE 
+                        WHEN (SELECT COUNT(*) FROM stack_members WHERE device_id = OLD.device_id) > 1 
+                        THEN 1 ELSE 0 
+                    END
+                WHERE id = OLD.device_id;
+            END
+        """)
+
+        # ================================================================
+        # TRIGGERS - Notes FTS sync
+        # ================================================================
+
+        cursor.execute("""
+            CREATE TRIGGER IF NOT EXISTS notes_fts_insert 
+            AFTER INSERT ON notes 
+            BEGIN
+                INSERT INTO note_fts(rowid, title, content, tags)
+                VALUES (new.id, new.title, new.content, new.tags);
+            END
+        """)
+
+        cursor.execute("""
+            CREATE TRIGGER IF NOT EXISTS notes_fts_delete 
+            AFTER DELETE ON notes 
+            BEGIN
+                DELETE FROM note_fts WHERE rowid = old.id;
+            END
+        """)
+
+        cursor.execute("""
+            CREATE TRIGGER IF NOT EXISTS notes_fts_update 
+            AFTER UPDATE ON notes 
+            BEGIN
+                UPDATE note_fts SET 
+                    title = new.title,
+                    content = new.content,
+                    tags = new.tags
+                WHERE rowid = new.id;
+            END
+        """)
+
+        # ================================================================
+        # TRIGGERS - Notes updated_at timestamp
+        # ================================================================
+
+        cursor.execute("""
+            CREATE TRIGGER IF NOT EXISTS notes_update_timestamp 
+            AFTER UPDATE ON notes
+            FOR EACH ROW
+            BEGIN
+                UPDATE notes SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+            END
+        """)
+
+        # ================================================================
+        # TRIGGERS - Capture snapshots FTS sync
+        # ================================================================
+
+        cursor.execute("""
+            CREATE TRIGGER IF NOT EXISTS capture_fts_insert 
+            AFTER INSERT ON capture_snapshots 
+            BEGIN
+                INSERT INTO capture_fts(rowid, content)
+                VALUES (new.id, new.content);
+            END
+        """)
+
+        cursor.execute("""
+            CREATE TRIGGER IF NOT EXISTS capture_fts_delete 
+            AFTER DELETE ON capture_snapshots 
+            BEGIN
+                DELETE FROM capture_fts WHERE rowid = old.id;
+            END
+        """)
+
+        cursor.execute("""
+            CREATE TRIGGER IF NOT EXISTS capture_fts_update 
+            AFTER UPDATE ON capture_snapshots 
+            BEGIN
+                UPDATE capture_fts 
+                SET content = new.content 
+                WHERE rowid = new.id;
+            END
+        """)
+
+        # ================================================================
+        # VIEWS
+        # ================================================================
+
+        cursor.execute("""
+            CREATE VIEW IF NOT EXISTS v_device_status AS
+            SELECT 
+                d.id,
+                d.name,
+                d.normalized_name,
+                s.name as site_name,
+                s.code as site_code,
+                v.name as vendor_name,
+                dt.name as device_type_name,
+                dt.netmiko_driver,
+                dt.napalm_driver,
+                dt.transport,
+                dr.name as role_name,
+                dr.is_infrastructure,
+                d.model,
+                d.os_version,
+                d.management_ip,
+                d.is_stack,
+                d.stack_count,
+                d.have_sn,
+                COUNT(dcc.id) as current_captures,
+                COUNT(DISTINCT dcc.capture_type) as capture_types,
+                MAX(fe.extraction_timestamp) as last_fingerprint,
+                MAX(fe.extraction_success) as last_fingerprint_success,
+                d.timestamp as last_updated
+            FROM devices d
+            LEFT JOIN sites s ON d.site_code = s.code
+            LEFT JOIN vendors v ON d.vendor_id = v.id
+            LEFT JOIN device_types dt ON d.device_type_id = dt.id
+            LEFT JOIN device_roles dr ON d.role_id = dr.id
+            LEFT JOIN device_captures_current dcc ON d.id = dcc.device_id
+            LEFT JOIN fingerprint_extractions fe ON d.id = fe.device_id
+            GROUP BY d.id
+        """)
+
+        cursor.execute("""
+            CREATE VIEW IF NOT EXISTS v_site_inventory AS
+            SELECT 
+                s.code,
+                s.name as site_name,
+                s.description,
+                COUNT(d.id) as total_devices,
+                COUNT(CASE WHEN dr.is_infrastructure = 1 THEN 1 END) as infrastructure_devices,
+                COUNT(CASE WHEN d.is_stack = 1 THEN 1 END) as stacked_devices,
+                COUNT(DISTINCT v.name) as vendor_count,
+                GROUP_CONCAT(DISTINCT v.name) as vendors,
+                COUNT(CASE WHEN d.have_sn = 1 THEN 1 END) as devices_with_serials,
+                MAX(d.timestamp) as last_device_update
+            FROM sites s
+            LEFT JOIN devices d ON s.code = d.site_code
+            LEFT JOIN vendors v ON d.vendor_id = v.id
+            LEFT JOIN device_roles dr ON d.role_id = dr.id
+            GROUP BY s.code, s.name, s.description
+            ORDER BY total_devices DESC
+        """)
+
+        cursor.execute("""
+            CREATE VIEW IF NOT EXISTS v_capture_coverage AS
+            SELECT 
+                capture_type,
+                COUNT(*) as device_count,
+                COUNT(DISTINCT device_id) as unique_devices,
+                AVG(file_size) as avg_file_size,
+                MAX(capture_timestamp) as latest_capture,
+                COUNT(CASE WHEN extraction_success = 0 THEN 1 END) as failed_count,
+                ROUND(
+                    (COUNT(CASE WHEN extraction_success = 1 THEN 1 END) * 100.0) / COUNT(*), 2
+                ) as success_rate
+            FROM device_captures_current
+            GROUP BY capture_type
+            ORDER BY device_count DESC
         """)
 
         cursor.execute("""
@@ -441,304 +767,17 @@ class DatabaseInitializer:
             LEFT JOIN device_roles dr ON d.role_id = dr.id
             ORDER BY dcc.capture_timestamp DESC
         """)
-        # ================================================================
-        # FULL-TEXT SEARCH
-        # ================================================================
-
-        cursor.execute("""
-            CREATE VIRTUAL TABLE IF NOT EXISTS capture_fts USING fts5(
-                content,
-                content=capture_snapshots,
-                content_rowid=id
-            )
-        """)
-
-        cursor.execute("""
-            CREATE VIRTUAL TABLE IF NOT EXISTS note_fts USING fts5(
-                title,
-                content,
-                tags,
-                content=notes,
-                content_rowid=id
-            )
-        """)
-
-        # ================================================================
-        # INDEXES
-        # ================================================================
-
-        indexes = [
-            # Devices
-            "CREATE INDEX IF NOT EXISTS idx_devices_vendor ON devices(vendor_id)",
-            "CREATE INDEX IF NOT EXISTS idx_devices_device_type ON devices(device_type_id)",
-            "CREATE INDEX IF NOT EXISTS idx_devices_role ON devices(role_id)",
-
-            # Device serials
-            "CREATE INDEX IF NOT EXISTS idx_device_serials_serial ON device_serials(serial)",
-
-            # Stack members
-            "CREATE INDEX IF NOT EXISTS idx_stack_members_serial ON stack_members(serial)",
-
-            # Components
-            "CREATE INDEX IF NOT EXISTS idx_components_device ON components(device_id)",
-
-            # Fingerprint extractions
-            "CREATE INDEX IF NOT EXISTS idx_extractions_device_timestamp ON fingerprint_extractions(device_id, extraction_timestamp)",
-            "CREATE INDEX IF NOT EXISTS idx_extractions_success ON fingerprint_extractions(extraction_success)",
-
-            # Capture snapshots
-            "CREATE INDEX IF NOT EXISTS idx_snapshots_device_type_time ON capture_snapshots(device_id, capture_type, captured_at)",
-            "CREATE INDEX IF NOT EXISTS idx_snapshots_hash ON capture_snapshots(content_hash)",
-
-            # Device captures current
-            "CREATE INDEX IF NOT EXISTS idx_current_timestamp ON device_captures_current(capture_timestamp)",
-
-            # Capture changes
-            "CREATE INDEX IF NOT EXISTS idx_changes_device_time ON capture_changes(device_id, detected_at)",
-
-            # Notes
-            "CREATE INDEX IF NOT EXISTS idx_notes_created ON notes(created_at DESC)",
-            "CREATE INDEX IF NOT EXISTS idx_notes_updated ON notes(updated_at DESC)",
-            "CREATE INDEX IF NOT EXISTS idx_notes_type ON notes(note_type)",
-
-            # Note associations
-            "CREATE INDEX IF NOT EXISTS idx_assoc_note ON note_associations(note_id)",
-            "CREATE INDEX IF NOT EXISTS idx_assoc_entity ON note_associations(entity_type, entity_id)",
-            "CREATE UNIQUE INDEX IF NOT EXISTS idx_assoc_unique ON note_associations(note_id, entity_type, entity_id)",
-
-            # Note attachments
-            "CREATE INDEX IF NOT EXISTS idx_attach_note ON note_attachments(note_id)",
-
-            # Bulk operations
-            "CREATE INDEX IF NOT EXISTS idx_bulk_ops_timestamp ON bulk_operations(executed_at)",
-        ]
-
-        for index_sql in indexes:
-            cursor.execute(index_sql)
-
-        # ================================================================
-        # TRIGGERS
-        # ================================================================
-
-        # FTS triggers for capture_snapshots
-        cursor.execute("""
-            CREATE TRIGGER IF NOT EXISTS capture_fts_insert 
-            AFTER INSERT ON capture_snapshots 
-            BEGIN
-                INSERT INTO capture_fts(rowid, content)
-                VALUES (new.id, new.content);
-            END
-        """)
-
-        cursor.execute("""
-            CREATE TRIGGER IF NOT EXISTS capture_fts_update 
-            AFTER UPDATE ON capture_snapshots 
-            BEGIN
-                UPDATE capture_fts 
-                SET content = new.content 
-                WHERE rowid = new.id;
-            END
-        """)
-
-        cursor.execute("""
-            CREATE TRIGGER IF NOT EXISTS capture_fts_delete 
-            AFTER DELETE ON capture_snapshots 
-            BEGIN
-                DELETE FROM capture_fts WHERE rowid = old.id;
-            END
-        """)
-
-        # FTS triggers for notes
-        cursor.execute("""
-            CREATE TRIGGER IF NOT EXISTS notes_fts_insert 
-            AFTER INSERT ON notes 
-            BEGIN
-                INSERT INTO note_fts(rowid, title, content, tags)
-                VALUES (new.id, new.title, new.content, new.tags);
-            END
-        """)
-
-        cursor.execute("""
-            CREATE TRIGGER IF NOT EXISTS notes_fts_update 
-            AFTER UPDATE ON notes 
-            BEGIN
-                UPDATE note_fts SET 
-                    title = new.title,
-                    content = new.content,
-                    tags = new.tags
-                WHERE rowid = new.id;
-            END
-        """)
-
-        cursor.execute("""
-            CREATE TRIGGER IF NOT EXISTS notes_fts_delete 
-            AFTER DELETE ON notes 
-            BEGIN
-                DELETE FROM note_fts WHERE rowid = old.id;
-            END
-        """)
-
-        # Notes update timestamp
-        cursor.execute("""
-            CREATE TRIGGER IF NOT EXISTS notes_update_timestamp 
-            AFTER UPDATE ON notes
-            FOR EACH ROW
-            BEGIN
-                UPDATE notes SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-            END
-        """)
-
-        # Devices update timestamp
-        cursor.execute("""
-            CREATE TRIGGER IF NOT EXISTS tr_devices_update_timestamp 
-            AFTER UPDATE ON devices
-            FOR EACH ROW
-            BEGIN
-                UPDATE devices 
-                SET timestamp = datetime('now') 
-                WHERE id = NEW.id;
-            END
-        """)
-
-        # Device serials - update have_sn
-        cursor.execute("""
-            CREATE TRIGGER IF NOT EXISTS tr_device_serials_update_have_sn_insert
-            AFTER INSERT ON device_serials
-            FOR EACH ROW
-            BEGIN
-                UPDATE devices 
-                SET have_sn = 1 
-                WHERE id = NEW.device_id;
-            END
-        """)
-
-        cursor.execute("""
-            CREATE TRIGGER IF NOT EXISTS tr_device_serials_update_have_sn_delete
-            AFTER DELETE ON device_serials
-            FOR EACH ROW
-            BEGIN
-                UPDATE devices 
-                SET have_sn = CASE 
-                    WHEN (SELECT COUNT(*) FROM device_serials WHERE device_id = OLD.device_id) > 0 
-                    THEN 1 ELSE 0 
-                END
-                WHERE id = OLD.device_id;
-            END
-        """)
-
-        # Stack members - update counts
-        cursor.execute("""
-            CREATE TRIGGER IF NOT EXISTS tr_stack_members_update_count_insert
-            AFTER INSERT ON stack_members
-            FOR EACH ROW
-            BEGIN
-                UPDATE devices 
-                SET 
-                    stack_count = (SELECT COUNT(*) FROM stack_members WHERE device_id = NEW.device_id),
-                    is_stack = 1
-                WHERE id = NEW.device_id;
-            END
-        """)
-
-        cursor.execute("""
-            CREATE TRIGGER IF NOT EXISTS tr_stack_members_update_count_delete
-            AFTER DELETE ON stack_members
-            FOR EACH ROW
-            BEGIN
-                UPDATE devices 
-                SET 
-                    stack_count = (SELECT COUNT(*) FROM stack_members WHERE device_id = OLD.device_id),
-                    is_stack = CASE 
-                        WHEN (SELECT COUNT(*) FROM stack_members WHERE device_id = OLD.device_id) > 1 
-                        THEN 1 ELSE 0 
-                    END
-                WHERE id = OLD.device_id;
-            END
-        """)
-
-        # ================================================================
-        # VIEWS
-        # ================================================================
-
-        cursor.execute("""
-            CREATE VIEW IF NOT EXISTS v_capture_coverage AS
-            SELECT 
-                capture_type,
-                COUNT(*) as device_count,
-                COUNT(DISTINCT device_id) as unique_devices,
-                AVG(file_size) as avg_file_size,
-                MAX(capture_timestamp) as latest_capture,
-                COUNT(CASE WHEN extraction_success = 0 THEN 1 END) as failed_count,
-                ROUND(
-                    (COUNT(CASE WHEN extraction_success = 1 THEN 1 END) * 100.0) / COUNT(*), 2
-                ) as success_rate
-            FROM device_captures_current
-            GROUP BY capture_type
-            ORDER BY device_count DESC
-        """)
-
-        cursor.execute("""
-            CREATE VIEW IF NOT EXISTS v_device_status AS
-            SELECT 
-                d.id,
-                d.name,
-                d.normalized_name,
-                s.name as site_name,
-                s.code as site_code,
-                v.name as vendor_name,
-                dt.name as device_type_name,
-                dt.netmiko_driver,
-                dt.napalm_driver,
-                dt.transport,
-                dr.name as role_name,
-                dr.is_infrastructure,
-                d.model,
-                d.os_version,
-                d.management_ip,
-                d.is_stack,
-                d.stack_count,
-                d.have_sn,
-                COUNT(dcc.id) as current_captures,
-                COUNT(DISTINCT dcc.capture_type) as capture_types,
-                MAX(fe.extraction_timestamp) as last_fingerprint,
-                MAX(fe.extraction_success) as last_fingerprint_success,
-                d.timestamp as last_updated
-            FROM devices d
-            LEFT JOIN sites s ON d.site_code = s.code
-            LEFT JOIN vendors v ON d.vendor_id = v.id
-            LEFT JOIN device_types dt ON d.device_type_id = dt.id
-            LEFT JOIN device_roles dr ON d.role_id = dr.id
-            LEFT JOIN device_captures_current dcc ON d.id = dcc.device_id
-            LEFT JOIN fingerprint_extractions fe ON d.id = fe.device_id
-            GROUP BY d.id
-        """)
-
-        cursor.execute("""
-            CREATE VIEW IF NOT EXISTS v_site_inventory AS
-            SELECT 
-                s.code,
-                s.name as site_name,
-                s.description,
-                COUNT(d.id) as total_devices,
-                COUNT(CASE WHEN dr.is_infrastructure = 1 THEN 1 END) as infrastructure_devices,
-                COUNT(CASE WHEN d.is_stack = 1 THEN 1 END) as stacked_devices,
-                COUNT(DISTINCT v.name) as vendor_count,
-                GROUP_CONCAT(DISTINCT v.name) as vendors,
-                COUNT(CASE WHEN d.have_sn = 1 THEN 1 END) as devices_with_serials,
-                MAX(d.timestamp) as last_device_update
-            FROM sites s
-            LEFT JOIN devices d ON s.code = d.site_code
-            LEFT JOIN vendors v ON d.vendor_id = v.id
-            LEFT JOIN device_roles dr ON d.role_id = dr.id
-            GROUP BY s.code, s.name, s.description
-            ORDER BY total_devices DESC
-        """)
 
         conn.commit()
         conn.close()
+        logger.info(f"✓ Assets database schema complete: {self.assets_db}")
 
     def _init_arp_db(self):
-        """Initialize arp_cat.db with complete schema matching documentation"""
+        """
+        Initialize arp_cat.db with complete schema.
+
+        Schema matches arp_cat_util.py expectations exactly.
+        """
         conn = sqlite3.connect(str(self.arp_db))
         cursor = conn.cursor()
 
@@ -748,6 +787,7 @@ class DatabaseInitializer:
         # ================================================================
         # DEVICES TABLE
         # ================================================================
+
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS devices (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -764,8 +804,9 @@ class DatabaseInitializer:
         """)
 
         # ================================================================
-        # CONTEXTS TABLE
+        # CONTEXTS TABLE (VRF, VDOM, routing-instance, etc.)
         # ================================================================
+
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS contexts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -781,29 +822,9 @@ class DatabaseInitializer:
         """)
 
         # ================================================================
-        # ARP SNAPSHOTS TABLE
-        # ================================================================
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS arp_snapshots (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                device_id INTEGER NOT NULL,
-                context_id INTEGER NOT NULL,
-                capture_timestamp TEXT NOT NULL,
-                source_file TEXT,
-                source_command TEXT,
-                total_entries INTEGER DEFAULT 0,
-                processing_status TEXT DEFAULT 'pending',
-                processing_error TEXT,
-                processing_timestamp TEXT,
-                FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE,
-                FOREIGN KEY (context_id) REFERENCES contexts(id) ON DELETE CASCADE,
-                UNIQUE(device_id, context_id, capture_timestamp)
-            )
-        """)
-
-        # ================================================================
         # ARP ENTRIES TABLE
         # ================================================================
+
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS arp_entries (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -826,27 +847,99 @@ class DatabaseInitializer:
         """)
 
         # ================================================================
+        # ARP SNAPSHOTS TABLE
+        # ================================================================
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS arp_snapshots (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                device_id INTEGER NOT NULL,
+                context_id INTEGER NOT NULL,
+                capture_timestamp TEXT NOT NULL,
+                source_file TEXT,
+                source_command TEXT,
+                total_entries INTEGER DEFAULT 0,
+                processing_status TEXT DEFAULT 'pending',
+                processing_error TEXT,
+                processing_timestamp TEXT,
+                FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE,
+                FOREIGN KEY (context_id) REFERENCES contexts(id) ON DELETE CASCADE,
+                UNIQUE(device_id, context_id, capture_timestamp)
+            )
+        """)
+
+        # ================================================================
+        # MAC VENDOR LOOKUP TABLE (OUI database)
+        # ================================================================
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS mac_vendors (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                oui TEXT UNIQUE NOT NULL,
+                vendor_name TEXT NOT NULL,
+                vendor_short TEXT,
+                last_updated TEXT DEFAULT (datetime('now'))
+            )
+        """)
+
+        # ================================================================
+        # MAC HISTORY TABLE (tracking MAC/IP bindings over time)
+        # ================================================================
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS mac_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                mac_address TEXT NOT NULL,
+                ip_address TEXT NOT NULL,
+                device_id INTEGER NOT NULL,
+                context_id INTEGER NOT NULL,
+                interface_name TEXT,
+                first_seen TEXT NOT NULL DEFAULT (datetime('now')),
+                last_seen TEXT NOT NULL DEFAULT (datetime('now')),
+                occurrence_count INTEGER DEFAULT 1,
+                FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE,
+                FOREIGN KEY (context_id) REFERENCES contexts(id) ON DELETE CASCADE,
+                UNIQUE(mac_address, ip_address, device_id, context_id)
+            )
+        """)
+
+        # ================================================================
         # INDEXES
         # ================================================================
+
         indexes = [
-            "CREATE INDEX IF NOT EXISTS idx_contexts_device ON contexts(device_id)",
-            "CREATE INDEX IF NOT EXISTS idx_contexts_name_type ON contexts(context_name, context_type)",
-            "CREATE INDEX IF NOT EXISTS idx_snapshots_device_context ON arp_snapshots(device_id, context_id)",
-            "CREATE INDEX IF NOT EXISTS idx_snapshots_timestamp ON arp_snapshots(capture_timestamp)",
+            # ARP entries indexes
             "CREATE INDEX IF NOT EXISTS idx_arp_entries_device_context ON arp_entries(device_id, context_id)",
             "CREATE INDEX IF NOT EXISTS idx_arp_entries_ip ON arp_entries(ip_address)",
             "CREATE INDEX IF NOT EXISTS idx_arp_entries_mac ON arp_entries(mac_address)",
             "CREATE INDEX IF NOT EXISTS idx_arp_entries_mac_ip ON arp_entries(mac_address, ip_address)",
             "CREATE INDEX IF NOT EXISTS idx_arp_entries_timestamp ON arp_entries(capture_timestamp)",
             "CREATE INDEX IF NOT EXISTS idx_arp_entries_current ON arp_entries(is_current)",
+
+            # Snapshots indexes
+            "CREATE INDEX IF NOT EXISTS idx_snapshots_device_context ON arp_snapshots(device_id, context_id)",
+            "CREATE INDEX IF NOT EXISTS idx_snapshots_timestamp ON arp_snapshots(capture_timestamp)",
+
+            # Contexts indexes
+            "CREATE INDEX IF NOT EXISTS idx_contexts_device ON contexts(device_id)",
+            "CREATE INDEX IF NOT EXISTS idx_contexts_name_type ON contexts(context_name, context_type)",
+
+            # MAC tracking indexes
+            "CREATE INDEX IF NOT EXISTS idx_mac_history_mac ON mac_history(mac_address)",
+            "CREATE INDEX IF NOT EXISTS idx_mac_history_ip ON mac_history(ip_address)",
+            "CREATE INDEX IF NOT EXISTS idx_mac_vendors_oui ON mac_vendors(oui)",
         ]
 
-        for index_sql in indexes:
-            cursor.execute(index_sql)
+        for idx_sql in indexes:
+            try:
+                cursor.execute(idx_sql)
+            except sqlite3.OperationalError as e:
+                logger.debug(f"Index creation note: {e}")
 
         # ================================================================
         # TRIGGERS
         # ================================================================
+
         cursor.execute("""
             CREATE TRIGGER IF NOT EXISTS tr_update_device_last_seen
             AFTER INSERT ON arp_entries
@@ -891,6 +984,7 @@ class DatabaseInitializer:
         # ================================================================
         # VIEWS
         # ================================================================
+
         cursor.execute("""
             CREATE VIEW IF NOT EXISTS v_current_arp AS
             SELECT
@@ -956,9 +1050,16 @@ class DatabaseInitializer:
 
         conn.commit()
         conn.close()
+        logger.info(f"✓ ARP database schema complete: {self.arp_db}")
 
-    def _init_users_db(self, admin_password='admin'):
-        """Initialize users.db with complete schema from documentation"""
+    def _init_users_db(self, admin_username='admin', admin_password='admin'):
+        """
+        Initialize users.db with complete schema from documentation
+
+        Args:
+            admin_username: Username for the admin account
+            admin_password: Password for the admin account
+        """
         conn = sqlite3.connect(str(self.users_db))
         cursor = conn.cursor()
 
@@ -980,12 +1081,12 @@ class DatabaseInitializer:
             )
         """)
 
-        # Check if admin exists
-        cursor.execute("SELECT COUNT(*) FROM users WHERE username = 'admin'")
+        # Check if admin user exists (by username)
+        cursor.execute("SELECT COUNT(*) FROM users WHERE username = ?", (admin_username,))
         admin_exists = cursor.fetchone()[0] > 0
 
         if not admin_exists:
-            # Create default admin user
+            # Create admin user
             import bcrypt
 
             password_hash = bcrypt.hashpw(
@@ -995,6 +1096,9 @@ class DatabaseInitializer:
 
             now = datetime.now().isoformat()
 
+            # Generate email from username
+            admin_email = f"{admin_username}@localhost"
+
             cursor.execute("""
                 INSERT INTO users (
                     username, email, password_hash, is_active, is_admin,
@@ -1002,8 +1106,8 @@ class DatabaseInitializer:
                     created_at, updated_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
-                'admin',
-                'admin@localhost',
+                admin_username,
+                admin_email,
                 password_hash,
                 1,  # is_active
                 1,  # is_admin
@@ -1014,31 +1118,33 @@ class DatabaseInitializer:
                 now
             ))
 
-            logger.info("✓ Default admin user created (admin/admin)")
+            logger.info(f"✓ Admin user created ({admin_username})")
         else:
-            logger.info("✓ Admin user already exists")
+            logger.info(f"✓ Admin user '{admin_username}' already exists")
 
         conn.commit()
         conn.close()
+        logger.info(f"✓ Users database schema complete: {self.users_db}")
 
 
 # ================================================================
 # CONVENIENCE FUNCTIONS
 # ================================================================
 
-def initialize_databases(data_dir='~/.velocitycmdb/data', admin_password='admin'):
+def initialize_databases(data_dir='~/.velocitycmdb/data', admin_username='admin', admin_password='admin'):
     """
     Convenience function to initialize all databases
 
     Args:
         data_dir: Directory where databases will be created
+        admin_username: Username for admin account (default: 'admin')
         admin_password: Password for default admin user
 
     Returns:
         (success: bool, message: str)
     """
     initializer = DatabaseInitializer(data_dir)
-    return initializer.initialize_all(admin_password)
+    return initializer.initialize_all(admin_username, admin_password)
 
 
 def reset_databases(data_dir='~/.velocitycmdb/data'):

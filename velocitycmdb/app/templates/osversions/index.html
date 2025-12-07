@@ -182,6 +182,20 @@
     if (chartData && chartData.length > 0) {
         const ctx = document.getElementById('versionChart').getContext('2d');
 
+        // Get theme-aware colors from localStorage (persisted theme preference)
+        const theme = localStorage.getItem('theme') || 'light';
+        let legendColor, borderColor;
+        if (theme === 'cyber') {
+            legendColor = '#00ccff';  // cyan
+            borderColor = '#001019';
+        } else if (theme === 'dark') {
+            legendColor = '#ffffff';  // white
+            borderColor = '#1a1a1a';
+        } else {
+            legendColor = '#3d2914';  // dark brown
+            borderColor = '#ffffff';
+        }
+
         // Generate distinct colors for pie chart
         const colors = [
             'rgba(59, 130, 246, 0.8)',   // Blue
@@ -203,7 +217,7 @@
                 datasets: [{
                     data: chartData.map(d => d.device_count),
                     backgroundColor: colors.slice(0, chartData.length),
-                    borderColor: '#1a1a1a',
+                    borderColor: borderColor,
                     borderWidth: 2
                 }]
             },
@@ -214,7 +228,7 @@
                     legend: {
                         position: 'right',
                         labels: {
-                            color: '#e5e7eb',
+                            color: legendColor,
                             font: {
                                 size: 12
                             },

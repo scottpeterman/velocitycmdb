@@ -69,6 +69,17 @@ class ConfigLoader:
                 'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                 'file': None
             },
+            # Directory paths
+            'paths': {
+                'data_dir': '~/.velocitycmdb/data',
+                'capture_dir': '~/.velocitycmdb/data/capture',
+                'jobs_dir': '~/.velocitycmdb/data/jobs',
+                'fingerprints_dir': '~/.velocitycmdb/data/fingerprints',
+                'discovery_dir': '~/.velocitycmdb/discovery',
+                'scmaps_dir': '~/.velocitycmdb/discovery/maps',
+                'maps_dir': '~/.velocitycmdb/data/maps'
+            },
+            # Legacy - kept for backwards compatibility
             'scmaps': {
                 'data_dir': '~/.velocitycmdb/discovery/maps'
             }
@@ -135,7 +146,18 @@ logging:
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
   file: null
 
-# SecureCartography Maps Directory
+# Directory Paths
+# All paths support ~ for home directory expansion
+paths:
+  data_dir: ~/.velocitycmdb/data
+  capture_dir: ~/.velocitycmdb/data/capture
+  jobs_dir: ~/.velocitycmdb/data/jobs
+  fingerprints_dir: ~/.velocitycmdb/data/fingerprints
+  discovery_dir: ~/.velocitycmdb/discovery
+  scmaps_dir: ~/.velocitycmdb/discovery/maps
+  maps_dir: ~/.velocitycmdb/data/maps
+
+# Legacy: SecureCartography Maps Directory (use paths.scmaps_dir instead)
 scmaps:
   data_dir: ~/.velocitycmdb/discovery/maps
 
@@ -149,6 +171,11 @@ scmaps:
         try:
             # Get absolute path for logging
             abs_path = os.path.abspath(self.config_path)
+
+            # Ensure parent directory exists
+            parent_dir = os.path.dirname(abs_path)
+            if parent_dir and not os.path.exists(parent_dir):
+                os.makedirs(parent_dir, exist_ok=True)
 
             # Write the config file
             with open(self.config_path, 'w') as f:
@@ -269,6 +296,22 @@ scmaps:
 
         return value
 
+    def get_path(self, key: str, default: str = None) -> str:
+        """
+        Get a path configuration value with ~ expansion
+
+        Args:
+            key: Configuration key (e.g., 'paths.capture_dir')
+            default: Default value if key not found
+
+        Returns:
+            Expanded absolute path
+        """
+        path = self.get(key, default)
+        if path:
+            return os.path.expanduser(path)
+        return default
+
     def reload(self) -> Dict[str, Any]:
         """Reload configuration from file"""
         self.config = None
@@ -287,3 +330,13 @@ def load_config(config_path: str = None) -> Dict[str, Any]:
     """
     loader = ConfigLoader(config_path)
     return loader.load()
+
+
+def get_config_path() -> str:
+    """
+    Get the standard config file path
+
+    Returns:
+        Path to ~/.velocitycmdb/config.yaml
+    """
+    return os.path.join(os.path.expanduser('~'), '.velocitycmdb', 'config.yaml')

@@ -7,12 +7,12 @@ from pathlib import Path
 JOB_VERSION = "1.0"
 DEFAULT_SESSION_FILE = "sessions.yaml"
 DEFAULT_MAX_WORKERS = 12
-DEFAULT_USERNAME = os.getenv("NETWORK_USERNAME", "speterman")
+DEFAULT_USERNAME = os.getenv("NETWORK_USERNAME", "admin")
 BATCH_SCRIPT = "batch_spn.py (Multi-process)"
 FINGERPRINT_BASE = "./output/fingerprints"
 DEFAULT_FINGERPRINT_ONLY = False
 DEFAULT_USE_KEYS = True  # or False for password-based
-DEFAULT_SSH_KEY_PATH = "~/.ssh/speterman/id_rsa"
+DEFAULT_SSH_KEY_PATH = "~/.ssh/admin/id_rsa"
 
 # Vendor configuration
 VENDOR_CONFIG = {

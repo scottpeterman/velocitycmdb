@@ -144,7 +144,7 @@ class FingerprintLoader:
         - "hostname#" or "hostname>"
         - "username@hostname#" or "username@hostname>"
         - "hostname(config)#"
-        - "speterman@edge1-01.fra1>"
+        - "admin@edge1-01>"
         """
         if not detected_prompt:
             return None

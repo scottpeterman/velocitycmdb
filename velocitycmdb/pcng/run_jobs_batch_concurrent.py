@@ -127,7 +127,7 @@ class JobExecutor:
             # Authentication configuration
             auth_config = job_config.get('authentication', {})
             use_keys = auth_config.get('use_keys', True)
-            ssh_key_path = auth_config.get('ssh_key_path', '~/.ssh/speterman/id_rsa')
+            ssh_key_path = auth_config.get('ssh_key_path', '~/.ssh/admin/id_rsa')
 
             if ssh_key_path:
                 ssh_key_path = os.path.expanduser(ssh_key_path)

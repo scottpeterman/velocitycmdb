@@ -102,17 +102,17 @@ velocitycmdb create-admin    # Creates admin user (default: admin/admin)
 
 ```bash
 # User logs in via Windows for first time
-Username: speterman
+Username: admin
 Auth Method: Local Authentication
-→ Creates shadow user: @speterman (auth_backend=local, is_admin=False)
+→ Creates shadow user: @admin (auth_backend=local, is_admin=False)
 
 # Admin promotes user via UI
-Admin → User Management → Edit @speterman → Check "Administrator" → Save
+Admin → User Management → Edit @admin → Check "Administrator" → Save
 
 # User logs in again via Windows
-Username: speterman
+Username: admin
 Auth Method: Local Authentication
-→ Loads shadow user: @speterman (is_admin=True)
+→ Loads shadow user: @admin (is_admin=True)
 → User now has admin access!
 ```
 
@@ -521,9 +521,9 @@ tail -f logs/velocitycmdb.log | grep "shadow user"
 
 You'll see:
 ```
-INFO: Looking up shadow user: username='@speterman', auth_backend='local'
-INFO: Found shadow user @speterman: is_admin=1, is_active=1, groups=[]
-INFO: Loaded permissions for @speterman: admin=True, groups=[]
+INFO: Looking up shadow user: username='@admin', auth_backend='local'
+INFO: Found shadow user @admin: is_admin=1, is_active=1, groups=[]
+INFO: Loaded permissions for @admin: admin=True, groups=[]
 ```
 
 ---

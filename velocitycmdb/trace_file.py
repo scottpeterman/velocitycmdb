@@ -208,7 +208,7 @@ def trace_single_file(file_path, db_path='assets.db'):
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         print("Usage: python trace_file.py <file_path> [db_path]")
-        print("\nExample: python trace_file.py pcng/capture/configs/edge1-01.fra1.txt ../assets.db")
+        print("\nExample: python trace_file.py pcng/capture/configs/edge1-01.txt ../assets.db")
         sys.exit(1)
 
     file_path = sys.argv[1]

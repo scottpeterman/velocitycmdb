@@ -80,7 +80,7 @@ def exec_and_print(client, command, use_pty=False, label=None):
 def main():
     host = "edge01.iad2home.com"
     port = 22
-    username = "speterman"
+    username = "admin"
     key_path = Path.home() / ".ssh" / "id_rsa"
     log_file = "/tmp/paramiko_debug.log"
 

@@ -9,20 +9,23 @@ from . import search_bp
 
 
 def get_db_connection(db_name='assets.db'):
-    """Get database connection - databases are in project root"""
-    db_path = db_name
-
-    print(f"DEBUG: Attempting to connect to: {os.path.abspath(db_path)}")
-    print(f"DEBUG: File exists: {os.path.exists(db_path)}")
-    print(f"DEBUG: Current working directory: {os.getcwd()}")
+    """Get database connection from app config"""
+    if db_name == 'assets.db':
+        db_path = current_app.config['DATABASE']
+    elif db_name == 'arp_cat.db':
+        db_path = current_app.config['ARP_DATABASE']
+    else:
+        # Fallback to data directory
+        data_dir = current_app.config.get('VELOCITYCMDB_DATA_DIR',
+                                          os.path.expanduser('~/.velocitycmdb/data'))
+        db_path = os.path.join(data_dir, db_name)
 
     if not os.path.exists(db_path):
-        raise FileNotFoundError(f"Database not found: {os.path.abspath(db_path)}")
+        raise FileNotFoundError(f"Database not found: {db_path}")
 
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
-
 
 def deduplicate_by_id(items: List[Dict]) -> List[Dict]:
     """Remove duplicate items based on their 'id' field"""

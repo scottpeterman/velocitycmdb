@@ -528,7 +528,7 @@ def main():
 
     return 0 if success_count == total else 1
 
-# python sc_run2.py --sessions-file sessions.yaml --username el-speterman --password Th3Weight@2025FuckYou --domain-name columbia.csc --exclude-string "SEP,Phone,us-,ca-" --output-dir .\maps --timeout 60 --save-debug-info --layout-algo kk --workers 10 --sc-path ..\.venv\Scripts\sc.exe
+# python sc_run2.py --sessions-file sessions.yaml --username el-admin --password Th3Weight@2025FuckYou --domain-name columbia.csc --exclude-string "SEP,Phone,us-,ca-" --output-dir .\maps --timeout 60 --save-debug-info --layout-algo kk --workers 10 --sc-path ..\.venv\Scripts\sc.exe
 
 if __name__ == '__main__':
     exit(main())

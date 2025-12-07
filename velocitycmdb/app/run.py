@@ -3,6 +3,8 @@ import json
 import os
 from pathlib import Path
 
+from velocitycmdb.app import create_app
+
 # CRITICAL: Set data directory BEFORE importing app
 # This ensures all components use the correct path
 if 'VELOCITYCMDB_DATA_DIR' not in os.environ:
@@ -10,7 +12,6 @@ if 'VELOCITYCMDB_DATA_DIR' not in os.environ:
     os.environ['VELOCITYCMDB_DATA_DIR'] = str(data_dir)
     print(f"Set VELOCITYCMDB_DATA_DIR to: {data_dir}")
 
-from velocitycmdb.app import create_app
 
 
 def parse_args():

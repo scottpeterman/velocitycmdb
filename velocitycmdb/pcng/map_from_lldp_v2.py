@@ -371,23 +371,10 @@ class LLDPTopologyMapper:
                 return None
 
         try:
-            result = self.engine.find_best_template(content, 'lldp')
+            best_template, result, best_score = self.engine.find_best_template(content, 'show_lldp')
 
-            if result is None:
-                return None
-
-            # Handle variable tuple sizes
-            if len(result) == 3:
-                template, parsed_data, score = result
-            elif len(result) == 4:
-                template, parsed_data, score, template_content = result
-            elif len(result) == 2:
-                template, parsed_data = result
-            else:
-                return None
-
-            if parsed_data and len(parsed_data) > 0:
-                return parsed_data
+            if result and len(result) > 0:
+                return result
 
             return None
 
@@ -752,7 +739,7 @@ Examples:
 
     parser.add_argument('--max-hops',
                         type=int,
-                        default=4,
+                        default=6,
                         help='Maximum hop count from root device (default: 4)')
 
     parser.add_argument('-o', '--output',

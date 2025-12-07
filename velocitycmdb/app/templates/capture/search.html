@@ -101,6 +101,27 @@
     <div class="card-header">
         <h2>Search Results</h2>
         <div id="results-summary"></div>
+        <div class="export-dropdown" id="export-dropdown" style="display: none;">
+            <button class="md-button md-button-outlined export-toggle" id="export-toggle">
+                <i data-lucide="download" size="16"></i>
+                Export
+                <i data-lucide="chevron-down" size="14"></i>
+            </button>
+            <div class="export-menu" id="export-menu">
+                <button class="export-option" data-format="csv">
+                    <i data-lucide="file-spreadsheet" size="16"></i>
+                    Export as CSV
+                </button>
+                <button class="export-option" data-format="json">
+                    <i data-lucide="file-json" size="16"></i>
+                    Export as JSON
+                </button>
+                <button class="export-option" data-format="text">
+                    <i data-lucide="file-text" size="16"></i>
+                    Export as Text
+                </button>
+            </div>
+        </div>
     </div>
     <div class="card-content">
         <div id="results-container" class="scrollable-results"></div>
@@ -214,6 +235,63 @@
 .form-actions {
     display: flex;
     gap: 12px;
+}
+
+/* Export dropdown styles */
+.export-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.export-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.export-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+    background: var(--md-surface-container-high);
+    border: 1px solid var(--md-outline);
+    border-radius: var(--md-shape-corner-small);
+    box-shadow: var(--md-elevation-2);
+    z-index: 100;
+    min-width: 180px;
+}
+
+.export-menu.show {
+    display: block;
+}
+
+.export-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    background: transparent;
+    color: var(--md-on-surface);
+    font: var(--md-typescale-body-medium);
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s;
+}
+
+.export-option:hover {
+    background: var(--md-surface-container);
+}
+
+.export-option:first-child {
+    border-radius: var(--md-shape-corner-small) var(--md-shape-corner-small) 0 0;
+}
+
+.export-option:last-child {
+    border-radius: 0 0 var(--md-shape-corner-small) var(--md-shape-corner-small);
 }
 
 .capture-types-grid {
@@ -634,8 +712,38 @@ document.addEventListener('DOMContentLoaded', function() {
     const loadingIndicator = document.getElementById('search-loading');
     const clearButton = document.getElementById('clear-form');
 
+    // Store search results for export
+    let currentSearchResults = null;
+    let currentSearchQuery = '';
+
     // Initialize Lucide icons
     lucide.createIcons();
+
+    // Export dropdown handlers
+    const exportDropdown = document.getElementById('export-dropdown');
+    const exportToggle = document.getElementById('export-toggle');
+    const exportMenu = document.getElementById('export-menu');
+
+    exportToggle.addEventListener('click', function(e) {
+        e.stopPropagation();
+        exportMenu.classList.toggle('show');
+    });
+
+    // Close export menu when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!exportDropdown.contains(e.target)) {
+            exportMenu.classList.remove('show');
+        }
+    });
+
+    // Export option handlers
+    document.querySelectorAll('.export-option').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const format = this.dataset.format;
+            exportResults(format);
+            exportMenu.classList.remove('show');
+        });
+    });
 
     form.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -932,12 +1040,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const summary = document.getElementById('results-summary');
         const container = document.getElementById('results-container');
 
+        // Store results for export
+        currentSearchResults = data.results;
+        currentSearchQuery = data.query;
+
         summary.innerHTML = `
             <span class="md-badge md-badge-success">${data.total_matches} matches</span>
             <span class="md-badge md-badge-secondary">Query: "${data.query}"</span>
         `;
 
         if (data.results.length === 0) {
+            exportDropdown.style.display = 'none';
             container.innerHTML = `
                 <div class="empty-state">
                     <i data-lucide="search-x" size="48"></i>
@@ -946,6 +1059,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
         } else {
+            exportDropdown.style.display = 'block';
             container.innerHTML = data.results.map(result => `
                 <div class="result-item">
                     <div class="result-header">
@@ -1000,6 +1114,102 @@ document.addEventListener('DOMContentLoaded', function() {
 
         resultsContainer.style.display = 'block';
         lucide.createIcons();
+    }
+
+    // Export functionality
+    function exportResults(format) {
+        if (!currentSearchResults || currentSearchResults.length === 0) {
+            alert('No results to export');
+            return;
+        }
+
+        let content, filename, mimeType;
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+
+        switch (format) {
+            case 'csv':
+                content = generateCSV();
+                filename = `capture-search-${timestamp}.csv`;
+                mimeType = 'text/csv';
+                break;
+            case 'json':
+                content = generateJSON();
+                filename = `capture-search-${timestamp}.json`;
+                mimeType = 'application/json';
+                break;
+            case 'text':
+                content = generateText();
+                filename = `capture-search-${timestamp}.txt`;
+                mimeType = 'text/plain';
+                break;
+            default:
+                return;
+        }
+
+        downloadFile(content, filename, mimeType);
+    }
+
+    function generateCSV() {
+        const rows = [['Device', 'IP', 'Site', 'Capture Type', 'Line Number', 'Match']];
+
+        currentSearchResults.forEach(result => {
+            result.matches.forEach(match => {
+                rows.push([
+                    result.device_name,
+                    result.management_ip || '',
+                    result.site_name || '',
+                    result.capture_type,
+                    match.line_number,
+                    match.line.replace(/"/g, '""')  // Escape quotes for CSV
+                ]);
+            });
+        });
+
+        return rows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+    }
+
+    function generateJSON() {
+        return JSON.stringify({
+            query: currentSearchQuery,
+            exported_at: new Date().toISOString(),
+            total_results: currentSearchResults.length,
+            results: currentSearchResults
+        }, null, 2);
+    }
+
+    function generateText() {
+        let text = `Capture Search Results\n`;
+        text += `Query: "${currentSearchQuery}"\n`;
+        text += `Exported: ${new Date().toLocaleString()}\n`;
+        text += `${'='.repeat(60)}\n\n`;
+
+        currentSearchResults.forEach(result => {
+            text += `Device: ${result.device_name}\n`;
+            text += `IP: ${result.management_ip || 'N/A'}\n`;
+            text += `Site: ${result.site_name || 'Unknown'}\n`;
+            text += `Capture Type: ${result.capture_type}\n`;
+            text += `${'-'.repeat(40)}\n`;
+
+            result.matches.forEach(match => {
+                text += `  Line ${match.line_number}: ${match.line}\n`;
+            });
+
+            text += `\n`;
+        });
+
+        return text;
+    }
+
+    function downloadFile(content, filename, mimeType) {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 
     function escapeHtml(text) {
