@@ -47,9 +47,12 @@
     </div>
 </div>
 
-<!-- Quick Actions Row -->
+<!-- Maintenance Cards Grid -->
 <div class="maintenance-grid">
-    <!-- Backup Operations -->
+
+    <!-- ================================================================== -->
+    <!-- BACKUP OPERATIONS -->
+    <!-- ================================================================== -->
     <div class="maintenance-card">
         <div class="card-header">
             <i data-lucide="save"></i>
@@ -75,30 +78,9 @@
         </div>
     </div>
 
-    <!-- Restore/Validate -->
-<!--    <div class="maintenance-card">-->
-<!--        <div class="card-header">-->
-<!--            <i data-lucide="upload"></i>-->
-<!--            <h3>Restore & Validate</h3>-->
-<!--        </div>-->
-<!--        <div class="card-body">-->
-<!--            <p>Inspect and validate backup archives</p>-->
-
-<!--            <div class="operation-group">-->
-<!--                <label class="file-upload-btn md-button md-button-outlined">-->
-<!--                    <i data-lucide="file-search"></i>-->
-<!--                    Inspect Backup-->
-<!--                    <input type="file" id="backup-file" accept=".tar.gz,.zip" style="display: none;">-->
-<!--                </label>-->
-<!--            </div>-->
-
-<!--            <div id="backup-inspect-results" style="display: none; margin-top: 12px;">-->
-<!--                <pre id="backup-manifest" class="code-block"></pre>-->
-<!--            </div>-->
-<!--        </div>-->
-<!--    </div>-->
-
-    <!-- Search Indexes -->
+    <!-- ================================================================== -->
+    <!-- SEARCH INDEXES -->
+    <!-- ================================================================== -->
     <div class="maintenance-card">
         <div class="card-header">
             <i data-lucide="search"></i>
@@ -129,46 +111,169 @@
         </div>
     </div>
 
-    <!-- Component Processing -->
-    <div class="maintenance-card">
+    <!-- ================================================================== -->
+    <!-- COMPONENT INVENTORY (NEW - Tabbed Interface) -->
+    <!-- ================================================================== -->
+    <div class="maintenance-card maintenance-card-wide">
         <div class="card-header">
             <i data-lucide="cpu"></i>
-            <h3>Component Processing</h3>
+            <h3>Component Inventory</h3>
         </div>
         <div class="card-body">
-            <p>Parse inventory captures and extract hardware components</p>
+            <p>Parse inventory captures, classify components, and manage hardware asset data</p>
 
-            <div class="operation-group">
-                <button class="md-button md-button-outlined" onclick="reclassifyComponents()">
-                    <i data-lucide="refresh-cw"></i>
-                    Reclassify Components
+            <!-- Operation Tabs -->
+            <div class="component-tabs">
+                <button class="comp-tab-btn active" data-tab="load">
+                    <i data-lucide="upload"></i> Load
                 </button>
-                <button class="md-button md-button-text" onclick="showComponentStats()">
-                    <i data-lucide="bar-chart"></i>
-                    View Statistics
+                <button class="comp-tab-btn" data-tab="reclassify">
+                    <i data-lucide="refresh-cw"></i> Reclassify
+                </button>
+                <button class="comp-tab-btn" data-tab="cleanup">
+                    <i data-lucide="trash-2"></i> Cleanup
+                </button>
+                <button class="comp-tab-btn" data-tab="stats">
+                    <i data-lucide="bar-chart-2"></i> Stats
                 </button>
             </div>
 
-            <div id="component-stats" style="display: none; margin-top: 12px;">
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <label>Total Components:</label>
-                        <span id="total-components">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <label>With Serials:</label>
-                        <span id="components-with-serials">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <label>Coverage:</label>
-                        <span id="serial-coverage">0%</span>
-                    </div>
+            <!-- Load Tab -->
+            <div id="comp-tab-load" class="comp-tab-content active">
+                <div class="tab-description">
+                    Load inventory data from capture database
                 </div>
+
+                <div class="options-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="load-purge">
+                        <span>Purge before load</span>
+                        <small>Delete all components before loading new data</small>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="load-reclassify" checked>
+                        <span>Reclassify after load</span>
+                        <small>Re-classify unknown components</small>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="load-ignore-sn">
+                        <span>Include without serials</span>
+                        <small>Import components without serial numbers</small>
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label for="load-device-filter">Device Filter (optional)</label>
+                    <input type="text" id="load-device-filter" class="form-input"
+                           placeholder="e.g., sw-core, rtr-*">
+                </div>
+
+                <div class="operation-group">
+                    <button class="md-button md-button-filled" onclick="loadInventoryComponents()">
+                        <i data-lucide="play"></i>
+                        Load Components
+                    </button>
+                    <button class="md-button md-button-danger" onclick="purgeAllComponents()">
+                        <i data-lucide="trash-2"></i>
+                        Purge Only
+                    </button>
+                </div>
+            </div>
+
+            <!-- Reclassify Tab -->
+            <div id="comp-tab-reclassify" class="comp-tab-content">
+                <div class="tab-description">
+                    Re-analyze unknown components and update classifications
+                </div>
+
+                <div class="options-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="reclassify-delete-junk">
+                        <span>Delete junk components</span>
+                        <small>Remove CLI artifacts, prompts, garbage data</small>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="reclassify-dry-run">
+                        <span>Dry run</span>
+                        <small>Preview changes without modifying database</small>
+                    </label>
+                </div>
+
+                <div class="operation-group">
+                    <button class="md-button md-button-outlined" onclick="reclassifyComponents()">
+                        <i data-lucide="refresh-cw"></i>
+                        Reclassify Unknown
+                    </button>
+                    <button class="md-button md-button-text" onclick="analyzeUnknown()">
+                        <i data-lucide="search"></i>
+                        Analyze
+                    </button>
+                </div>
+            </div>
+
+            <!-- Cleanup Tab -->
+            <div id="comp-tab-cleanup" class="comp-tab-content">
+                <div class="tab-description">
+                    Remove component records from the database
+                </div>
+
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="cleanup-scope" value="device" checked>
+                        <span>By Device</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="cleanup-scope" value="source">
+                        <span>By Source</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="cleanup-scope" value="all">
+                        <span>All</span>
+                    </label>
+                </div>
+
+                <div id="cleanup-device-input" class="form-group">
+                    <input type="text" id="cleanup-device-name" class="form-input"
+                           placeholder="Device name pattern">
+                </div>
+
+                <div id="cleanup-source-input" class="form-group" style="display: none;">
+                    <select id="cleanup-source" class="form-select">
+                        <option value="inventory_capture">inventory_capture</option>
+                        <option value="manual">manual</option>
+                    </select>
+                </div>
+
+                <button class="md-button md-button-danger" onclick="cleanupComponents()">
+                    <i data-lucide="trash-2"></i>
+                    Delete Components
+                </button>
+            </div>
+
+            <!-- Stats Tab -->
+            <div id="comp-tab-stats" class="comp-tab-content">
+                <div id="component-stats-display">
+                    <div class="stats-loading">Click refresh to load stats...</div>
+                </div>
+                <button class="md-button md-button-text" onclick="refreshComponentStats()">
+                    <i data-lucide="refresh-cw"></i> Refresh Stats
+                </button>
+            </div>
+
+            <!-- Results Panel -->
+            <div id="component-results" class="results-panel" style="display: none;">
+                <div class="results-header">
+                    <strong>Results</strong>
+                    <button class="close-btn" onclick="hideComponentResults()">&times;</button>
+                </div>
+                <pre id="component-results-content"></pre>
             </div>
         </div>
     </div>
 
-    <!-- ARP Database -->
+    <!-- ================================================================== -->
+    <!-- ARP DATABASE -->
+    <!-- ================================================================== -->
     <div class="maintenance-card">
         <div class="card-header">
             <i data-lucide="network"></i>
@@ -189,7 +294,7 @@
             </div>
 
             <div id="arp-stats" style="display: none; margin-top: 12px;">
-                <div class="stats-grid">
+                <div class="stats-grid-simple">
                     <div class="stat-item">
                         <label>Total Entries:</label>
                         <span id="arp-entries">0</span>
@@ -207,411 +312,74 @@
         </div>
     </div>
 
-    <!-- Manual Capture Load -->
+    <!-- ================================================================== -->
+    <!-- TOPOLOGY GENERATION -->
+    <!-- ================================================================== -->
     <div class="maintenance-card">
         <div class="card-header">
-            <i data-lucide="file-text"></i>
-            <h3>Capture Data</h3>
+            <i data-lucide="git-branch"></i>
+            <h3>Topology Generation</h3>
         </div>
         <div class="card-body">
-            <p>Manually load CLI captures into database</p>
+            <p>Generate network topology map from LLDP data</p>
 
-            <div class="capture-options" style="display:none;">
-                <label class="checkbox-label">
-                    <input type="checkbox" id="load-configs" checked>
-                    <span>Configurations</span>
-                </label>
-                <label class="checkbox-label">
-                    <input type="checkbox" id="load-inventory" checked>
-                    <span>Inventory</span>
-                </label>
-                <label class="checkbox-label">
-                    <input type="checkbox" id="load-routes">
-                    <span>Routes</span>
-                </label>
-                <label class="checkbox-label">
-                    <input type="checkbox" id="load-mac">
-                    <span>MAC Tables</span>
-                </label>
+            <!-- Root Device Search -->
+            <div class="form-group">
+                <label for="rootDevice">Root Device</label>
+                <input type="text" id="rootDevice" class="form-input"
+                       placeholder="Start typing device name..." autocomplete="off">
+                <div id="deviceSuggestions" class="autocomplete-suggestions"></div>
             </div>
 
-            <button class="md-button md-button-outlined" onclick="loadCaptureData()">
-                <i data-lucide="download"></i>
-                Load Capture Data
-            </button>
-        </div>
-    </div>
-
-    <!-- Topology Generation -->
-    <!-- Add this card to velocitycmdb/app/templates/admin/maintenance.html -->
-<!-- Place it after the "Capture Data" card -->
-
-<!-- Topology Generation -->
-<div class="maintenance-card">
-    <div class="card-header">
-        <i data-lucide="git-branch"></i>
-        <h3>Topology Generation</h3>
-    </div>
-    <div class="card-body">
-        <p>Generate network topology map from LLDP data starting from a root device</p>
-
-        <!-- Root Device Search -->
-        <div class="form-group">
-            <label for="rootDevice">Root Device</label>
-            <input
-                type="text"
-                id="rootDevice"
-                class="form-select"
-                placeholder="Start typing device name..."
-                autocomplete="off">
-            <div id="deviceSuggestions" class="autocomplete-suggestions"></div>
-        </div>
-
-        <!-- Max Hops -->
-        <div class="form-group">
-            <label for="maxHops">Max Hops (1-10)</label>
-            <input
-                type="number"
-                id="maxHops"
-                class="form-select"
-                value="4"
-                min="1"
-                max="10">
-        </div>
-
-        <!-- Domain Suffix -->
-        <div class="form-group">
-            <label for="domainSuffix">Domain Suffix</label>
-            <input
-                type="text"
-                id="domainSuffix"
-                class="form-select"
-                value=""
-                placeholder=".example.com">
-        </div>
-
-        <!-- Advanced Filters (Collapsible) -->
-        <details class="advanced-filters">
-            <summary class="md-button md-button-text">
-                <i data-lucide="filter"></i>
-                Advanced Filters
-            </summary>
-            <div class="filter-content">
-                <div class="form-group">
-                    <label for="filterPlatform">Filter Platform (comma-separated)</label>
-                    <input
-                        type="text"
-                        id="filterPlatform"
-                        class="form-select"
-                        placeholder="e.g., sep,debian,ubuntu">
-                    <small>Exclude devices with these platforms</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="filterDevice">Filter Device (comma-separated)</label>
-                    <input
-                        type="text"
-                        id="filterDevice"
-                        class="form-select"
-                        placeholder="e.g., rft,sw,phone">
-                    <small>Exclude devices with these name patterns</small>
-                </div>
+            <!-- Max Hops -->
+            <div class="form-group">
+                <label for="maxHops">Max Hops (1-10)</label>
+                <input type="number" id="maxHops" class="form-input" value="4" min="1" max="10">
             </div>
-        </details>
 
-        <!-- Generate Button -->
-        <button id="btnGenerateTopology" class="md-button md-button-filled">
-            <i data-lucide="map"></i>
-            Generate Topology
-        </button>
+            <!-- Domain Suffix -->
+            <div class="form-group">
+                <label for="domainSuffix">Domain Suffix</label>
+                <input type="text" id="domainSuffix" class="form-input" placeholder=".example.com">
+            </div>
 
-
-    </div>
-</div>
-
-<style>
-/* Autocomplete suggestions styling */
-.autocomplete-suggestions {
-    position: absolute;
-    border: 1px solid var(--md-outline);
-    background: var(--md-surface-container);
-    max-height: 200px;
-    overflow-y: auto;
-    width: 100%;
-    z-index: 1000;
-    display: none;
-    border-radius: var(--md-shape-corner-small);
-    box-shadow: var(--md-elevation-2);
-    margin-top: 4px;
-}
-
-.autocomplete-suggestions.show {
-    display: block;
-}
-
-.suggestion-item {
-    padding: 12px 16px;
-    cursor: pointer;
-    border-bottom: 1px solid var(--md-outline-variant);
-    color: var(--md-on-surface);
-    font: var(--md-typescale-body-medium);
-    transition: background-color var(--md-motion-duration-short2) var(--md-motion-easing-standard);
-}
-
-.suggestion-item:last-child {
-    border-bottom: none;
-}
-
-.suggestion-item:hover {
-    background: var(--md-surface-container-high);
-}
-
-.suggestion-item .device-name {
-    font-weight: 500;
-    color: var(--md-on-surface);
-}
-
-.suggestion-item .device-info {
-    font-size: 0.85em;
-    color: var(--md-on-surface-variant);
-    margin-top: 2px;
-}
-
-.file-list {
-    max-height: 200px;
-    overflow-y: auto;
-    border: 1px solid var(--md-outline-variant);
-    border-radius: var(--md-shape-corner-small);
-    background: var(--md-surface);
-}
-
-.file-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--md-outline-variant);
-    color: var(--md-on-surface);
-}
-
-.file-item:last-child {
-    border-bottom: none;
-}
-
-.file-item:hover {
-    background: var(--md-surface-container-high);
-}
-
-.file-name {
-    font-family: 'Courier New', monospace;
-    font-size: 0.9em;
-    color: var(--md-on-surface);
-}
-
-.file-meta {
-    font-size: 0.85em;
-    color: var(--md-on-surface-variant);
-}
-
-/* Form group for proper autocomplete positioning */
-.form-group {
-    position: relative;
-    margin-bottom: 16px;
-}
-
-.form-group label {
-    display: block;
-    font: var(--md-typescale-label-large);
-    color: var(--md-on-surface);
-    margin-bottom: 8px;
-}
-
-.form-group small {
-    display: block;
-    font: var(--md-typescale-body-small);
-    color: var(--md-on-surface-variant);
-    margin-top: 4px;
-}
-
-</style>
-
-<script>
-// Add to your maintenance.js or inline script
-
-// Device autocomplete
-let deviceSearchTimeout;
-const rootDeviceInput = document.getElementById('rootDevice');
-const deviceSuggestions = document.getElementById('deviceSuggestions');
-
-rootDeviceInput.addEventListener('input', function() {
-    clearTimeout(deviceSearchTimeout);
-    const query = this.value.trim();
-
-    if (query.length < 2) {
-        deviceSuggestions.classList.remove('show');
-        return;
-    }
-
-    deviceSearchTimeout = setTimeout(() => {
-        fetch(`/admin/maintenance/devices/search?q=${encodeURIComponent(query)}`)
-            .then(r => r.json())
-            .then(data => {
-                if (data.devices && data.devices.length > 0) {
-                    deviceSuggestions.innerHTML = data.devices.map(d => `
-                        <div class="suggestion-item" data-device="${d.name}">
-                            <div class="device-name">${d.name}</div>
-                            <div class="device-info">${d.ip} • ${d.model}</div>
-                        </div>
-                    `).join('');
-                    deviceSuggestions.classList.add('show');
-
-                    // Add click handlers
-                    deviceSuggestions.querySelectorAll('.suggestion-item').forEach(item => {
-                        item.addEventListener('click', function() {
-                            rootDeviceInput.value = this.dataset.device;
-                            deviceSuggestions.classList.remove('show');
-                        });
-                    });
-                } else {
-                    deviceSuggestions.classList.remove('show');
-                }
-            });
-    }, 300);
-});
-
-// Hide suggestions when clicking outside
-document.addEventListener('click', function(e) {
-    if (!rootDeviceInput.contains(e.target) && !deviceSuggestions.contains(e.target)) {
-        deviceSuggestions.classList.remove('show');
-    }
-});
-
-// Generate topology
-document.getElementById('btnGenerateTopology').addEventListener('click', function() {
-    const rootDevice = document.getElementById('rootDevice').value.trim();
-
-    if (!rootDevice) {
-        alert('Please enter a root device name');
-        return;
-    }
-
-    const maxHops = parseInt(document.getElementById('maxHops').value) || 4;
-    const domainSuffix = document.getElementById('domainSuffix').value.trim() || 'home.com';
-
-    // Parse filters
-    const filterPlatform = document.getElementById('filterPlatform').value
-        .split(',')
-        .map(s => s.trim())
-        .filter(s => s);
-
-    const filterDevice = document.getElementById('filterDevice').value
-        .split(',')
-        .map(s => s.trim())
-        .filter(s => s);
-
-    console.log('Emitting topology generation:', {
-        root_device: rootDevice,
-        max_hops: maxHops,
-        domain_suffix: domainSuffix,
-        filter_platform: filterPlatform,
-        filter_device: filterDevice
-    });
-
-    socket.emit('maintenance_generate_topology', {
-        root_device: rootDevice,
-        max_hops: maxHops,
-        domain_suffix: domainSuffix,
-        filter_platform: filterPlatform,
-        filter_device: filterDevice
-    });
-
-    // Add to operation log (assumes logMessage function exists)
-    if (typeof logMessage === 'function') {
-        logMessage(`Generating topology from ${rootDevice} (max ${maxHops} hops)...`);
-    }
-});
-
-// Handle topology completion
-socket.on('maintenance_complete', function(data) {
-    if (data.operation === 'topology') {
-        const message = `✓ Topology generated: ${data.device_count} devices, ${data.connection_count} connections\n` +
-                       `File: ${data.filename} (${data.size_kb} KB)`;
-
-        console.log('Topology complete:', data);
-
-        if (typeof logMessage === 'function') {
-            logMessage(message);
-            // Add download link
-            const downloadUrl = `/admin/maintenance/topology/download/${data.filename}`;
-            logMessage(`<a href="${downloadUrl}" class="btn btn-sm btn-success"><i class="fas fa-download"></i> Download</a>`);
-        }
-
-        // Refresh topology list
-        loadTopologyList();
-    }
-});
-
-// Load topology list
-function loadTopologyList() {
-    fetch('/admin/maintenance/topology/list')
-        .then(r => r.json())
-        .then(data => {
-            const list = document.getElementById('topologyList');
-
-            if (!data.topologies || data.topologies.length === 0) {
-                list.innerHTML = '<p class="text-muted">No topologies generated yet</p>';
-                return;
-            }
-
-            list.innerHTML = data.topologies.map(t => `
-                <div class="file-item">
-                    <div>
-                        <div class="file-name">${t.filename}</div>
-                        <div class="file-meta">${t.size_kb} KB • ${new Date(t.created).toLocaleString()}</div>
+            <!-- Advanced Filters -->
+            <details class="advanced-filters">
+                <summary class="md-button md-button-text">
+                    <i data-lucide="filter"></i>
+                    Advanced Filters
+                </summary>
+                <div class="filter-content">
+                    <div class="form-group">
+                        <label for="filterPlatform">Filter Platform (comma-separated)</label>
+                        <input type="text" id="filterPlatform" class="form-input"
+                               placeholder="e.g., sep,debian,ubuntu">
+                        <small>Exclude devices with these platforms</small>
                     </div>
-                    <a href="/admin/maintenance/topology/download/${t.filename}"
-                       class="btn btn-sm btn-primary">
-                        <i class="fas fa-download"></i>
-                    </a>
+                    <div class="form-group">
+                        <label for="filterDevice">Filter Device (comma-separated)</label>
+                        <input type="text" id="filterDevice" class="form-input"
+                               placeholder="e.g., rft,sw,phone">
+                        <small>Exclude devices with these name patterns</small>
+                    </div>
                 </div>
-            `).join('');
-        });
-}
+            </details>
 
-// Load topology list on page load
-loadTopologyList();
-</script>
-<!--    <div class="maintenance-card">-->
-<!--        <div class="card-header">-->
-<!--            <i data-lucide="git-branch"></i>-->
-<!--            <h3>Topology Generation</h3>-->
-<!--        </div>-->
-<!--        <div class="card-body">-->
-<!--            <p>Generate network map from LLDP/CDP data</p>-->
+            <button id="btnGenerateTopology" class="md-button md-button-filled">
+                <i data-lucide="map"></i>
+                Generate Topology
+            </button>
 
-<!--            <div class="operation-group">-->
-<!--                <select id="map-source" class="form-select">-->
-<!--                    <option value="lldp">LLDP Data</option>-->
-<!--                    <option value="cdp">CDP Data</option>-->
-<!--                    <option value="both">Both</option>-->
-<!--                </select>-->
+            <!-- Topology File List -->
+            <div id="topologyList" class="file-list" style="margin-top: 16px;">
+                <p class="text-muted">Loading...</p>
+            </div>
+        </div>
+    </div>
 
-<!--                <button class="md-button md-button-outlined" onclick="generateTopology()">-->
-<!--                    <i data-lucide="map"></i>-->
-<!--                    Generate Map-->
-<!--                </button>-->
-<!--            </div>-->
-
-<!--            <div id="topology-status" style="display: none; margin-top: 12px;">-->
-<!--                <div class="alert alert-info">-->
-<!--                    <i data-lucide="info"></i>-->
-<!--                    <span id="topology-message">Processing...</span>-->
-<!--                </div>-->
-<!--            </div>-->
-<!--        </div>-->
-<!--    </div>-->
-
-    <!-- Database Reset -->
+    <!-- ================================================================== -->
+    <!-- DATABASE RESET (DANGER) -->
+    <!-- ================================================================== -->
     <div class="maintenance-card danger-card">
         <div class="card-header">
             <i data-lucide="trash-2"></i>
@@ -631,6 +399,7 @@ loadTopologyList();
             </button>
         </div>
     </div>
+
 </div>
 
 <!-- Operation Log -->
@@ -653,7 +422,11 @@ loadTopologyList();
     </div>
 </div>
 
+<!-- ====================================================================== -->
+<!-- STYLES -->
+<!-- ====================================================================== -->
 <style>
+/* Grid Layout */
 .maintenance-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
@@ -668,11 +441,22 @@ loadTopologyList();
     padding: 20px;
 }
 
+.maintenance-card-wide {
+    grid-column: span 2;
+}
+
+@media (max-width: 800px) {
+    .maintenance-card-wide {
+        grid-column: span 1;
+    }
+}
+
 .maintenance-card.danger-card {
     border-color: var(--md-error);
     background: rgba(var(--md-error-rgb), 0.05);
 }
 
+/* Card Header */
 .card-header {
     display: flex;
     align-items: center;
@@ -702,28 +486,563 @@ loadTopologyList();
 
 .card-body > p {
     color: var(--md-on-surface-variant);
-    font: var(--md-typescale-body-medium);
     margin: 0;
 }
 
-.operation-group {
+/* Component Tabs */
+.component-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--md-outline-variant);
+    flex-wrap: wrap;
+}
+
+.comp-tab-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 8px 8px 0 0;
+    font-size: 14px;
+    color: var(--md-on-surface-variant);
+    transition: all 0.2s ease;
+}
+
+.comp-tab-btn:hover {
+    background: var(--md-surface-variant);
+}
+
+.comp-tab-btn.active {
+    background: var(--md-primary-container);
+    color: var(--md-on-primary-container);
+}
+
+.comp-tab-btn i {
+    width: 16px;
+    height: 16px;
+}
+
+.comp-tab-content {
+    display: none;
+    padding: 16px 0;
+}
+
+.comp-tab-content.active {
+    display: block;
+}
+
+.tab-description {
+    color: var(--md-on-surface-variant);
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+/* Options Group */
+.options-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: var(--md-surface-variant);
+    border-radius: 8px;
+}
+
+.checkbox-label {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.checkbox-label input {
+    margin: 0;
+}
+
+.checkbox-label span {
+    font-weight: 500;
+}
+
+.checkbox-label small {
+    width: 100%;
+    margin-left: 24px;
+    color: var(--md-on-surface-variant);
+    font-size: 12px;
+}
+
+.radio-group {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.radio-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+/* Forms */
+.form-group {
+    position: relative;
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    font: var(--md-typescale-label-large);
+    color: var(--md-on-surface);
+    margin-bottom: 8px;
+}
+
+.form-group small {
+    display: block;
+    font: var(--md-typescale-body-small);
+    color: var(--md-on-surface-variant);
+    margin-top: 4px;
+}
+
+.form-input, .form-select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--md-outline);
+    border-radius: var(--md-shape-corner-small);
+    background: var(--md-surface);
+    color: var(--md-on-surface);
+    font-size: 14px;
+}
+
+.form-input:focus, .form-select:focus {
+    outline: none;
+    border-color: var(--md-primary);
+    box-shadow: 0 0 0 2px rgba(var(--md-primary-rgb), 0.2);
+}
+
+/* Operation Groups */
+.operation-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Buttons */
+.md-button-danger {
+    background: var(--md-error);
+    color: var(--md-on-error);
+}
+
+.md-button-danger:hover {
+    background: var(--md-error);
+    filter: brightness(1.1);
+}
+
+/* Results Panel */
+.results-panel {
+    margin-top: 16px;
+    border: 1px solid var(--md-outline-variant);
+    border-radius: 8px;
+    background: var(--md-surface);
+}
+
+.results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--md-surface-variant);
+    border-radius: 8px 8px 0 0;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: var(--md-on-surface-variant);
+    padding: 0 4px;
+}
+
+#component-results-content {
+    padding: 12px;
+    margin: 0;
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+    max-height: 250px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+}
+
+/* Stats Display */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.stat-card {
+    padding: 12px;
+    background: var(--md-surface-variant);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.stat-card h5 {
+    margin: 0 0 4px;
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--md-on-surface-variant);
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--md-primary);
+}
+
+.stat-sub {
+    font-size: 11px;
+    color: var(--md-on-surface-variant);
+}
+
+/* Type breakdown bars */
+.type-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 13px;
+}
+
+.type-label {
+    width: 100px;
+    flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.type-progress {
+    flex: 1;
+    height: 18px;
+    background: var(--md-surface-variant);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.type-fill {
+    height: 100%;
+    background: var(--md-primary);
+    min-width: 20px;
+    display: flex;
+    align-items: center;
+    padding-left: 6px;
+    font-size: 11px;
+    color: white;
+    transition: width 0.3s ease;
+}
+
+.type-fill.unknown {
+    background: var(--md-error);
+}
+
+.type-count {
+    width: 60px;
+    text-align: right;
+    color: var(--md-on-surface-variant);
+}
+
+/* Simple stats grid (for ARP etc) */
+.stats-grid-simple {
+    display: flex;
+    flex-direction: column;
     gap: 8px;
 }
 
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--md-outline-variant);
+}
+
+.stat-item:last-child {
+    border-bottom: none;
+}
+
+.stat-item label {
+    color: var(--md-on-surface-variant);
+}
+
+.stat-item span {
+    font-weight: 500;
+}
+
+/* Autocomplete */
+.autocomplete-suggestions {
+    position: absolute;
+    border: 1px solid var(--md-outline);
+    background: var(--md-surface-container);
+    max-height: 200px;
+    overflow-y: auto;
+    width: 100%;
+    z-index: 1000;
+    display: none;
+    border-radius: var(--md-shape-corner-small);
+    box-shadow: var(--md-elevation-2);
+    margin-top: 4px;
+}
+
+.autocomplete-suggestions.show {
+    display: block;
+}
+
+.suggestion-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--md-outline-variant);
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover {
+    background: var(--md-surface-container-high);
+}
+
+.suggestion-item .device-name {
+    font-weight: 500;
+}
+
+.suggestion-item .device-info {
+    font-size: 0.85em;
+    color: var(--md-on-surface-variant);
+    margin-top: 2px;
+}
+
+/* File list */
+.file-list {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid var(--md-outline-variant);
+    border-radius: var(--md-shape-corner-small);
+    background: var(--md-surface);
+}
+
+.file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--md-outline-variant);
+}
+
+.file-item:last-child {
+    border-bottom: none;
+}
+
+.file-item:hover {
+    background: var(--md-surface-container-high);
+}
+
+.file-name {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+}
+
+.file-meta {
+    font-size: 0.85em;
+    color: var(--md-on-surface-variant);
+}
+
+/* Advanced filters */
+.advanced-filters {
+    margin-bottom: 16px;
+}
+
+.advanced-filters summary {
+    cursor: pointer;
+    list-style: none;
+}
+
+.advanced-filters summary::-webkit-details-marker {
+    display: none;
+}
+
+.filter-content {
+    padding: 16px;
+    margin-top: 8px;
+    background: var(--md-surface-variant);
+    border-radius: 8px;
+}
+
+/* Progress Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.progress-dialog {
+    background: var(--md-surface);
+    border-radius: var(--md-shape-corner-large);
+    padding: 24px;
+    min-width: 350px;
+    max-width: 500px;
+    box-shadow: var(--md-elevation-5);
+}
+
+.progress-header h3 {
+    margin: 0 0 16px;
+    font: var(--md-typescale-title-large);
+}
+
+.progress-message {
+    margin-bottom: 16px;
+    color: var(--md-on-surface-variant);
+    font-size: 14px;
+    min-height: 20px;
+}
+
+.progress-bar-container {
+    height: 8px;
+    background: var(--md-surface-variant);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.progress-bar {
+    height: 100%;
+    background: var(--md-primary);
+    transition: width 0.3s ease;
+}
+
+.progress-percentage {
+    text-align: center;
+    font-size: 14px;
+    color: var(--md-on-surface-variant);
+}
+
+/* Operation Log */
+.operation-log-container {
+    margin-top: 24px;
+    background: var(--md-surface-container);
+    border: 1px solid var(--md-outline-variant);
+    border-radius: var(--md-shape-corner-large);
+}
+
+.log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--md-outline-variant);
+}
+
+.log-header h3 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font: var(--md-typescale-title-medium);
+}
+
+.log-content {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 12px 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+}
+
+.log-entry {
+    padding: 6px 0;
+    border-bottom: 1px solid var(--md-outline-variant);
+    display: flex;
+    gap: 12px;
+}
+
+.log-entry:last-child {
+    border-bottom: none;
+}
+
+.log-timestamp {
+    color: var(--md-on-surface-variant);
+    flex-shrink: 0;
+}
+
+.log-message {
+    word-break: break-word;
+}
+
+.log-info .log-message { color: var(--md-on-surface); }
+.log-success .log-message { color: var(--md-primary); }
+.log-error .log-message { color: var(--md-error); }
+.log-warning .log-message { color: var(--md-tertiary); }
+
+/* Badges */
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.badge-success {
+    background: rgba(var(--md-primary-rgb), 0.15);
+    color: var(--md-primary);
+}
+
+/* Index status */
+.index-status {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Alerts */
 .alert {
     display: flex;
-    align-items: start;
+    align-items: flex-start;
     gap: 12px;
-    padding: 12px;
+    padding: 16px;
     border-radius: var(--md-shape-corner-medium);
-    font: var(--md-typescale-body-small);
+    margin-bottom: 16px;
+}
+
+.alert i {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
 }
 
 .alert-warning {
-    background: rgba(var(--md-warning-rgb), 0.1);
-    border: 1px solid var(--md-warning);
+    background: rgba(var(--md-tertiary-rgb), 0.1);
+    border: 1px solid var(--md-tertiary);
     color: var(--md-on-surface);
 }
 
@@ -733,299 +1052,147 @@ loadTopologyList();
     color: var(--md-on-surface);
 }
 
-.alert-info {
-    background: rgba(var(--md-primary-rgb), 0.1);
-    border: 1px solid var(--md-primary);
-    color: var(--md-on-surface);
-}
-
-.alert i {
-    flex-shrink: 0;
-    width: 20px;
-    height: 20px;
-}
-
-.index-status, .stats-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 12px;
-    background: var(--md-surface);
-    border-radius: var(--md-shape-corner-small);
-}
-
-.status-item, .stat-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font: var(--md-typescale-body-small);
-}
-
-.badge {
-    padding: 4px 8px;
-    border-radius: var(--md-shape-corner-extra-small);
-    font: var(--md-typescale-label-small);
-    font-weight: 600;
-}
-
-.badge-success {
-    background: var(--md-success-container);
-    color: var(--md-on-success-container);
-}
-
-.capture-options {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    font: var(--md-typescale-body-medium);
-}
-
-.checkbox-label input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-}
-
-.form-select {
-    padding: 10px;
-    border: 1px solid var(--md-outline);
-    border-radius: var(--md-shape-corner-small);
-    background: var(--md-surface);
-    color: var(--md-on-surface);
-    font: var(--md-typescale-body-medium);
-}
-
-.backup-info {
-    padding: 8px;
-    background: var(--md-surface);
-    border-radius: var(--md-shape-corner-small);
-    font: var(--md-typescale-body-small);
+/* Text utilities */
+.text-muted {
     color: var(--md-on-surface-variant);
+    font-style: italic;
 }
 
-.code-block {
-    background: var(--md-surface-variant);
-    padding: 12px;
-    border-radius: var(--md-shape-corner-small);
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
-    overflow-x: auto;
-    max-height: 300px;
-}
-
-.operation-log-container {
-    margin-top: 32px;
-    background: var(--md-surface-container);
-    border: 1px solid var(--md-outline-variant);
-    border-radius: var(--md-shape-corner-large);
-    overflow: hidden;
-}
-
-.log-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 20px;
-    background: var(--md-surface-container-high);
-    border-bottom: 1px solid var(--md-outline-variant);
-}
-
-.log-header h3 {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 0;
-    font: var(--md-typescale-title-small);
-}
-
-.log-content {
-    padding: 16px;
-    max-height: 400px;
-    overflow-y: auto;
-    font-family: 'Courier New', monospace;
-    font-size: 13px;
-}
-
-.log-entry {
-    display: flex;
-    gap: 12px;
-    padding: 8px;
-    border-left: 3px solid transparent;
-    margin-bottom: 4px;
-}
-
-.log-entry.log-info {
-    border-left-color: var(--md-primary);
-}
-
-.log-entry.log-success {
-    border-left-color: var(--md-success);
-}
-
-.log-entry.log-error {
-    border-left-color: var(--md-error);
-}
-
-.log-entry.log-warning {
-    border-left-color: var(--md-warning);
-}
-
-.log-timestamp {
-    color: var(--md-on-surface-variant);
-    white-space: nowrap;
-}
-
-.log-message {
-    color: var(--md-on-surface);
-}
-
-.md-button-danger {
-    background: var(--md-error);
-    color: var(--md-on-error);
-    border: none;
-}
-
-.md-button-danger:hover {
-    background: var(--md-error-container);
-    color: var(--md-on-error-container);
-}
-
-/* Progress Modal */
-.progress-dialog {
-    background: var(--md-surface-container);
-    border-radius: var(--md-shape-corner-extra-large);
-    padding: 32px;
-    min-width: 400px;
-    max-width: 500px;
-    box-shadow: var(--md-elevation-3);
-}
-
-.progress-header {
-    margin-bottom: 24px;
-}
-
-.progress-header h3 {
-    font: var(--md-typescale-headline-small);
-    color: var(--md-on-surface);
-    margin: 0;
-}
-
-.progress-body {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.progress-message {
-    font: var(--md-typescale-body-medium);
-    color: var(--md-on-surface-variant);
-    min-height: 24px;
-}
-
-.progress-bar-container {
-    width: 100%;
-    height: 8px;
-    background: var(--md-surface-variant);
-    border-radius: 4px;
-    overflow: hidden;
-}
-
-.progress-bar {
-    height: 100%;
-    background: var(--md-primary);
-    border-radius: 4px;
-    transition: width 0.3s ease;
-}
-
-.progress-percentage {
+.stats-loading {
+    padding: 20px;
     text-align: center;
-    font: var(--md-typescale-title-large);
-    color: var(--md-primary);
-    font-weight: 600;
+    color: var(--md-on-surface-variant);
 }
 </style>
+
+<!-- ====================================================================== -->
+<!-- JAVASCRIPT -->
+<!-- ====================================================================== -->
 <script>
-// Initialize SocketIO
+// ========================================================================
+// SOCKET.IO SETUP
+// ========================================================================
 const socket = io();
 
-// Progress modal management
+socket.on('connect', function() {
+    logOperation('Connected to server', 'info');
+});
+
+socket.on('disconnect', function() {
+    logOperation('Disconnected from server', 'warning');
+});
+
+// ========================================================================
+// PROGRESS MODAL
+// ========================================================================
 function showProgressModal(title) {
-    const modal = document.getElementById('progress-modal');
     document.getElementById('progress-title').textContent = title;
     document.getElementById('progress-message').textContent = 'Starting...';
     document.getElementById('progress-bar').style.width = '0%';
     document.getElementById('progress-percentage').textContent = '0%';
-    modal.style.display = 'flex';
+    document.getElementById('progress-modal').style.display = 'flex';
 }
 
 function hideProgressModal() {
-    const modal = document.getElementById('progress-modal');
-    modal.style.display = 'none';
+    document.getElementById('progress-modal').style.display = 'none';
 }
 
-function updateProgress(stage, message, progress) {
+function updateProgress(message, progress) {
     document.getElementById('progress-message').textContent = message;
     document.getElementById('progress-bar').style.width = progress + '%';
     document.getElementById('progress-percentage').textContent = progress + '%';
 }
 
-// SocketIO event handlers
+// ========================================================================
+// UNIFIED SOCKET HANDLERS
+// ========================================================================
 socket.on('maintenance_progress', function(data) {
-    updateProgress(data.stage, data.message, data.progress);
-    logOperation(data.message, 'info');
+    updateProgress(data.message || 'Processing...', data.progress || 50);
 });
-
-// Replace the socket.on('maintenance_complete') handler in your maintenance.html with this:
 
 socket.on('maintenance_complete', function(data) {
     hideProgressModal();
 
-    if (data.operation === 'backup' && data.success) {
-        // Show detailed backup information with full paths
-        let message = `Backup created: ${data.filename} (${data.size_mb} MB)`;
+    if (!data.success) {
+        logOperation('Operation failed: ' + (data.error || 'Unknown error'), 'error');
+        return;
+    }
 
-        if (data.backup_path) {
-            message += `\nLocation: ${data.backup_path}`;
-        }
+    const op = data.operation;
 
-        if (data.data_dir) {
-            message += `\nData directory: ${data.data_dir}`;
-        }
+    // Route based on operation type
+    switch(op) {
+        case 'backup':
+            logOperation(`Backup created: ${data.filename} (${data.size_mb} MB)`, 'success');
+            document.getElementById('last-backup').textContent = new Date().toLocaleString();
+            break;
 
-        logOperation(message, 'success');
-        document.getElementById('last-backup').textContent = new Date().toLocaleString();
+        case 'indexes':
+            logOperation(`Rebuilt ${data.indexes_rebuilt} search indexes`, 'success');
+            break;
 
-        // Also show in console for easy copy/paste
-        console.log('✅ Backup Details:');
-        console.log(`  File: ${data.filename}`);
-        console.log(`  Size: ${data.size_mb} MB`);
-        console.log(`  Path: ${data.backup_path || 'Unknown'}`);
-        console.log(`  Data: ${data.data_dir || 'Unknown'}`);
+        case 'topology':
+            logOperation(`Topology generated: ${data.device_count} devices, ${data.connection_count} connections`, 'success');
+            loadTopologyList();
+            break;
 
-    } else if (data.operation === 'topology' && data.success) {
-        document.getElementById('topology-message').textContent =
-            `Generated map: ${data.map_name} (${data.device_count} devices, ${data.link_count} links)`;
-        logOperation(`Topology generated: ${data.map_name}`, 'success');
-    } else if (data.success) {
-        logOperation('Operation completed successfully', 'success');
-    } else {
-        logOperation('Operation failed: ' + data.error, 'error');
-        if (data.operation === 'topology') {
-            document.getElementById('topology-message').textContent = `Failed: ${data.error}`;
-        }
+        case 'arp':
+            logOperation(`Loaded ${data.entries_loaded} ARP entries`, 'success');
+            break;
+
+        case 'captures':
+            logOperation(`Processed ${data.files_processed} capture files`, 'success');
+            break;
+
+        case 'inventory_load':
+            const loadMsg = data.components_loaded
+                ? `Loaded ${data.components_loaded} components`
+                : 'Component load complete';
+            logOperation(loadMsg, 'success');
+            showComponentResults(data);
+            refreshComponentStats();
+            break;
+
+        case 'inventory_reclassify':
+            const reclassMsg = data.reclassified
+                ? `Reclassified ${data.reclassified} components`
+                : 'Reclassification complete';
+            logOperation(reclassMsg, 'success');
+            if (data.junk_filtered) {
+                logOperation(`Filtered ${data.junk_filtered} junk entries`, 'info');
+            }
+            showComponentResults(data);
+            refreshComponentStats();
+            break;
+
+        case 'inventory_cleanup':
+            logOperation(`Deleted ${data.deleted_count || 0} components`, 'success');
+            showComponentResults(data);
+            refreshComponentStats();
+            break;
+
+        case 'inventory_purge':
+            logOperation(`Purged all components (${data.deleted_count || 0} removed)`, 'success');
+            showComponentResults(data);
+            refreshComponentStats();
+            break;
+
+        case 'inventory_analyze':
+            logOperation('Component analysis complete', 'success');
+            showComponentResults(data);
+            break;
+
+        default:
+            logOperation('Operation completed successfully', 'success');
     }
 });
 
 socket.on('maintenance_error', function(data) {
     hideProgressModal();
     logOperation('Error: ' + data.error, 'error');
+    if (data.output) {
+        showComponentResults({output: data.output, error: data.error});
+    }
 });
 
 socket.on('maintenance_reset_complete', function(data) {
@@ -1035,11 +1202,13 @@ socket.on('maintenance_reset_complete', function(data) {
         alert('Database has been reset. The page will now reload.');
         window.location.reload();
     } else {
-        logOperation(`Database reset failed: ${data.error}`, 'error');
+        logOperation('Database reset failed: ' + data.error, 'error');
     }
 });
 
-// Logging utility
+// ========================================================================
+// LOGGING
+// ========================================================================
 function logOperation(message, type = 'info') {
     const log = document.getElementById('operation-log');
     const timestamp = new Date().toLocaleTimeString();
@@ -1061,50 +1230,21 @@ function clearLog() {
     logOperation('Log cleared', 'info');
 }
 
-// Backup Operations (WebSocket)
+// ========================================================================
+// BACKUP OPERATIONS
+// ========================================================================
 function createBackup(type) {
     logOperation(`Starting ${type} backup...`, 'info');
     showProgressModal(`Creating ${type} Backup`);
 
-    const includeCaptures = type === 'full';
-
     socket.emit('maintenance_backup', {
-        include_captures: includeCaptures
+        include_captures: type === 'full'
     });
 }
 
-// Backup inspection (AJAX - no progress needed, quick operation)
-document.getElementById('backup-file')?.addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    logOperation(`Inspecting backup: ${file.name}`, 'info');
-
-    const formData = new FormData();
-    formData.append('backup_file', file);
-
-    try {
-        const response = await fetch('/admin/maintenance/backup/inspect', {
-            method: 'POST',
-            body: formData
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            document.getElementById('backup-inspect-results').style.display = 'block';
-            document.getElementById('backup-manifest').textContent =
-                JSON.stringify(result.manifest, null, 2);
-            logOperation('Backup inspection complete', 'success');
-        } else {
-            logOperation(`Inspection failed: ${result.error}`, 'error');
-        }
-    } catch (error) {
-        logOperation(`Inspection error: ${error.message}`, 'error');
-    }
-});
-
-// Rebuild search indexes (WebSocket)
+// ========================================================================
+// SEARCH INDEX OPERATIONS
+// ========================================================================
 function rebuildIndexes() {
     if (!confirm('Rebuild all search indexes? This may take several minutes.')) {
         return;
@@ -1112,50 +1252,214 @@ function rebuildIndexes() {
 
     logOperation('Rebuilding search indexes...', 'info');
     showProgressModal('Rebuilding Search Indexes');
-
     socket.emit('maintenance_rebuild_indexes', {});
 }
 
-// Component reclassification (WebSocket)
+// ========================================================================
+// COMPONENT INVENTORY OPERATIONS
+// ========================================================================
+
+// Tab management
+document.querySelectorAll('.comp-tab-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const tabName = this.dataset.tab;
+
+        // Update buttons
+        document.querySelectorAll('.comp-tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+
+        // Update content
+        document.querySelectorAll('.comp-tab-content').forEach(t => t.classList.remove('active'));
+        document.getElementById(`comp-tab-${tabName}`).classList.add('active');
+
+        // Auto-refresh stats when switching to stats tab
+        if (tabName === 'stats') {
+            refreshComponentStats();
+        }
+
+        // Reinitialize icons
+        lucide.createIcons();
+    });
+});
+
+// Cleanup scope toggle
+document.querySelectorAll('input[name="cleanup-scope"]').forEach(r => {
+    r.addEventListener('change', function() {
+        document.getElementById('cleanup-device-input').style.display =
+            this.value === 'device' ? 'block' : 'none';
+        document.getElementById('cleanup-source-input').style.display =
+            this.value === 'source' ? 'block' : 'none';
+    });
+});
+
+function loadInventoryComponents() {
+    const purge = document.getElementById('load-purge').checked;
+
+    if (purge && !confirm('This will PURGE all existing components before loading new data. Continue?')) {
+        return;
+    }
+
+    logOperation('Loading components...', 'info');
+    showProgressModal('Loading Inventory');
+
+    socket.emit('maintenance_inventory_load', {
+        purge: purge,
+        reclassify: document.getElementById('load-reclassify').checked,
+        ignore_sn: document.getElementById('load-ignore-sn').checked,
+        device_filter: document.getElementById('load-device-filter').value.trim() || null
+    });
+}
+
+function purgeAllComponents() {
+    if (!confirm('This will DELETE ALL component records from the database.\n\nThis cannot be undone!')) {
+        return;
+    }
+
+    const doubleConfirm = prompt('Type "PURGE" to confirm:');
+    if (doubleConfirm !== 'PURGE') {
+        alert('Purge cancelled - confirmation text did not match');
+        return;
+    }
+
+    logOperation('Purging all components...', 'warning');
+    showProgressModal('Purging Components');
+    socket.emit('maintenance_inventory_purge', {});
+}
+
 function reclassifyComponents() {
-    if (!confirm('Reclassify all components? This will reparse inventory data.')) {
+    if (!confirm('Reclassify unknown components?')) {
         return;
     }
 
     logOperation('Reclassifying components...', 'info');
     showProgressModal('Reclassifying Components');
 
-    socket.emit('maintenance_reclassify_components', {});
+    socket.emit('maintenance_inventory_reclassify', {
+        delete_junk: document.getElementById('reclassify-delete-junk').checked,
+        dry_run: document.getElementById('reclassify-dry-run').checked
+    });
 }
 
-// Component stats (AJAX - quick)
-async function showComponentStats() {
-    const statsDiv = document.getElementById('component-stats');
-    statsDiv.style.display = statsDiv.style.display === 'none' ? 'block' : 'none';
+function analyzeUnknown() {
+    logOperation('Analyzing unknown components...', 'info');
+    showProgressModal('Analyzing');
+    socket.emit('maintenance_inventory_analyze', {});
+}
 
-    if (statsDiv.style.display === 'block') {
-        try {
-            const response = await fetch('/admin/maintenance/components/stats');
-            const stats = await response.json();
+function cleanupComponents() {
+    const scope = document.querySelector('input[name="cleanup-scope"]:checked').value;
+    let params = { scope };
 
-            document.getElementById('total-components').textContent = stats.total;
-            document.getElementById('components-with-serials').textContent = stats.with_serials;
-            document.getElementById('serial-coverage').textContent = stats.coverage + '%';
-        } catch (error) {
-            logOperation(`Failed to load component stats: ${error.message}`, 'error');
+    if (scope === 'device') {
+        params.device_name = document.getElementById('cleanup-device-name').value.trim();
+        if (!params.device_name) {
+            alert('Enter device name pattern');
+            return;
         }
+        if (!confirm(`Delete components for devices matching "${params.device_name}"?`)) {
+            return;
+        }
+    } else if (scope === 'source') {
+        params.source = document.getElementById('cleanup-source').value;
+        if (!confirm(`Delete all "${params.source}" components?`)) {
+            return;
+        }
+    } else if (scope === 'all') {
+        if (prompt('Type DELETE ALL to confirm:') !== 'DELETE ALL') {
+            return;
+        }
+    }
+
+    logOperation(`Cleanup (${scope})...`, 'info');
+    showProgressModal('Deleting Components');
+    socket.emit('maintenance_inventory_cleanup', params);
+}
+
+async function refreshComponentStats() {
+    const container = document.getElementById('component-stats-display');
+    container.innerHTML = '<div class="stats-loading">Loading...</div>';
+
+    try {
+        const resp = await fetch('/admin/maintenance/components/stats');
+        const stats = await resp.json();
+
+        if (stats.error) {
+            throw new Error(stats.error);
+        }
+
+        const total = stats.total_components || 0;
+        const coverage = total > 0 ? ((stats.with_serial / total) * 100).toFixed(1) : 0;
+
+        let html = `
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h5>Total</h5>
+                    <div class="stat-value">${total.toLocaleString()}</div>
+                </div>
+                <div class="stat-card">
+                    <h5>With Serials</h5>
+                    <div class="stat-value">${(stats.with_serial || 0).toLocaleString()}</div>
+                    <div class="stat-sub">${coverage}%</div>
+                </div>
+                <div class="stat-card">
+                    <h5>Devices</h5>
+                    <div class="stat-value">${stats.devices_with_components || 0}</div>
+                </div>
+                <div class="stat-card">
+                    <h5>Unknown</h5>
+                    <div class="stat-value">${(stats.unknown_pct || 0).toFixed(1)}%</div>
+                </div>
+            </div>
+        `;
+
+        if (stats.by_type && Object.keys(stats.by_type).length > 0) {
+            html += '<div style="margin-top:16px"><strong>By Type</strong></div>';
+
+            const sorted = Object.entries(stats.by_type).sort((a, b) => b[1] - a[1]);
+
+            for (const [type, count] of sorted) {
+                const pct = total > 0 ? (count / total * 100) : 0;
+                const cls = type === 'unknown' ? 'type-fill unknown' : 'type-fill';
+                html += `
+                    <div class="type-bar">
+                        <span class="type-label">${type || 'null'}</span>
+                        <div class="type-progress">
+                            <div class="${cls}" style="width:${Math.max(pct, 2)}%">
+                                ${pct > 8 ? count : ''}
+                            </div>
+                        </div>
+                        <span class="type-count">${count.toLocaleString()}</span>
+                    </div>
+                `;
+            }
+        }
+
+        container.innerHTML = html;
+
+    } catch (e) {
+        container.innerHTML = `<div class="alert alert-danger">${e.message}</div>`;
     }
 }
 
-// ARP database operations (WebSocket)
+function showComponentResults(data) {
+    document.getElementById('component-results').style.display = 'block';
+    document.getElementById('component-results-content').textContent =
+        typeof data === 'object' ? JSON.stringify(data, null, 2) : data;
+}
+
+function hideComponentResults() {
+    document.getElementById('component-results').style.display = 'none';
+}
+
+// ========================================================================
+// ARP DATABASE OPERATIONS
+// ========================================================================
 function loadArpData() {
     logOperation('Loading ARP data from captures...', 'info');
     showProgressModal('Loading ARP Data');
-
     socket.emit('maintenance_load_arp', {});
 }
 
-// ARP stats (AJAX - quick)
 async function showArpStats() {
     const statsDiv = document.getElementById('arp-stats');
     statsDiv.style.display = statsDiv.style.display === 'none' ? 'block' : 'none';
@@ -1165,8 +1469,8 @@ async function showArpStats() {
             const response = await fetch('/admin/maintenance/arp/stats');
             const stats = await response.json();
 
-            document.getElementById('arp-entries').textContent = stats.total_entries;
-            document.getElementById('unique-macs').textContent = stats.unique_macs;
+            document.getElementById('arp-entries').textContent = stats.total_entries || 0;
+            document.getElementById('unique-macs').textContent = stats.unique_macs || 0;
             document.getElementById('arp-updated').textContent = stats.last_updated || 'Never';
         } catch (error) {
             logOperation(`Failed to load ARP stats: ${error.message}`, 'error');
@@ -1174,42 +1478,122 @@ async function showArpStats() {
     }
 }
 
-// Capture data loading (WebSocket)
-function loadCaptureData() {
-    const captureTypes = [];
-    if (document.getElementById('load-configs').checked) captureTypes.push('configs');
-    if (document.getElementById('load-inventory').checked) captureTypes.push('inventory');
-    if (document.getElementById('load-routes').checked) captureTypes.push('routes');
-    if (document.getElementById('load-mac').checked) captureTypes.push('mac');
+// ========================================================================
+// TOPOLOGY OPERATIONS
+// ========================================================================
 
-    if (captureTypes.length === 0) {
-        alert('Please select at least one capture type');
+// Device autocomplete
+let deviceSearchTimeout;
+const rootDeviceInput = document.getElementById('rootDevice');
+const deviceSuggestions = document.getElementById('deviceSuggestions');
+
+rootDeviceInput.addEventListener('input', function() {
+    clearTimeout(deviceSearchTimeout);
+    const query = this.value.trim();
+
+    if (query.length < 2) {
+        deviceSuggestions.classList.remove('show');
         return;
     }
 
-    logOperation(`Loading capture data: ${captureTypes.join(', ')}`, 'info');
-    showProgressModal('Loading Capture Data');
+    deviceSearchTimeout = setTimeout(() => {
+        fetch(`/admin/maintenance/devices/search?q=${encodeURIComponent(query)}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.devices && data.devices.length > 0) {
+                    deviceSuggestions.innerHTML = data.devices.map(d => `
+                        <div class="suggestion-item" data-device="${d.name}">
+                            <div class="device-name">${d.name}</div>
+                            <div class="device-info">${d.ip} • ${d.model}</div>
+                        </div>
+                    `).join('');
+                    deviceSuggestions.classList.add('show');
 
-    socket.emit('maintenance_load_captures', {
-        capture_types: captureTypes
-    });
-}
+                    deviceSuggestions.querySelectorAll('.suggestion-item').forEach(item => {
+                        item.addEventListener('click', function() {
+                            rootDeviceInput.value = this.dataset.device;
+                            deviceSuggestions.classList.remove('show');
+                        });
+                    });
+                } else {
+                    deviceSuggestions.classList.remove('show');
+                }
+            });
+    }, 300);
+});
 
-// Topology generation (WebSocket)
-function generateTopology() {
-    const source = document.getElementById('map-source').value;
+// Hide suggestions on outside click
+document.addEventListener('click', function(e) {
+    if (!rootDeviceInput.contains(e.target) && !deviceSuggestions.contains(e.target)) {
+        deviceSuggestions.classList.remove('show');
+    }
+});
 
-    logOperation(`Generating topology from ${source} data...`, 'info');
+// Generate topology
+document.getElementById('btnGenerateTopology').addEventListener('click', function() {
+    const rootDevice = document.getElementById('rootDevice').value.trim();
+
+    if (!rootDevice) {
+        alert('Please enter a root device name');
+        return;
+    }
+
+    const maxHops = parseInt(document.getElementById('maxHops').value) || 4;
+    const domainSuffix = document.getElementById('domainSuffix').value.trim();
+
+    const filterPlatform = document.getElementById('filterPlatform').value
+        .split(',').map(s => s.trim()).filter(s => s);
+
+    const filterDevice = document.getElementById('filterDevice').value
+        .split(',').map(s => s.trim()).filter(s => s);
+
+    logOperation(`Generating topology from ${rootDevice} (max ${maxHops} hops)...`, 'info');
     showProgressModal('Generating Topology');
-    document.getElementById('topology-status').style.display = 'block';
-    document.getElementById('topology-message').textContent = 'Processing...';
 
     socket.emit('maintenance_generate_topology', {
-        source: source
+        root_device: rootDevice,
+        max_hops: maxHops,
+        domain_suffix: domainSuffix,
+        filter_platform: filterPlatform,
+        filter_device: filterDevice
     });
+});
+
+function loadTopologyList() {
+    fetch('/admin/maintenance/topology/list')
+        .then(r => r.json())
+        .then(data => {
+            const list = document.getElementById('topologyList');
+
+            if (!data.topologies || data.topologies.length === 0) {
+                list.innerHTML = '<p class="text-muted" style="padding: 12px;">No topologies generated yet</p>';
+                return;
+            }
+
+            list.innerHTML = data.topologies.map(t => `
+                <div class="file-item">
+                    <div>
+                        <div class="file-name">${t.filename}</div>
+                        <div class="file-meta">${t.size_kb} KB • ${new Date(t.created).toLocaleString()}</div>
+                    </div>
+                    <a href="/admin/maintenance/topology/download/${t.filename}"
+                       class="md-button md-button-text" style="padding: 4px 8px;">
+                        <i data-lucide="download"></i>
+                    </a>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        })
+        .catch(err => {
+            document.getElementById('topologyList').innerHTML =
+                '<p class="text-muted" style="padding: 12px;">Failed to load topology list</p>';
+        });
 }
 
-// Database reset (WebSocket)
+// ========================================================================
+// DATABASE RESET
+// ========================================================================
 function confirmDatabaseReset() {
     const confirmed = confirm(
         'WARNING: This will delete ALL data and reset the database to initial state.\n\n' +
@@ -1228,11 +1612,18 @@ function confirmDatabaseReset() {
 
     logOperation('Resetting database...', 'warning');
     showProgressModal('Resetting Database');
-
     socket.emit('maintenance_reset_database', {});
 }
 
-// Initialize lucide icons
-lucide.createIcons();
+// ========================================================================
+// INITIALIZATION
+// ========================================================================
+document.addEventListener('DOMContentLoaded', function() {
+    // Load topology list
+    loadTopologyList();
+
+    // Initialize Lucide icons
+    lucide.createIcons();
+});
 </script>
 {% endblock %}

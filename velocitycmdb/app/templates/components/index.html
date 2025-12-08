@@ -33,8 +33,8 @@
 
     /* Filter Controls */
     .filter-section { background: var(--md-surface); border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-corner-medium); padding: 20px; margin-bottom: 24px; }
-    .filter-controls { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 12px; align-items: end; }
-    @media (max-width: 1200px) { .filter-controls { grid-template-columns: 1fr 1fr; } }
+    .filter-controls { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto auto; gap: 12px; align-items: end; }
+    @media (max-width: 1200px) { .filter-controls { grid-template-columns: 1fr 1fr 1fr; } }
     @media (max-width: 768px)  { .filter-controls { grid-template-columns: 1fr; } }
     .form-group { display: flex; flex-direction: column; gap: 8px; }
     .form-label { font: var(--md-typescale-body-small); color: var(--md-on-surface-variant); font-weight: 500; }
@@ -230,6 +230,12 @@
         <i data-lucide="search" size="16"></i> Search&nbsp;&nbsp;
       </button>
     </div>
+
+    <div class="form-group">
+      <a id="exportBtn" class="md-button md-button-outlined" href="{{ url_for('components.export_csv', search=filters.search, type=filters.type, vendor=filters.vendor, has_serial=filters.has_serial) }}">
+        <i data-lucide="download" size="16"></i> Export CSV
+      </a>
+    </div>
   </div>
 
   <input type="hidden" name="page" value="1">
@@ -357,6 +363,35 @@
 document.addEventListener('DOMContentLoaded', function () {
     if (window.lucide && typeof window.lucide.createIcons === 'function') {
         window.lucide.createIcons();
+    }
+
+    // Update export link when filter inputs change
+    const filterForm = document.querySelector('.filter-section');
+    const exportBtn = document.getElementById('exportBtn');
+
+    if (filterForm && exportBtn) {
+        const baseExportUrl = "{{ url_for('components.export_csv') }}";
+
+        function updateExportLink() {
+            const formData = new FormData(filterForm);
+            const params = new URLSearchParams();
+
+            // Only add non-empty values
+            for (const [key, value] of formData.entries()) {
+                if (value && key !== 'page' && key !== 'per_page') {
+                    params.append(key, value);
+                }
+            }
+
+            const queryString = params.toString();
+            exportBtn.href = baseExportUrl + (queryString ? '?' + queryString : '');
+        }
+
+        // Update on any input change
+        filterForm.querySelectorAll('input, select').forEach(el => {
+            el.addEventListener('change', updateExportLink);
+            el.addEventListener('input', updateExportLink);
+        });
     }
 });
 </script>

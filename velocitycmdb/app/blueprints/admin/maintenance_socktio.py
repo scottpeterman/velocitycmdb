@@ -1,50 +1,185 @@
 # velocitycmdb/app/blueprints/admin/maintenance_socketio.py
 """
 SocketIO event handlers for real-time maintenance operations
+Unified handlers for backup, indexes, topology, ARP, and component inventory
+
+Component inventory operations call db_loader_inventory.py CLI
 """
 
 from flask import session
 from flask_socketio import emit
 from pathlib import Path
-from velocitycmdb.services.maintenance import MaintenanceOrchestrator
+import subprocess
+import threading
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
 
 def get_maintenance_service(app):
     """Get configured maintenance service"""
+    from velocitycmdb.services.maintenance import MaintenanceOrchestrator
     project_root = Path(app.root_path).parent
-    data_dir = Path(app.config.get('VELOCITYCMDB_DATA_DIR', '.'))
+    data_dir = Path(app.config.get('VELOCITYCMDB_DATA_DIR', '.')).expanduser()
     return MaintenanceOrchestrator(project_root=project_root, data_dir=data_dir)
+
+
+def get_loader_paths(app):
+    """Get paths for inventory loader script and data directory"""
+    data_dir = Path(app.config.get('VELOCITYCMDB_DATA_DIR', '~/.velocitycmdb')).expanduser()
+
+    # Script locations to check (in priority order)
+    # VELOCITYCMDB_DATA_DIR points to ~/.velocitycmdb/data
+    # Scripts are in ~/.velocitycmdb (parent) or project root
+    script_candidates = [
+        Path(app.root_path).parent / 'db_loader_inventory.py',  # velocitycmdb/db_loader_inventory.py
+        Path(app.root_path).parent / 'scripts' / 'db_loader_inventory.py',
+        data_dir.parent / 'db_loader_inventory.py',  # ~/.velocitycmdb/db_loader_inventory.py
+        data_dir.parent / 'scripts' / 'db_loader_inventory.py',
+    ]
+
+    script_path = None
+    for path in script_candidates:
+        if path.exists():
+            script_path = path
+            break
+
+    # VELOCITYCMDB_DATA_DIR already points to the data directory
+    # e.g., ~/.velocitycmdb/data
+    # The CLI expects the directory, not the file path
+    return script_path, data_dir
 
 
 def register_maintenance_socketio_handlers(socketio, app):
     """Register all maintenance-related SocketIO handlers"""
 
     def require_admin():
-        """Check if user is admin"""
+        """Check admin privileges, emit error if not admin"""
         if not session.get('is_admin'):
             emit('maintenance_error', {'error': 'Admin privileges required'})
             return False
         return True
 
     def progress_callback(update):
-        """Emit progress updates to client"""
+        """Standard progress callback for service operations"""
         emit('maintenance_progress', {
-            'stage': update['stage'],
-            'message': update['message'],
-            'progress': update['progress']
+            'stage': update.get('stage', ''),
+            'message': update.get('message', ''),
+            'progress': update.get('progress', 0)
         })
+
+    def run_inventory_loader(args, operation_name):
+        """
+        Run db_loader_inventory.py CLI and emit progress/results via SocketIO.
+        Runs in a background thread to avoid blocking.
+        """
+        script_path, data_dir = get_loader_paths(app)
+
+        if not script_path:
+            socketio.emit('maintenance_error', {
+                'error': 'db_loader_inventory.py not found. Check scripts directory.'
+            })
+            return
+
+        if not data_dir.exists():
+            socketio.emit('maintenance_error', {
+                'error': f'Data directory not found: {data_dir}'
+            })
+            return
+
+        cmd = ['python3', str(script_path),
+               '--assets-db', str(data_dir) + "/assets.db"] + args
+        logger.info(f"Running inventory loader: {' '.join(cmd)}")
+
+        try:
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,  # Capture stderr separately
+                text=True,
+                bufsize=1,
+                cwd=str(script_path.parent)  # Run from script directory so it finds tfsm_templates.db
+            )
+
+            output_lines = []
+            stderr_lines = []
+            stats = {}
+
+            for line in iter(process.stdout.readline, ''):
+                line = line.strip()
+                if not line:
+                    continue
+
+                output_lines.append(line)
+
+                # Parse key metrics from CLI output
+                if match := re.search(r'Components:\s*(\d+)', line):
+                    stats['components_loaded'] = int(match.group(1))
+                elif match := re.search(r'Processed:\s*(\d+)', line):
+                    stats['files_processed'] = int(match.group(1))
+                elif match := re.search(r'[Rr]eclassified[:\s]*(\d+)', line):
+                    stats['reclassified'] = int(match.group(1))
+                elif ('Deleted' in line or 'Cleaned up' in line) and (match := re.search(r'(\d+)', line)):
+                    stats['deleted_count'] = int(match.group(1))
+                elif match := re.search(r'Unknown:\s*(\d+)', line):
+                    stats['unknown_count'] = int(match.group(1))
+
+                # Emit progress update
+                socketio.emit('maintenance_progress', {
+                    'stage': 'processing',
+                    'message': line[:120],  # Truncate long lines
+                    'progress': 50
+                })
+
+            # Capture stderr after stdout is done
+            stderr_output = process.stderr.read()
+            if stderr_output:
+                stderr_lines = stderr_output.strip().split('\n')
+                for line in stderr_lines:
+                    logger.error(f"STDERR: {line}")
+
+            process.wait()
+
+            if process.returncode == 0:
+                socketio.emit('maintenance_complete', {
+                    'success': True,
+                    'operation': operation_name,
+                    'output': '\n'.join(output_lines[-30:]),  # Last 30 lines
+                    **stats
+                })
+                logger.info(f"{operation_name} completed successfully: {stats}")
+            else:
+                error_msg = '\n'.join(stderr_lines[-10:]) if stderr_lines else 'No stderr captured'
+                socketio.emit('maintenance_error', {
+                    'error': f'Command failed (rc={process.returncode}): {error_msg[:200]}',
+                    'output': '\n'.join(output_lines[-20:])
+                })
+                logger.error(f"{operation_name} failed (rc={process.returncode})")
+                logger.error(f"STDERR: {error_msg}")
+                logger.error(f"STDOUT tail: {output_lines[-5:] if output_lines else 'empty'}")
+
+        except Exception as e:
+            import traceback
+            logger.error(f"Inventory loader error: {e}\n{traceback.format_exc()}")
+            socketio.emit('maintenance_error', {'error': str(e)})
+
+    # =========================================================================
+    # BACKUP HANDLERS
+    # =========================================================================
 
     @socketio.on('maintenance_backup')
     def handle_backup(data):
-        """Handle backup creation with progress"""
+        """Create database backup with progress updates"""
         if not require_admin():
             return
 
         try:
-            logger.info(f"Starting backup (include_captures={data.get('include_captures')})")
+            emit('maintenance_progress', {
+                'stage': 'starting',
+                'message': 'Initializing backup...',
+                'progress': 10
+            })
 
             service = get_maintenance_service(app)
             result = service.create_backup(
@@ -52,163 +187,152 @@ def register_maintenance_socketio_handlers(socketio, app):
                 progress_callback=progress_callback
             )
 
-            if result['success']:
+            if result.get('success'):
                 emit('maintenance_complete', {
                     'success': True,
                     'operation': 'backup',
-                    'filename': result['filename'],
-                    'size_mb': result['size_mb'],
-                    'backup_path': result.get('backup_path', ''),  # Full path
-                    'data_dir': result.get('data_dir', '')  # Source data directory
+                    'filename': result.get('filename'),
+                    'size_mb': result.get('size_mb')
                 })
-                logger.info(f"Backup completed: {result['filename']} ({result['size_mb']} MB)")
-                logger.info(f"Backup location: {result.get('backup_path', 'unknown')}")
             else:
-                emit('maintenance_error', {'error': result['error']})
-                logger.error(f"Backup failed: {result['error']}")
+                emit('maintenance_error', {'error': result.get('error', 'Backup failed')})
 
         except Exception as e:
             logger.error(f"Backup error: {e}")
-            import traceback
-            logger.error(traceback.format_exc())
             emit('maintenance_error', {'error': str(e)})
+
+    # =========================================================================
+    # SEARCH INDEX HANDLERS
+    # =========================================================================
 
     @socketio.on('maintenance_rebuild_indexes')
     def handle_rebuild_indexes(data):
-        """Handle search index rebuild with progress"""
+        """Rebuild FTS5 search indexes"""
         if not require_admin():
             return
 
         try:
-            logger.info("Starting index rebuild")
+            emit('maintenance_progress', {
+                'stage': 'starting',
+                'message': 'Rebuilding search indexes...',
+                'progress': 10
+            })
 
             service = get_maintenance_service(app)
             result = service.rebuild_search_indexes(progress_callback=progress_callback)
 
-            if result['success']:
+            if result.get('success'):
                 emit('maintenance_complete', {
                     'success': True,
                     'operation': 'indexes',
-                    'indexes_rebuilt': result['indexes_rebuilt'],
-                    'statistics': result.get('statistics', {})
+                    'indexes_rebuilt': result.get('indexes_rebuilt', 0)
                 })
-                logger.info(f"Index rebuild completed: {result['indexes_rebuilt']}")
-                if 'statistics' in result:
-                    logger.info(f"Statistics: {result['statistics']}")
             else:
-                # Send detailed error information to UI
-                error_msg = result.get('error', 'Unknown error')
-                emit('maintenance_error', {
-                    'error': error_msg,
-                    'statistics': result.get('statistics', {}),
-                    'indexes_rebuilt': result.get('indexes_rebuilt', []),
-                    'return_code': result.get('return_code'),
-                    'full_output': result.get('full_output')
-                })
-                logger.error(f"Index rebuild failed: {error_msg}")
-                if 'return_code' in result:
-                    logger.error(f"Return code: {result['return_code']}")
+                emit('maintenance_error', {'error': result.get('error', 'Index rebuild failed')})
 
         except Exception as e:
             logger.error(f"Index rebuild error: {e}")
-            import traceback
-            error_trace = traceback.format_exc()
-            logger.error(error_trace)
+            emit('maintenance_error', {'error': str(e)})
 
-            # Send detailed error to UI
-            emit('maintenance_error', {
-                'error': str(e),
-                'traceback': error_trace if app.debug else None
-            })
-
-    # Add this to velocitycmdb/app/blueprints/admin/maintenance_socketio.py
-    # Inside the register_maintenance_socketio_handlers function
+    # =========================================================================
+    # TOPOLOGY HANDLERS
+    # =========================================================================
 
     @socketio.on('maintenance_generate_topology')
     def handle_generate_topology(data):
-        """Handle topology generation with progress"""
+        """Generate topology map from LLDP data"""
         if not require_admin():
             return
 
         try:
             root_device = data.get('root_device')
-            max_hops = data.get('max_hops', 4)
-            domain_suffix = data.get('domain_suffix', 'home.com')
-            filter_platform = data.get('filter_platform', [])
-            filter_device = data.get('filter_device', [])
-
             if not root_device:
                 emit('maintenance_error', {'error': 'Root device required'})
                 return
 
-            logger.info(f"Starting topology generation from {root_device} (max_hops={max_hops})")
+            emit('maintenance_progress', {
+                'stage': 'starting',
+                'message': f'Generating topology from {root_device}...',
+                'progress': 10
+            })
 
             service = get_maintenance_service(app)
             result = service.generate_topology_from_lldp(
                 root_device=root_device,
-                max_hops=max_hops,
-                domain_suffix=domain_suffix,
-                filter_platform=filter_platform,
-                filter_device=filter_device,
+                max_hops=data.get('max_hops', 4),
+                domain_suffix=data.get('domain_suffix', ''),
+                filter_platform=data.get('filter_platform', []),
+                filter_device=data.get('filter_device', []),
                 progress_callback=progress_callback
             )
 
-            if result['success']:
+            if result.get('success'):
                 emit('maintenance_complete', {
                     'success': True,
                     'operation': 'topology',
-                    'filename': result['filename'],
-                    'device_count': result['device_count'],
-                    'connection_count': result['connection_count'],
-                    'size_kb': result['size_kb']
+                    'filename': result.get('filename'),
+                    'device_count': result.get('device_count', 0),
+                    'connection_count': result.get('connection_count', 0),
+                    'size_kb': result.get('size_kb', 0)
                 })
-                logger.info(f"Topology generated: {result['filename']} ({result['device_count']} devices)")
             else:
-                emit('maintenance_error', {'error': result['error']})
-                logger.error(f"Topology generation failed: {result['error']}")
+                emit('maintenance_error', {'error': result.get('error', 'Topology generation failed')})
 
         except Exception as e:
             logger.error(f"Topology generation error: {e}")
-            import traceback
-            logger.error(traceback.format_exc())
             emit('maintenance_error', {'error': str(e)})
+
+    # =========================================================================
+    # ARP DATABASE HANDLERS
+    # =========================================================================
 
     @socketio.on('maintenance_load_arp')
     def handle_load_arp(data):
-        """Handle ARP data loading with progress"""
+        """Load ARP data from captures"""
         if not require_admin():
             return
 
         try:
-            logger.info("Starting ARP data load")
+            emit('maintenance_progress', {
+                'stage': 'starting',
+                'message': 'Loading ARP data...',
+                'progress': 10
+            })
 
             service = get_maintenance_service(app)
             result = service.load_arp_data(progress_callback=progress_callback)
 
-            if result['success']:
+            if result.get('success'):
                 emit('maintenance_complete', {
                     'success': True,
                     'operation': 'arp',
-                    'entries_loaded': result['entries_loaded']
+                    'entries_loaded': result.get('entries_loaded', 0)
                 })
-                logger.info(f"Loaded {result['entries_loaded']} ARP entries")
             else:
-                emit('maintenance_error', {'error': result['error']})
-                logger.error(f"ARP load failed: {result['error']}")
+                emit('maintenance_error', {'error': result.get('error', 'ARP load failed')})
 
         except Exception as e:
             logger.error(f"ARP load error: {e}")
             emit('maintenance_error', {'error': str(e)})
 
+    # =========================================================================
+    # CAPTURE DATA HANDLERS
+    # =========================================================================
+
     @socketio.on('maintenance_load_captures')
     def handle_load_captures(data):
-        """Handle capture data loading with progress"""
+        """Load capture data into database"""
         if not require_admin():
             return
 
         try:
             capture_types = data.get('capture_types', [])
-            logger.info(f"Starting capture load: {capture_types}")
+
+            emit('maintenance_progress', {
+                'stage': 'starting',
+                'message': f'Loading captures: {", ".join(capture_types)}...',
+                'progress': 10
+            })
 
             service = get_maintenance_service(app)
             result = service.load_capture_data(
@@ -216,104 +340,197 @@ def register_maintenance_socketio_handlers(socketio, app):
                 progress_callback=progress_callback
             )
 
-            if result['success']:
+            if result.get('success'):
                 emit('maintenance_complete', {
                     'success': True,
                     'operation': 'captures',
-                    'files_processed': result['files_processed']
+                    'files_processed': result.get('files_processed', 0)
                 })
-                logger.info(f"Loaded {result['files_processed']} capture files")
             else:
-                emit('maintenance_error', {'error': result['error']})
-                logger.error(f"Capture load failed: {result['error']}")
+                emit('maintenance_error', {'error': result.get('error', 'Capture load failed')})
 
         except Exception as e:
             logger.error(f"Capture load error: {e}")
             emit('maintenance_error', {'error': str(e)})
 
+    # =========================================================================
+    # COMPONENT INVENTORY HANDLERS (CLI-based)
+    # =========================================================================
 
+    @socketio.on('maintenance_inventory_load')
+    def handle_inventory_load(data):
+        """Load components from capture database via CLI"""
+        if not require_admin():
+            return
+
+        logger.info(f"Inventory load requested with options: {data}")
+
+        emit('maintenance_progress', {
+            'stage': 'starting',
+            'message': 'Starting component load...',
+            'progress': 5
+        })
+
+        # Build args for load command - CLI handles --purge natively
+        args = ['load']
+
+        if data.get('purge'):
+            args.append('--purge')
+
+        if data.get('reclassify'):
+            args.append('--reclassify')
+
+        if data.get('ignore_sn'):
+            args.append('--ignore-sn')
+
+        if data.get('device_filter'):
+            args.extend(['--device-filter', data['device_filter']])
+
+        threading.Thread(
+            target=run_inventory_loader,
+            args=(args, 'inventory_load'),
+            daemon=True
+        ).start()
+
+    @socketio.on('maintenance_inventory_purge')
+    def handle_inventory_purge(data):
+        """Purge all components without reloading (cleanup --all)"""
+        if not require_admin():
+            return
+
+        logger.info("Inventory purge (cleanup only) requested")
+
+        emit('maintenance_progress', {
+            'stage': 'starting',
+            'message': 'Purging all components...',
+            'progress': 5
+        })
+
+        args = ['cleanup', '--all', '--confirm']
+
+        threading.Thread(
+            target=run_inventory_loader,
+            args=(args, 'inventory_purge'),
+            daemon=True
+        ).start()
+
+    @socketio.on('maintenance_inventory_reclassify')
+    def handle_inventory_reclassify(data):
+        """Reclassify unknown components via CLI"""
+        if not require_admin():
+            return
+
+        args = ['reclassify']
+
+        if data.get('delete_junk'):
+            args.append('--delete-junk')
+        if data.get('dry_run'):
+            args.append('--dry-run')
+
+        logger.info(f"Inventory reclassify requested: {args}")
+
+        emit('maintenance_progress', {
+            'stage': 'starting',
+            'message': 'Starting reclassification...',
+            'progress': 5
+        })
+
+        threading.Thread(
+            target=run_inventory_loader,
+            args=(args, 'inventory_reclassify'),
+            daemon=True
+        ).start()
+
+    @socketio.on('maintenance_inventory_cleanup')
+    def handle_inventory_cleanup(data):
+        """Delete component records via CLI"""
+        if not require_admin():
+            return
+
+        args = ['cleanup', '--confirm']
+        scope = data.get('scope', 'device')
+
+        if scope == 'all':
+            args.append('--all')
+        elif scope == 'device' and data.get('device_name'):
+            args.extend(['--device-name', data['device_name']])
+        elif scope == 'source' and data.get('source'):
+            args.extend(['--source', data['source']])
+        else:
+            emit('maintenance_error', {'error': 'Invalid cleanup parameters'})
+            return
+
+        logger.info(f"Inventory cleanup requested: {args}")
+
+        emit('maintenance_progress', {
+            'stage': 'starting',
+            'message': f'Cleaning up components ({scope})...',
+            'progress': 5
+        })
+
+        threading.Thread(
+            target=run_inventory_loader,
+            args=(args, 'inventory_cleanup'),
+            daemon=True
+        ).start()
+
+    @socketio.on('maintenance_inventory_analyze')
+    def handle_inventory_analyze(data):
+        """Analyze unknown components via CLI"""
+        if not require_admin():
+            return
+
+        logger.info("Inventory analyze requested")
+
+        emit('maintenance_progress', {
+            'stage': 'starting',
+            'message': 'Analyzing unknown components...',
+            'progress': 5
+        })
+
+        threading.Thread(
+            target=run_inventory_loader,
+            args=(['analyze'], 'inventory_analyze'),
+            daemon=True
+        ).start()
+
+    # Legacy handler - redirects to new reclassify
+    @socketio.on('maintenance_reclassify_components')
+    def handle_reclassify_legacy(data):
+        """Legacy component reclassify - redirects to new handler"""
+        logger.info("Legacy reclassify_components called, redirecting to inventory_reclassify")
+        handle_inventory_reclassify({
+            'delete_junk': data.get('delete_junk', False),
+            'dry_run': False
+        })
+
+    # =========================================================================
+    # DATABASE RESET HANDLER
+    # =========================================================================
 
     @socketio.on('maintenance_reset_database')
     def handle_reset_database(data):
-        """Handle database reset with progress"""
+        """Reset database to initial state (DANGEROUS)"""
         if not require_admin():
             return
 
         try:
-            logger.warning("Starting database reset - DESTRUCTIVE OPERATION")
+            emit('maintenance_progress', {
+                'stage': 'starting',
+                'message': 'Resetting database...',
+                'progress': 10
+            })
 
             service = get_maintenance_service(app)
-            result = service.reset_database(
-                confirm=True,
-                progress_callback=progress_callback
-            )
+            result = service.reset_database(confirm=True, progress_callback=progress_callback)
 
-            if result['success']:
+            if result.get('success'):
                 emit('maintenance_reset_complete', {'success': True})
-                logger.warning("Database reset completed")
             else:
-                emit('maintenance_error', {'error': result['error']})
-                logger.error(f"Database reset failed: {result['error']}")
+                emit('maintenance_error', {'error': result.get('error', 'Reset failed')})
 
         except Exception as e:
             logger.error(f"Database reset error: {e}")
             emit('maintenance_error', {'error': str(e)})
 
-    logger.info("Maintenance SocketIO handlers registered")
-
-
-    @socketio.on('maintenance_reclassify_components')
-    def handle_reclassify_components(data):
-        """Handle component processing with real-time progress (2-step process)"""
-        if not require_admin():
-            return
-
-        try:
-            delete_junk = data.get('delete_junk', False)
-
-            logger.info(f"Starting component processing (delete_junk={delete_junk})")
-
-            service = get_maintenance_service(app)
-            result = service.reclassify_components(
-                delete_junk=delete_junk,
-                progress_callback=progress_callback
-            )
-
-            if result['success']:
-                emit('maintenance_complete', {
-                    'success': True,
-                    'operation': 'components',
-                    'step1': result.get('step1', {}),
-                    'step2': result.get('step2', {}),
-                    'summary': {
-                        'files_processed': result['step1'].get('files_processed', 0),
-                        'components_loaded': result['step1'].get('components_loaded', 0),
-                        'components_reclassified': result['step2'].get('reclassified_count', 0),
-                        'junk_deleted': result['step2'].get('junk_deleted', 0),
-                        'unknown_remaining': result['step2'].get('unknown_count', 0)
-                    }
-                })
-                logger.info(f"Component processing completed")
-                logger.info(f"  Step 1: {result['step1']}")
-                logger.info(f"  Step 2: {result['step2']}")
-            else:
-                # Send detailed error information
-                error_msg = result.get('error', 'Unknown error')
-                emit('maintenance_error', {
-                    'error': error_msg,
-                    'step1': result.get('step1', {}),
-                    'step2': result.get('step2', {}),
-                    'return_code': result.get('return_code')
-                })
-                logger.error(f"Component processing failed: {error_msg}")
-
-        except Exception as e:
-            logger.error(f"Component processing error: {e}")
-            import traceback
-            error_trace = traceback.format_exc()
-            logger.error(error_trace)
-
-            emit('maintenance_error', {
-                'error': str(e),
-                'traceback': error_trace if app.debug else None
-            })
+    logger.info("Maintenance SocketIO handlers registered successfully")
