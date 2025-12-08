@@ -311,7 +311,50 @@
             </div>
         </div>
     </div>
+<!-- Manual Capture Load -->
+<div class="maintenance-card">
+    <div class="card-header">
+        <i data-lucide="file-text"></i>
+        <h3>Capture Data</h3>
+    </div>
+    <div class="card-body">
+        <p>Manually load CLI captures into database</p>
 
+        <div class="capture-options">
+            <label class="checkbox-label">
+                <input type="checkbox" id="load-configs" checked>
+                <span>Configurations</span>
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" id="load-inventory" checked>
+                <span>Inventory</span>
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" id="load-routes">
+                <span>Routes</span>
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" id="load-mac">
+                <span>MAC Tables</span>
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" id="load-lldp">
+                <span>LLDP Neighbors</span>
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" id="load-arp">
+                <span>ARP Tables</span>
+            </label>
+        </div>
+
+        <div class="operation-group">
+            <button class="md-button md-button-filled" onclick="loadCaptureData()">
+                <i data-lucide="download"></i>
+                Load Selected Captures
+            </button>
+        </div>
+    </div>
+</div>
     <!-- ================================================================== -->
     <!-- TOPOLOGY GENERATION -->
     <!-- ================================================================== -->
@@ -1625,5 +1668,29 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize Lucide icons
     lucide.createIcons();
 });
+    // ========================================================================
+// CAPTURE DATA OPERATIONS
+// ========================================================================
+function loadCaptureData() {
+    const captureTypes = [];
+    if (document.getElementById('load-configs')?.checked) captureTypes.push('configs');
+    if (document.getElementById('load-inventory')?.checked) captureTypes.push('inventory');
+    if (document.getElementById('load-routes')?.checked) captureTypes.push('routes');
+    if (document.getElementById('load-mac')?.checked) captureTypes.push('mac');
+    if (document.getElementById('load-lldp')?.checked) captureTypes.push('lldp');
+    if (document.getElementById('load-arp')?.checked) captureTypes.push('arp');
+
+    if (captureTypes.length === 0) {
+        alert('Please select at least one capture type');
+        return;
+    }
+
+    logOperation(`Loading capture data: ${captureTypes.join(', ')}`, 'info');
+    showProgressModal('Loading Capture Data');
+
+    socket.emit('maintenance_load_captures', {
+        capture_types: captureTypes
+    });
+}
 </script>
 {% endblock %}
