@@ -316,4 +316,4 @@ Built with Flask, SocketIO, Cytoscape.js, Material Design 3, TextFSM, Paramiko, 
 
 ---
 
-*VelocityCMDB v0.10.5 | December 2025*
+*VelocityCMDB v0.10.X | December 2025*
