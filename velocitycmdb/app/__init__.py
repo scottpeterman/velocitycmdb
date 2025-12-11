@@ -117,6 +117,12 @@ def create_app(config_name='development'):
     # Initialize SocketIO
     socketio.init_app(app, cors_allowed_origins="*")
 
+    @socketio.on('connect')
+    def require_login_socketio():
+        from flask import session
+        if not session.get('logged_in'):
+            return False
+
     # Register SocketIO event handlers
     from velocitycmdb.app.blueprints.admin.maintenance_socktio import register_maintenance_socketio_handlers
     register_maintenance_socketio_handlers(socketio, app)
