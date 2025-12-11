@@ -1,0 +1,1 @@
+python velocitycmdb/db_to_sessions.py ~/.velocitycmdb/data/assets.db -o ~/.velocitycmdb/data/sessions.yam

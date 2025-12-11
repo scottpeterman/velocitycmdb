@@ -25,7 +25,7 @@
   "commands": {
     "template": "Arista Command Template",
     "command_text": "terminal length 0,show interfaces status",
-    "output_directory": "int-status"
+    "output_directory": "interface-status"
   },
   "execution": {
     "batch_script": "batch_spn.py (Multi-process)",

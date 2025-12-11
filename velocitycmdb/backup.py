@@ -17,6 +17,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+# Consistent default paths
+DEFAULT_DATA_DIR = '~/.velocitycmdb/data'
+DEFAULT_BACKUP_DIR = '~/.velocitycmdb/data/backups'
+
 
 class VelocityCMDBBackup:
     """Complete backup utility for VelocityCMDB"""
@@ -31,11 +35,15 @@ class VelocityCMDBBackup:
             data_dir: Data directory containing databases (defaults to ~/.velocitycmdb/data)
         """
         if data_dir:
-            self.data_dir = Path(data_dir).resolve()
+            self.data_dir = Path(data_dir).expanduser().resolve()
+            self._validate_data_dir(self.data_dir)
         else:
-            self.data_dir = Path.home() / '.velocitycmdb' / 'data'
+            self.data_dir = Path(DEFAULT_DATA_DIR).expanduser().resolve()
 
         self.base_dir = self.data_dir.parent  # ~/.velocitycmdb
+
+        # Default backup directory inside data dir
+        self.backup_dir = self.data_dir / 'backups'
 
         # Database files in data directory
         self.db_files = {
@@ -57,6 +65,40 @@ class VelocityCMDBBackup:
             self.artifact_dirs['discovery_maps'] = discovery_dir / 'maps'
 
         self.validate_environment()
+
+    def _validate_data_dir(self, data_dir: Path):
+        """
+        Validate that provided data_dir is not a project/venv folder.
+        Prevents accidentally using the installed package location.
+        """
+        # Check for common project/venv indicators
+        invalid_indicators = [
+            'site-packages',
+            'dist-packages',
+            'venv',
+            '.venv',
+            'lib/python',
+            '__pycache__',
+            '.egg-info',
+        ]
+
+        data_dir_str = str(data_dir).lower()
+
+        for indicator in invalid_indicators:
+            if indicator in data_dir_str:
+                raise RuntimeError(
+                    f"Invalid data directory: {data_dir}\n"
+                    f"This appears to be a Python package/venv location.\n"
+                    f"Use the default (~/.velocitycmdb/data) or specify a valid data directory."
+                )
+
+        # Also check if it looks like a package directory (has __init__.py or setup.py nearby)
+        if (data_dir / '__init__.py').exists() or (data_dir / 'setup.py').exists():
+            raise RuntimeError(
+                f"Invalid data directory: {data_dir}\n"
+                f"This appears to be a Python project directory.\n"
+                f"Use the default (~/.velocitycmdb/data) or specify a valid data directory."
+            )
 
     def validate_environment(self):
         """Ensure data directory exists"""
@@ -212,13 +254,26 @@ class VelocityCMDBBackup:
             print(f"  [ERROR] Error backing up {src_path.name}/: {e}")
             return False
 
-    def create_backup(self, output_dir: str, include_captures: bool = True,
+    def create_backup(self, output_dir: str = None, include_captures: bool = True,
                       include_logs: bool = False) -> Tuple[bool, Optional[str]]:
-        """Create a complete backup archive"""
+        """
+        Create a complete backup archive
+
+        Args:
+            output_dir: Where to save backup (defaults to ~/.velocitycmdb/data/backups)
+            include_captures: Include capture files in backup
+            include_logs: Include log files in backup
+        """
 
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         backup_name = f'velocitycmdb_backup_{timestamp}'
-        output_path = Path(output_dir).resolve()
+
+        # Use provided output_dir or default to backup_dir
+        if output_dir:
+            output_path = Path(output_dir).expanduser().resolve()
+        else:
+            output_path = self.backup_dir
+
         output_path.mkdir(parents=True, exist_ok=True)
 
         archive_path = output_path / f"{backup_name}.tar.gz"
@@ -312,14 +367,17 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Full backup with everything
-  python backup.py --output ./backups
+  # Full backup with everything (saves to ~/.velocitycmdb/data/backups/)
+  python backup.py
 
   # Metadata-only backup (excludes large capture files)
-  python backup.py --output ./backups --no-captures
+  python backup.py --no-captures
+
+  # Backup to specific output directory
+  python backup.py --output ~/my-backups
 
   # Backup from specific data directory
-  python backup.py --data-dir /path/to/data --output ./backups
+  python backup.py --data-dir /path/to/data --output ~/my-backups
         """
     )
 
@@ -331,8 +389,8 @@ Examples:
 
     parser.add_argument(
         '--output',
-        default='./backups',
-        help='Output directory for backup archive (default: ./backups)'
+        default=None,
+        help='Output directory for backup archive (default: ~/.velocitycmdb/data/backups)'
     )
 
     parser.add_argument(

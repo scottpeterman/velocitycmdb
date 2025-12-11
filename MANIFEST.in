@@ -18,7 +18,6 @@ recursive-include velocitycmdb/app/static *
 
 # TextFSM templates and command definitions
 include velocitycmdb/pcng/tfsm_templates.db
-include velocitycmdb/tfsm_templates.db
 include velocitycmdb/pcng/command_templates.json
 
 # Database schema files

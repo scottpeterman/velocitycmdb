@@ -367,7 +367,7 @@ Real-time batch progress
 pip install velocitycmdb
 
 # Initialize
-python -m velocitycmdb.cli init
+velocitycmdb init
 
 # Start
 velocitycmdb start
@@ -420,7 +420,7 @@ python -m velocitycmdb.cli start
 ```bash
 # Installation
 pip install velocitycmdb
-python -m velocitycmdb.cli init
+velocitycmdb init
 velocitycmdb start
 
 # Everything else via Web UI wizard

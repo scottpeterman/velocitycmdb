@@ -16,18 +16,21 @@ import re
 
 logger = logging.getLogger(__name__)
 
+# Consistent default for all data directory references
+DEFAULT_DATA_DIR = '~/.velocitycmdb/data'
+
 
 def get_maintenance_service(app):
     """Get configured maintenance service"""
     from velocitycmdb.services.maintenance import MaintenanceOrchestrator
     project_root = Path(app.root_path).parent
-    data_dir = Path(app.config.get('VELOCITYCMDB_DATA_DIR', '.')).expanduser()
+    data_dir = Path(app.config.get('VELOCITYCMDB_DATA_DIR', DEFAULT_DATA_DIR)).expanduser()
     return MaintenanceOrchestrator(project_root=project_root, data_dir=data_dir)
 
 
 def get_loader_paths(app):
     """Get paths for inventory loader script and data directory"""
-    data_dir = Path(app.config.get('VELOCITYCMDB_DATA_DIR', '~/.velocitycmdb')).expanduser()
+    data_dir = Path(app.config.get('VELOCITYCMDB_DATA_DIR', DEFAULT_DATA_DIR)).expanduser()
 
     # Script locations to check (in priority order)
     # VELOCITYCMDB_DATA_DIR points to ~/.velocitycmdb/data
@@ -272,8 +275,7 @@ def register_maintenance_socketio_handlers(socketio, app):
                     'operation': 'topology',
                     'filename': result.get('filename'),
                     'device_count': result.get('device_count', 0),
-                    'connection_count': result.get('connection_count', 0),
-                    'size_kb': result.get('size_kb', 0)
+                    'connection_count': result.get('connection_count', 0)
                 })
             else:
                 emit('maintenance_error', {'error': result.get('error', 'Topology generation failed')})
@@ -283,7 +285,7 @@ def register_maintenance_socketio_handlers(socketio, app):
             emit('maintenance_error', {'error': str(e)})
 
     # =========================================================================
-    # ARP DATABASE HANDLERS
+    # ARP HANDLERS
     # =========================================================================
 
     @socketio.on('maintenance_load_arp')

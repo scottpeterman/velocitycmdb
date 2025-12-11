@@ -19,7 +19,7 @@ That's it. No Docker, no PostgreSQL, no Redis, no Kubernetes.
 ## Step 2: Initialize
 
 ```bash
-python -m velocitycmdb.cli init
+velocitycmdb init
 ```
 
 **What happens:**
@@ -31,7 +31,7 @@ python -m velocitycmdb.cli init
 **Output:**
 ```
 ============================================================
-python -m velocitycmdb.cli initialization
+VelocityCMDB Initialization
 ============================================================
 
 Set VELOCITYCMDB_DATA_DIR to: /home/you/.velocitycmdb/data
@@ -62,7 +62,7 @@ Default admin credentials:
   IMPORTANT: Change this password after first login!
 
 Next step:
-  python -m velocitycmdb.app.run
+  velocitycmdb run
 
 Config file: ~/.velocitycmdb/config.yaml
 ============================================================
@@ -146,7 +146,7 @@ Users log in with their Windows/Linux credentials. Admin rights controlled via V
 ## Step 4: Launch
 
 ```bash
-python -m velocitycmdb.app.run
+velocitycmdb run
 ```
 
 **What happens:**
@@ -156,10 +156,10 @@ python -m velocitycmdb.app.run
 
 **Options:**
 ```bash
-python -m velocitycmdb.app.run                      # Default: port 8086, no SSL
-python -m velocitycmdb.app.run -p 8443 --ssl        # Port 8443 with self-signed SSL
-python -m velocitycmdb.app.run --port 5000          # Port 5000, no SSL
-python -m velocitycmdb.app.run --host 127.0.0.1     # Bind to localhost only
+velocitycmdb run                      # Default: port 8086, no SSL
+velocitycmdb run -p 8443 --ssl        # Port 8443 with self-signed SSL
+velocitycmdb run --port 5000          # Port 5000, no SSL
+velocitycmdb run --host 127.0.0.1     # Bind to localhost only
 ```
 
 ---
@@ -333,11 +333,11 @@ Here's what happened in our lab test:
 $ pip install velocitycmdb
 
 # Initialized
-$ python -m velocitycmdb.cli init
-python -m velocitycmdb.cli initialized successfully!
+$ velocitycmdb init
+VelocityCMDB initialized successfully!
 
 # Launched
-$ python -m velocitycmdb.app.run
+$ velocitycmdb run
 * Running on http://127.0.0.1:8086
 
 # In browser: Started discovery with seed IP 172.16.10.21
@@ -397,30 +397,30 @@ $ python -m velocitycmdb.app.run
 
 ```bash
 # Initialize system (first time setup)
-python -m velocitycmdb.cli init
+velocitycmdb init
 
 # Re-initialize and overwrite config
-python -m velocitycmdb.cli init --force
+velocitycmdb init --force
 
 # Start web interface (default: port 8086)
-python -m velocitycmdb.app.run
+velocitycmdb run
 
 # Start with SSL enabled
-python -m velocitycmdb.app.run --ssl
+velocitycmdb run --ssl
 
 # Start on custom port
-python -m velocitycmdb.app.run -p 8443
+velocitycmdb run -p 8443
 
 # Start on custom host and port
-python -m velocitycmdb.app.run --host 127.0.0.1 --port 5000
+velocitycmdb run --host 127.0.0.1 --port 5000
 
 # Disable debug mode (for production)
-python -m velocitycmdb.app.run --no-debug
+velocitycmdb run --no-debug
 
 # Show help
 velocitycmdb --help
-python -m velocitycmdb.cli init --help
-python -m velocitycmdb.app.run --help
+velocitycmdb init --help
+velocitycmdb run --help
 ```
 
 ---
@@ -432,8 +432,8 @@ python -m velocitycmdb.app.run --help
 ```bash
 # Install and setup
 pip install velocitycmdb
-python -m velocitycmdb.cli init
-python -m velocitycmdb.app.run
+velocitycmdb init
+velocitycmdb run
 
 # In browser:
 # 1. Login (admin/admin)
@@ -453,8 +453,8 @@ python -m velocitycmdb.app.run
 ```bash
 # Install once
 pip install velocitycmdb
-python -m velocitycmdb.cli init
-python -m velocitycmdb.app.run
+velocitycmdb init
+velocitycmdb run
 
 # In browser (repeat for each site):
 # Site 1: HQ
@@ -501,13 +501,13 @@ python -m velocitycmdb.app.run
 ```bash
 # 1. Install and initialize
 pip install velocitycmdb
-python -m velocitycmdb.cli init
+velocitycmdb init
 
 # 2. Edit ~/.velocitycmdb/config.yaml with LDAP settings
 # (see Step 3 above)
 
 # 3. Launch
-python -m velocitycmdb.app.run
+velocitycmdb run
 
 # 4. Users log in with LDAP credentials
 # System auto-creates their accounts
@@ -625,8 +625,8 @@ After your first successful discovery:
 
 ```bash
 pip install velocitycmdb
-python -m velocitycmdb.cli init
-python -m velocitycmdb.app.run
+velocitycmdb init
+velocitycmdb run
 ```
 
 **Three commands. One seed IP. Five minutes.**

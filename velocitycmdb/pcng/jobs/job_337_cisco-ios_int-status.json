@@ -7,14 +7,14 @@
     "auto_paging": true
   },
   "credentials": {
-    "username": "admin",
+    "username": "speterman",
     "credential_system": "Auto-detect from script",
     "password_provided": false,
     "enable_password_provided": false
   },
   "authentication": {
     "use_keys": true,
-    "ssh_key_path": "~/.ssh/admin/id_rsa"
+    "ssh_key_path": "~/.ssh/speterman/id_rsa"
   },
   "filters": {
     "folder": "",

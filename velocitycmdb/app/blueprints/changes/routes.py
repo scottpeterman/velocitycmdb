@@ -1,6 +1,6 @@
 import traceback
 
-from flask import render_template, jsonify, request
+from flask import render_template, jsonify, request, current_app
 import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -8,6 +8,11 @@ import os
 
 from velocitycmdb.app.blueprints.changes import changes_bp
 from velocitycmdb.app.utils.database import get_db_connection
+
+
+def get_data_dir():
+    """Get configured data directory from app config"""
+    return Path(current_app.config.get('VELOCITYCMDB_DATA_DIR', '.')).expanduser()
 
 
 @changes_bp.route('/')
@@ -174,23 +179,28 @@ def view_diff(change_id):
     if change and change.get('diff_path'):
         try:
             diff_path = Path(change['diff_path'])
+            data_dir = get_data_dir()
             debug_info.append(f"Original path: {change['diff_path']}")
+            debug_info.append(f"Data dir: {data_dir}")
 
             # Try multiple path resolution strategies
             paths_to_try = []
 
-            # Strategy 1: Absolute path
+            # Strategy 1: If absolute path, use as-is
             if diff_path.is_absolute():
                 paths_to_try.append(diff_path)
 
-            # Strategy 2: Relative to pcng directory
-            paths_to_try.append(Path('pcng') / diff_path)
+            # Strategy 2: Relative to configured data_dir (PRIMARY)
+            paths_to_try.append(data_dir / diff_path)
 
-            # Strategy 3: Relative to current directory
+            # Strategy 3: Check if path starts with 'diffs/' and resolve from data_dir
+            if str(diff_path).startswith('diffs/'):
+                paths_to_try.append(data_dir / diff_path)
+            else:
+                paths_to_try.append(data_dir / 'diffs' / diff_path)
+
+            # Strategy 4: Relative to current working directory (fallback)
             paths_to_try.append(diff_path)
-
-            # Strategy 4: Look in common capture locations
-            paths_to_try.append(Path('pcng/capture') / diff_path.name)
 
             # Try each path
             file_found = False

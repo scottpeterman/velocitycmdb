@@ -105,7 +105,7 @@ def _create_directory_structure(self):
         directory.mkdir(parents=True, exist_ok=True)
 ```
 
-**Called automatically by `python -m velocitycmdb.cli init`.**
+**Called automatically by `velocitycmdb init`.**
 
 ---
 
@@ -164,7 +164,7 @@ def find_data_path(base_dir: Path) -> Path:
 ### Init Command
 
 ```bash
-python -m velocitycmdb.cli init
+velocitycmdb init
 # Creates:
 #   ~/.velocitycmdb/data/ (with all subdirectories)
 #   ~/.velocitycmdb/discovery/
@@ -256,7 +256,7 @@ RUN pip install -e .
 ENV VELOCITYCMDB_DATA_DIR=/app/.velocitycmdb/data
 
 # Initialize on first run
-RUN python -m velocitycmdb.cli init --admin-password=changeme
+RUN velocitycmdb init --admin-password=changeme
 
 EXPOSE 8086
 
@@ -334,7 +334,7 @@ Override default paths:
 export VELOCITYCMDB_DATA_DIR=/custom/path/data
 
 # Commands use this path
-python -m velocitycmdb.cli init
+velocitycmdb init
 velocitycmdb start
 velocitycmdb backup
 ```
@@ -399,7 +399,7 @@ find ~/.velocitycmdb/data/capture -type f -mtime +90 -delete
 ```bash
 # Nuclear option - delete everything
 velocitycmdb reset --yes
-python -m velocitycmdb.cli init
+velocitycmdb init
 ```
 
 ---

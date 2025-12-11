@@ -346,7 +346,7 @@ scmaps:
 #
 # Database authentication not working?
 # - Verify database path exists: ls -la ~/.velocitycmdb/data/users.db
-# - Recreate database: python -m velocitycmdb.cli init
+# - Recreate database: velocitycmdb init
 # - Create admin user: velocitycmdb create-admin
 #
 # Local authentication not working (Windows)?

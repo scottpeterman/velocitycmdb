@@ -1,0 +1,46 @@
+{
+  "version": "1.0",
+  "timestamp": "2025-10-16T06:37:32.037423",
+  "session_file": "sessions.yaml",
+  "vendor": {
+    "selected": "Arista",
+    "auto_paging": true
+  },
+  "credentials": {
+    "username": "speterman",
+    "credential_system": "Auto-detect from script",
+    "password_provided": false,
+    "enable_password_provided": false
+  },
+  "authentication": {
+    "use_keys": true,
+    "ssh_key_path": "~/.ssh/speterman/id_rsa"
+  },
+  "filters": {
+    "folder": "",
+    "name": "",
+    "vendor": "arista",
+    "device_type": ""
+  },
+  "commands": {
+    "template": "Arista Command Template",
+    "command_text": "terminal length 0,show interfaces status",
+    "output_directory": "int-status"
+  },
+  "execution": {
+    "batch_script": "batch_spn.py (Multi-process)",
+    "max_workers": 12,
+    "verbose": false,
+    "dry_run": false
+  },
+  "fingerprint_options": {
+    "fingerprint_base": "./output/fingerprints"
+  },
+  "ui_state": {
+    "current_tab": 0
+  },
+  "legacy_info": {
+    "generated_by": "generate_capture_jobs.py",
+    "generation_timestamp": "2025-10-16T06:37:32.037423"
+  }
+}

@@ -145,7 +145,8 @@ class CollectionOrchestrator:
             )
 
             # Step 3: Load to database if requested
-            if auto_load_db and result['success']:
+            # Always attempt db_load if enabled - _load_to_database handles missing dirs gracefully
+            if auto_load_db:
                 if progress_callback:
                     progress_callback({
                         'stage': 'loading',
@@ -604,7 +605,13 @@ class CollectionOrchestrator:
     def _load_to_database(self,
                          capture_dirs: List[Path],
                          progress_callback: Optional[Callable] = None) -> Dict:
-        """Load captured data into database"""
+        """
+        Load captured data into database
+
+        Note: db_load_capture.py expects the BASE capture directory and looks for
+        subdirectories named after each capture type. We pass --capture-types to
+        specify which types to load.
+        """
         if progress_callback:
             progress_callback({
                 'stage': 'loading',
@@ -614,38 +621,74 @@ class CollectionOrchestrator:
 
         db_path = self.data_dir / 'assets.db'
 
-        try:
-            loaded_count = 0
+        # Extract capture type names from the paths
+        # capture_dirs are like [.../capture/configs, .../capture/ospf-neighbor]
+        capture_types = [d.name for d in capture_dirs]
 
-            for capture_dir in capture_dirs:
-                cmd = [
-                    sys.executable,
-                    str(self.db_load_script),
-                    '--db-path', str(db_path),
-                    '--captures-dir', str(self.capture_dir),
-                    '--verbose'
-                ]
+        # Filter to only types that have actual capture directories
+        existing_types = [ct for ct in capture_types if (self.capture_dir / ct).exists()]
 
-                logger.info(f"Loading captures from {capture_dir}")
-                result = subprocess.run(
-                    cmd,
-                    capture_output=True,
-                    text=True,
-                    timeout=600
-                )
-
-                if result.returncode == 0:
-                    loaded_count += 1
-                    logger.info(f"✓ Loaded {capture_dir.name}")
-                else:
-                    logger.error(f"✗ Failed to load {capture_dir.name}")
-
+        if not existing_types:
+            logger.warning(f"No capture directories found for types: {capture_types}")
             return {
-                'success': loaded_count > 0,
-                'loaded_count': loaded_count,
-                'total_requested': len(capture_dirs)
+                'success': False,
+                'error': 'No capture directories found',
+                'loaded_count': 0,
+                'total_requested': len(capture_types)
             }
 
+        try:
+            # Call db_load_capture.py ONCE with base capture dir and list of types
+            cmd = [
+                sys.executable,
+                str(self.db_load_script),
+                '--data-dir', str(self.data_dir),  # Base data directory
+                '--db-path', str(db_path),
+                '--captures-dir', str(self.capture_dir),  # Base capture directory
+                '--capture-types', ','.join(existing_types),  # Comma-separated types
+                '--verbose'
+            ]
+
+            logger.info(f"Loading captures: {' '.join(cmd)}")
+            logger.info(f"Capture types to load: {existing_types}")
+
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=600
+            )
+
+            if result.returncode == 0:
+                logger.info(f"✓ Loaded captures for types: {', '.join(existing_types)}")
+                if result.stdout:
+                    logger.debug(f"db_load_capture stdout:\n{result.stdout}")
+                return {
+                    'success': True,
+                    'loaded_count': len(existing_types),
+                    'total_requested': len(capture_types)
+                }
+            else:
+                logger.error(f"✗ Failed to load captures")
+                if result.stderr:
+                    logger.error(f"db_load_capture stderr: {result.stderr}")
+                if result.stdout:
+                    logger.error(f"db_load_capture stdout: {result.stdout}")
+                return {
+                    'success': False,
+                    'error': result.stderr or 'Unknown error',
+                    'loaded_count': 0,
+                    'total_requested': len(capture_types)
+                }
+
+        except subprocess.TimeoutExpired:
+            logger.error("db_load_capture.py timed out after 600 seconds")
+            return {
+                'success': False,
+                'error': 'Database loading timed out',
+                'loaded_count': 0,
+                'total_requested': len(capture_types)
+            }
         except Exception as e:
             logger.exception("Database loading failed")
             return {

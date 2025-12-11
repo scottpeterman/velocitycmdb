@@ -5,6 +5,7 @@ TextFSM Template Tester - Debug tool for testing template matching and parsing
 
 import sys
 import json
+import sqlite3
 from pathlib import Path
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QHBoxLayout, QTextEdit, QLineEdit, QPushButton,
@@ -24,7 +25,7 @@ except ImportError:
 
 class TemplateTestWorker(QThread):
     """Worker thread for template testing to avoid blocking UI"""
-    results_ready = pyqtSignal(str, list, float, list)
+    results_ready = pyqtSignal(str, list, float, list, str)  # Added template_content
 
     def __init__(self, db_path, device_output, filter_string, verbose=True):
         super().__init__()
@@ -41,15 +42,40 @@ class TemplateTestWorker(QThread):
             with engine.connection_manager.get_connection() as conn:
                 all_templates = engine.get_filtered_templates(conn, self.filter_string)
 
-            # Find best template
+            # Find best template - returns 3 values (unchanged signature)
             best_template, best_parsed, best_score = engine.find_best_template(
                 self.device_output, self.filter_string
             )
 
-            self.results_ready.emit(best_template or "None", best_parsed or [],
-                                    best_score, all_templates)
+            # Retrieve template content separately using the template name
+            template_content = ""
+            if best_template:
+                template_content = self._get_template_content(best_template)
+
+            self.results_ready.emit(
+                best_template or "None",
+                best_parsed or [],
+                best_score,
+                all_templates,
+                template_content
+            )
         except Exception as e:
-            self.results_ready.emit(f"Error: {str(e)}", [], 0.0, [])
+            self.results_ready.emit(f"Error: {str(e)}", [], 0.0, [], "")
+
+    def _get_template_content(self, template_name: str) -> str:
+        """Retrieve template content from database by cli_command name"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT textfsm_content FROM templates WHERE cli_command = ?",
+                (template_name,)
+            )
+            result = cursor.fetchone()
+            conn.close()
+            return result[0] if result else ""
+        except Exception as e:
+            return f"Error retrieving template: {str(e)}"
 
 
 class TextFSMTester(QMainWindow):
@@ -163,6 +189,22 @@ usa-leaf-1          Eth5           120        R               GigabitEthernet0/0
 
         self.results_tabs.addTab(results_tab, "Best Results")
 
+        # Template Content tab (NEW)
+        template_tab = QWidget()
+        template_layout = QVBoxLayout(template_tab)
+
+        self.template_name_label = QLabel("Template: None")
+        self.template_name_label.setFont(QFont("Arial", 10, QFont.Weight.Bold))
+        template_layout.addWidget(self.template_name_label)
+
+        self.template_content_text = QTextEdit()
+        self.template_content_text.setReadOnly(True)
+        self.template_content_text.setFont(QFont("Courier", 10))
+        self.template_content_text.setPlaceholderText("Template content will appear here after testing...")
+        template_layout.addWidget(self.template_content_text)
+
+        self.results_tabs.addTab(template_tab, "Template Content")
+
         # All templates tab
         templates_tab = QWidget()
         templates_layout = QVBoxLayout(templates_tab)
@@ -239,13 +281,17 @@ usa-leaf-1          Eth5           120        R               GigabitEthernet0/0
         self.worker.results_ready.connect(self.handle_results)
         self.worker.start()
 
-    def handle_results(self, best_template, best_parsed, best_score, all_templates):
+    def handle_results(self, best_template, best_parsed, best_score, all_templates, template_content):
         self.test_btn.setEnabled(True)
         self.statusBar().showMessage("Testing complete")
 
         # Update best match info
         self.best_match_label.setText(f"Best Match: {best_template}")
         self.score_label.setText(f"Score: {best_score:.2f}")
+
+        # Update template content tab
+        self.template_name_label.setText(f"Template: {best_template}")
+        self.template_content_text.setPlainText(template_content)
 
         # Update results table
         if best_parsed:
@@ -270,12 +316,12 @@ usa-leaf-1          Eth5           120        R               GigabitEthernet0/0
             self.templates_table.setItem(row, 3, QTableWidgetItem("Available"))
 
         # Log detailed results
-        self.log_results(best_template, best_parsed, best_score, all_templates)
+        self.log_results(best_template, best_parsed, best_score, all_templates, template_content)
 
         # Auto-switch to results tab
         self.results_tabs.setCurrentIndex(0)
 
-    def log_results(self, best_template, best_parsed, best_score, all_templates):
+    def log_results(self, best_template, best_parsed, best_score, all_templates, template_content):
         log_content = []
         log_content.append("=" * 60)
         log_content.append("TEXTFSM TEMPLATE TEST RESULTS")
@@ -298,6 +344,11 @@ usa-leaf-1          Eth5           120        R               GigabitEthernet0/0
             if len(best_parsed) > 3:
                 log_content.append(f"... and {len(best_parsed) - 3} more records")
                 log_content.append("")
+
+        log_content.append("BEST TEMPLATE CONTENT:")
+        log_content.append("-" * 40)
+        log_content.append(template_content if template_content else "No template content available")
+        log_content.append("")
 
         log_content.append("ALL MATCHING TEMPLATES:")
         log_content.append("-" * 40)

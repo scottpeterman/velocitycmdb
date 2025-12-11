@@ -15,6 +15,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Consistent default for all data directory references
+DEFAULT_DATA_DIR = '~/.velocitycmdb/data'
+
 
 def admin_required(f):
     """Decorator to require admin privileges"""
@@ -35,13 +38,13 @@ def get_maintenance_service():
     """Get configured maintenance service"""
     from velocitycmdb.services.maintenance import MaintenanceOrchestrator
     project_root = Path(current_app.root_path).parent
-    data_dir = Path(current_app.config.get('VELOCITYCMDB_DATA_DIR', '.')).expanduser()
+    data_dir = Path(current_app.config.get('VELOCITYCMDB_DATA_DIR', DEFAULT_DATA_DIR)).expanduser()
     return MaintenanceOrchestrator(project_root=project_root, data_dir=data_dir)
 
 
 def get_assets_db():
     """Get assets database path"""
-    data_dir = Path(current_app.config.get('VELOCITYCMDB_DATA_DIR', '~/.velocitycmdb')).expanduser()
+    data_dir = Path(current_app.config.get('VELOCITYCMDB_DATA_DIR', DEFAULT_DATA_DIR)).expanduser()
     # VELOCITYCMDB_DATA_DIR already points to the data directory
     # e.g., ~/.velocitycmdb/data - assets.db is directly in it
     return data_dir / 'assets.db'

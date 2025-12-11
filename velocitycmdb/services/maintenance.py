@@ -16,6 +16,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Consistent default paths
+DEFAULT_DATA_DIR = '~/.velocitycmdb/data'
+
 
 class MaintenanceOrchestrator:
     """Orchestrates database maintenance and administrative operations"""
@@ -35,11 +38,12 @@ class MaintenanceOrchestrator:
             self.project_root = Path(__file__).parent.parent.parent
 
         if data_dir:
-            self.data_dir = Path(data_dir)
+            self.data_dir = Path(data_dir).expanduser()
         else:
-            self.data_dir = Path.home() / '.velocitycmdb' / 'data'
+            self.data_dir = Path(DEFAULT_DATA_DIR).expanduser()
 
-        self.backup_dir = self.project_root / 'backups'
+        # Backup directory should be in data_dir, not project_root
+        self.backup_dir = self.data_dir / 'backups'
         self.backup_dir.mkdir(parents=True, exist_ok=True)
 
         logger.info(f"Maintenance service initialized")
@@ -644,11 +648,15 @@ class MaintenanceOrchestrator:
 
         try:
             # Locate capture loader script - try multiple locations
+            # Note: script was renamed from db_load_capture.py to db_load_capture.py
             loader_paths = [
+                self.project_root / 'velocitycmdb' / 'db_load_capture.py',
+                self.project_root / 'db_load_capture.py',
+                self.project_root / 'velocitycmdb' / 'pcng' / 'db_load_capture.py',
+                Path(__file__).parent.parent / 'pcng' / 'db_load_capture.py',
+                # Legacy names for backwards compatibility
                 self.project_root / 'velocitycmdb' / 'pcng' / 'db_load_capture.py',
                 self.project_root / 'db_load_capture.py',
-                self.project_root / 'velocitycmdb' / 'db_load_capture.py',
-                Path(__file__).parent.parent / 'pcng' / 'db_load_capture.py',
             ]
 
             load_script = None
@@ -681,6 +689,7 @@ class MaintenanceOrchestrator:
                 }
 
             logger.info(f"Using capture loader: {load_script}")
+            logger.info(f"Data directory: {self.data_dir}")
             logger.info(f"Assets database: {self.assets_db}")
             logger.info(f"Captures directory: {captures_dir}")
 
@@ -691,21 +700,20 @@ class MaintenanceOrchestrator:
                     'progress': 20
                 })
 
-            # Build command with correct arguments for db_load_capture.py
-            # Expected CLI: python db_load_capture.py -v --db-path <path> --captures-dir <path>
+            # Build command with --data-dir for proper diff path storage
+            # The loader will derive paths from data_dir:
+            #   - db_path: {data_dir}/assets.db
+            #   - captures_dir: {data_dir}/capture
+            #   - diff_output_dir: {data_dir}/diffs
             cmd = [
                 sys.executable, str(load_script),
                 '-v',  # Verbose output
-                '--db-path', str(self.assets_db),
-                '--captures-dir', str(captures_dir)
+                '--data-dir', str(self.data_dir),
             ]
 
-            # Note: If db_load_capture.py supports filtering by capture types,
-            # add those arguments here. For now, it loads all types in captures_dir.
-            # If you need to implement type filtering, you would add:
-            # if capture_types:
-            #     for capture_type in capture_types:
-            #         cmd.extend(['--type', capture_type])
+            # Add capture type filter if specified
+            if capture_types:
+                cmd.extend(['--capture-types', ','.join(capture_types)])
 
             logger.info(f"Executing: {' '.join(cmd)}")
 
@@ -729,9 +737,12 @@ class MaintenanceOrchestrator:
                 stats = self._parse_capture_loader_output(result.stdout)
 
                 if progress_callback:
+                    msg = f'Loaded {stats.get("files_processed", 0)} files'
+                    if stats.get('changes_detected', 0) > 0:
+                        msg += f', {stats["changes_detected"]} changes detected'
                     progress_callback({
                         'stage': 'captures',
-                        'message': f'Loaded {stats.get("files_processed", 0)} capture files',
+                        'message': msg,
                         'progress': 100
                     })
 
@@ -739,7 +750,9 @@ class MaintenanceOrchestrator:
                 return {
                     'success': True,
                     'files_processed': stats.get('files_processed', 0),
-                    'files_failed': stats.get('files_failed', 0)
+                    'files_failed': stats.get('files_failed', 0),
+                    'snapshots_created': stats.get('snapshots_created', 0),
+                    'changes_detected': stats.get('changes_detected', 0)
                 }
 
             # Handle failure
@@ -1370,10 +1383,14 @@ class MaintenanceOrchestrator:
         Total files: 30
         Successfully loaded: 30
         Failed: 0
+        Snapshots created/updated: 5
+        Changes detected: 2
         """
         stats = {
             'files_processed': 0,
-            'files_failed': 0
+            'files_failed': 0,
+            'snapshots_created': 0,
+            'changes_detected': 0
         }
 
         try:
@@ -1392,6 +1409,18 @@ class MaintenanceOrchestrator:
                     numbers = re.findall(r'\d+', line)
                     if numbers:
                         stats['files_failed'] = int(numbers[0])
+
+                # "Snapshots created/updated: 5"
+                elif 'snapshots created' in line.lower():
+                    numbers = re.findall(r'\d+', line)
+                    if numbers:
+                        stats['snapshots_created'] = int(numbers[0])
+
+                # "Changes detected: 2"
+                elif 'changes detected:' in line.lower():
+                    numbers = re.findall(r'\d+', line)
+                    if numbers:
+                        stats['changes_detected'] = int(numbers[0])
 
         except Exception as e:
             logger.warning(f"Error parsing capture loader output: {e}")

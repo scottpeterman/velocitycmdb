@@ -12,6 +12,10 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Default paths
+DEFAULT_BASE_DIR = '~/.velocitycmdb'
+DEFAULT_DISCOVERY_DIR = '~/.velocitycmdb/discovery'
+
 
 class DiscoveryOrchestrator:
     """Orchestrates network discovery and collection pipeline"""
@@ -25,9 +29,9 @@ class DiscoveryOrchestrator:
                        Defaults to ~/.velocitycmdb/discovery
         """
         if output_dir:
-            self.output_dir = Path(output_dir)
+            self.output_dir = Path(output_dir).expanduser()
         else:
-            self.output_dir = Path.home() / '.velocitycmdb' / 'discovery'
+            self.output_dir = Path(DEFAULT_DISCOVERY_DIR).expanduser()
 
         self.output_dir.mkdir(parents=True, exist_ok=True)
         logger.info(f"Discovery output directory: {self.output_dir}")
@@ -199,39 +203,42 @@ class DiscoveryOrchestrator:
             return_code = process.wait(timeout=600)  # 10 minute timeout
 
             logger.info(f"Process completed with return code: {return_code}")
-            logger.info(f"Full output ({len(output_lines)} lines):")
-            for line in output_lines:
-                logger.info(f"  {line}")
 
             if return_code != 0:
-                error_output = '\n'.join(output_lines[-20:])  # Last 20 lines
-                logger.error(f"Discovery failed with return code {return_code}")
-                logger.error(f"Error output:\n{error_output}")
+                error_output = '\n'.join(output_lines[-20:])
+                logger.error(f"Discovery failed. Last output:\n{error_output}")
                 return {
                     'success': False,
-                    'error': f"Discovery failed with code {return_code}. Last output:\n{error_output}"
+                    'error': f"Discovery process failed (exit code {return_code}). Check logs for details.",
+                    'output': error_output
                 }
 
-            if progress_callback:
-                progress_callback({
-                    'stage': 'discovery',
-                    'message': 'Discovery complete, processing results...',
-                    'progress': 80
-                })
-
-            # Find topology file - it's named with site_name, not "topology.json"!
+            # Find topology output file
             topology_file = self.output_dir / f'{site_name}.json'
+
             if not topology_file.exists():
-                logger.error(f"Topology file not found at: {topology_file}")
-                logger.info(f"Directory contents: {list(self.output_dir.iterdir())}")
+                # Try alternate names
+                for alt_name in ['topology.json', 'network.json']:
+                    alt_file = self.output_dir / alt_name
+                    if alt_file.exists():
+                        topology_file = alt_file
+                        break
+
+            if not topology_file.exists():
+                logger.error(f"Topology file not found. Output dir contents: {list(self.output_dir.iterdir())}")
                 return {
                     'success': False,
-                    'error': f'Topology file not created by secure_cartography. Expected: {topology_file}'
+                    'error': f"Topology file not found in {self.output_dir}"
                 }
 
-            # Count devices
+            # Load topology to get device count
             with open(topology_file) as f:
                 topology_data = json.load(f)
+
+            # Handle both list and dict formats
+            if isinstance(topology_data, list):
+                device_count = len(topology_data)
+            elif isinstance(topology_data, dict):
                 device_count = len(topology_data)
 
             # Find map files (named with site name)

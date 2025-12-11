@@ -12,8 +12,16 @@ import threading
 
 logger = logging.getLogger(__name__)
 
+# Consistent default for all data directory references
+DEFAULT_DATA_DIR = '~/.velocitycmdb/data'
+
 # Create blueprint
 discovery_bp = Blueprint('discovery', __name__, url_prefix='/discovery')
+
+
+def get_data_dir():
+    """Get data directory with consistent default"""
+    return Path(current_app.config.get('VELOCITYCMDB_DATA_DIR', DEFAULT_DATA_DIR)).expanduser()
 
 
 @discovery_bp.route('/')
@@ -75,8 +83,8 @@ def start_discovery():
         # Create job ID for this discovery
         job_id = f"discovery_{uuid.uuid4().hex[:8]}"
 
-        # Get data directory
-        data_dir = current_app.config.get('VELOCITYCMDB_DATA_DIR')
+        # Get data directory with consistent default
+        data_dir = get_data_dir()
 
         # Store comprehensive job info in session (for fingerprinting later)
         session[f'job_{job_id}'] = {
@@ -87,7 +95,7 @@ def start_discovery():
             'seed_ip': seed_ip,
             'username': username,
             'password': password,  # Store for fingerprinting (consider encrypting in production)
-            'data_dir': data_dir
+            'data_dir': str(data_dir)
         }
         session.modified = True
 
@@ -230,102 +238,54 @@ def run_discovery_task(app, job_id, seed_ip, username, password, **kwargs):
 
 def run_discovery_sync(seed_ip, username, password, **kwargs):
     """
-    Synchronous discovery (fallback when SocketIO unavailable)
-    Not recommended for production - blocks HTTP thread
+    Synchronous discovery (fallback when no SocketIO)
     """
     from velocitycmdb.services.discovery import DiscoveryOrchestrator
 
-    orchestrator = DiscoveryOrchestrator()
-
-    result = orchestrator.run_full_discovery(
-        seed_ip=seed_ip,
-        username=username,
-        password=password,
-        **kwargs
-    )
-
-    return result
-
-
-@discovery_bp.route('/map/<job_id>')
-def view_map(job_id):
-    """
-    View topology map for a completed discovery job
-    """
-    job_info = session.get(f'job_{job_id}')
-
-    if not job_info or job_info.get('status') != 'complete':
-        return "Map not available", 404
-
-    result = job_info.get('result', {})
-    map_file = result.get('map_file')
-
-    if not map_file or not Path(map_file).exists():
-        return "Map file not found", 404
-
-    # Serve the HTML map file
-    with open(map_file, 'r') as f:
-        return f.read()
+    try:
+        orchestrator = DiscoveryOrchestrator()
+        result = orchestrator.run_full_discovery(
+            seed_ip=seed_ip,
+            username=username,
+            password=password,
+            **kwargs
+        )
+        return result
+    except Exception as e:
+        logger.exception("Synchronous discovery failed")
+        return {'success': False, 'error': str(e)}
 
 
 @discovery_bp.route('/results/<job_id>')
-def view_results(job_id):
+def get_results(job_id):
     """
-    View detailed results of discovery
+    Get discovery results for a job
+    Returns device list from the discovered sessions.yaml file
     """
-    job_info = session.get(f'job_{job_id}')
-
-    if not job_info:
-        return "Job not found", 404
-
-    return render_template('discovery/results.html',
-                          job_id=job_id,
-                          job_info=job_info)
-
-
-# ============================================================================
-# FINGERPRINTING ROUTES
-# ============================================================================
-
-@discovery_bp.route('/<job_id>/devices', methods=['GET'])
-def get_discovered_devices(job_id):
-    """
-    Get list of discovered devices from discovery job
-
-    Returns device count and summary for fingerprint step
-    """
-    job_info = session.get(f'job_{job_id}')
-
-    if not job_info:
-        return jsonify({'error': 'Discovery job not found'}), 404
-
-    # Get data directory
-    data_dir = Path(job_info.get('data_dir', current_app.config['VELOCITYCMDB_DATA_DIR']))
-
-    # Find sessions.yaml - could be in disco/{job_id}/ or just disco/
-    possible_paths = [
-        data_dir / 'disco' / job_id / 'sessions.yaml',
-        data_dir / 'disco' / 'sessions.yaml',
-        Path('disco') / 'sessions.yaml'  # Fallback to relative path
-    ]
-
-    sessions_file = None
-    for path in possible_paths:
-        if path.exists():
-            sessions_file = path
-            break
-
-    if not sessions_file:
-        return jsonify({'error': 'Sessions file not found'}), 404
-
     try:
+        job_info = session.get(f'job_{job_id}')
+
+        if not job_info:
+            return jsonify({'error': 'Job not found'}), 404
+
+        # Get data directory with consistent default
+        data_dir = Path(job_info.get('data_dir', str(get_data_dir())))
+        sessions_file = data_dir / 'disco' / 'sessions.yaml'
+
+        if not sessions_file.exists():
+            return jsonify({'error': 'Sessions file not found'}), 404
+
+        # Parse sessions.yaml
         import yaml
         with open(sessions_file) as f:
-            data = yaml.safe_load(f)
+            sessions = yaml.safe_load(f) or {}
 
+        # Extract devices
         devices = []
-        for site in data:
-            site_name = site.get('folder_name', 'Unknown')
+        for site_name, site in sessions.items():
+            if not isinstance(site, dict):
+                continue
+
             for session_data in site.get('sessions', []):
                 devices.append({
                     'name': session_data.get('display_name', session_data.get('name', 'unknown')),
@@ -388,8 +348,8 @@ def start_fingerprinting(job_id):
         if not username or not password:
             return jsonify({'error': 'Credentials required'}), 400
 
-        # Get paths
-        data_dir = Path(job_info.get('data_dir', current_app.config['VELOCITYCMDB_DATA_DIR']))
+        # Get paths with consistent default
+        data_dir = Path(job_info.get('data_dir', str(get_data_dir())))
 
         # Get inventory file path - priority order:
         # 1. From request body (client stored it from discovery_complete)
@@ -535,8 +495,8 @@ def get_fingerprint_status(fingerprint_job_id):
     if not job_info:
         return jsonify({'error': 'Fingerprint job not found'}), 404
 
-    # Count fingerprint files to show progress
-    data_dir = Path(job_info.get('data_dir'))
+    # Count fingerprint files to show progress - use consistent default
+    data_dir = Path(job_info.get('data_dir', str(get_data_dir())))
     fingerprints_dir = data_dir / 'fingerprints'
 
     if fingerprints_dir.exists():

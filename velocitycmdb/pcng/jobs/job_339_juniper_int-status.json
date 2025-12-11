@@ -25,7 +25,7 @@
   "commands": {
     "template": "Juniper Command Template",
     "command_text": "set cli screen-length 0,show interfaces terse",
-    "output_directory": "int-status"
+    "output_directory": "interface-status"
   },
   "execution": {
     "batch_script": "batch_spn.py (Multi-process)",

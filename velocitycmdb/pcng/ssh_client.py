@@ -824,7 +824,13 @@ class SSHClient:
                 raise ValueError("No authentication method available")
 
             # Make connection
-            self._ssh_client.connect(**connect_params)
+            try:
+                self._ssh_client.connect(**connect_params)
+            except Exception as e:
+                self._log_with_timestamp("Retrying with SHA2 RSA algorithms enabled...")
+                connect_params.pop('disabled_algorithms', None)  # Remove the restriction
+                self._ssh_client.connect(**connect_params)
+
 
             self._log_with_timestamp(
                 f"Connected to {self._options.host}:{self._options.port}", True)
