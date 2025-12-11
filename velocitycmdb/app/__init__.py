@@ -30,6 +30,7 @@ from velocitycmdb.app.blueprints.search import search_bp
 from velocitycmdb.app.blueprints.discovery import discovery_bp
 from velocitycmdb.app.blueprints.scmaps import scmaps_bp
 from velocitycmdb.app.blueprints.ip_locator import ip_locator_bp
+
 socketio = SocketIO()
 
 
@@ -156,6 +157,46 @@ def create_app(config_name='development'):
     auth_config = config.get('authentication', {})
     auth_manager = init_auth_manager(auth_config)
     init_admin(auth_manager)
+
+    # =========================================================================
+    # GLOBAL AUTHENTICATION - Secure all routes by default
+    # =========================================================================
+    @app.before_request
+    def require_login():
+        """
+        Require authentication for all routes except auth blueprint and static files.
+        This is a 'secure by default' approach - everything is protected unless
+        explicitly whitelisted here.
+        """
+        from flask import request, redirect, url_for, session
+
+        # Endpoints that don't require authentication
+        public_endpoints = {
+            'auth.login',
+            'auth.logout',
+            'auth.get_auth_methods',
+            'static',
+        }
+
+        # Check if current endpoint is public
+        if request.endpoint:
+            # Direct match
+            if request.endpoint in public_endpoints:
+                return None
+            # Prefix match for static files
+            if request.endpoint.startswith('static'):
+                return None
+
+        # Check if user is authenticated
+        if not session.get('logged_in'):
+            # For API endpoints, return 401 instead of redirect
+            if request.path.startswith('/api/') or request.is_json:
+                from flask import jsonify
+                return jsonify({'error': 'Authentication required'}), 401
+            # For regular requests, redirect to login
+            return redirect(url_for('auth.login', next=request.url))
+
+        return None
 
     # DEPRECATED: Legacy paths - keep for backwards compatibility
     app.config['SESSIONS_YAML'] = 'pcng/sessions.yaml'

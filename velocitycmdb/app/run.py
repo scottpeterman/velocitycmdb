@@ -85,13 +85,8 @@ caution in production or security-critical environments.
                 return []
         return []
 
-    # Apply login_required to dashboard routes
-    from velocitycmdb.app.blueprints.auth.routes import login_required
-    from velocitycmdb.app.blueprints.dashboard import dashboard_bp
-
-    # Protect dashboard routes
-    for endpoint, view_func in dashboard_bp.view_functions.items():
-        dashboard_bp.view_functions[endpoint] = login_required(view_func)
+    # NOTE: Route protection is now handled globally via before_request in create_app()
+    # All routes except auth.* and static are automatically protected
 
     # Build SSL context if requested
     ssl_context = None
