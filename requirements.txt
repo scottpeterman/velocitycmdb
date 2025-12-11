@@ -34,6 +34,7 @@ ntc_templates>=8.1.0
 ttp>=0.10.0
 ttp-templates>=0.3.7
 netutils>=1.15.1
+mac_vendor_lookup>=0.1.10
 
 # Juniper support
 junos-eznc>=2.7.5

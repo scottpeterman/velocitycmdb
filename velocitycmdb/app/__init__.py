@@ -29,7 +29,7 @@ from velocitycmdb.app.blueprints.vendors import vendors_bp
 from velocitycmdb.app.blueprints.search import search_bp
 from velocitycmdb.app.blueprints.discovery import discovery_bp
 from velocitycmdb.app.blueprints.scmaps import scmaps_bp
-
+from velocitycmdb.app.blueprints.ip_locator import ip_locator_bp
 socketio = SocketIO()
 
 
@@ -150,6 +150,7 @@ def create_app(config_name='development'):
     app.register_blueprint(collection_bp, url_prefix='/collection')
     app.register_blueprint(scmaps_bp, url_prefix='/scmaps')
     app.register_blueprint(environment_bp)
+    app.register_blueprint(ip_locator_bp)
 
     # Initialize authentication
     auth_config = config.get('authentication', {})

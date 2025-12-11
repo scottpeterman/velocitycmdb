@@ -7,7 +7,7 @@
 <div class="page-header">
     <h1 class="md-headline-large">
         <i data-lucide="search"></i>
-        ARP Table Search&nbsp;
+        ARP Table Search
     </h1>
     <p class="md-body-large" style="color: var(--md-on-surface-variant);">
         Search MAC and IP addresses across network devices
@@ -17,18 +17,22 @@
 <!-- Stats Card -->
 <div class="md-card" style="margin-bottom: 24px;">
     <div class="md-card-content" style="padding: 20px;">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 20px;">
             <div>
                 <div class="md-label-small" style="color: var(--md-on-surface-variant);">Devices</div>
                 <div class="md-headline-small" id="stat-devices">-</div>
             </div>
             <div>
-                <div class="md-label-small" style="color: var(--md-on-surface-variant);">Total Entries</div>
+                <div class="md-label-small" style="color: var(--md-on-surface-variant);">Current Entries</div>
                 <div class="md-headline-small" id="stat-entries">-</div>
             </div>
             <div>
                 <div class="md-label-small" style="color: var(--md-on-surface-variant);">Unique MACs</div>
                 <div class="md-headline-small" id="stat-macs">-</div>
+            </div>
+            <div>
+                <div class="md-label-small" style="color: var(--md-on-surface-variant);">Unique IPs</div>
+                <div class="md-headline-small" id="stat-ips">-</div>
             </div>
             <div>
                 <div class="md-label-small" style="color: var(--md-on-surface-variant);">Last Capture</div>
@@ -38,63 +42,118 @@
     </div>
 </div>
 
-<!-- Search Section -->
-<div class="filter-section">
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
-        <div class="form-field">
-            <label for="mac-search">MAC Address&nbsp;&nbsp;</label>
-            <input type="text" id="mac-search"
-                   placeholder="aa:bb:cc:dd:ee:ff"
-                   style="padding: 12px; border: 1px solid var(--md-outline); border-radius: var(--md-shape-corner-small);">
-        </div>
-
-        <div class="form-field">
-            <label for="ip-search">IP Address&nbsp;&nbsp;</label>
-            <input type="text" id="ip-search"
-                   placeholder="192.168.1.100"
-                   style="padding: 12px; border: 1px solid var(--md-outline); border-radius: var(--md-shape-corner-small);">
+<!-- Unified Search -->
+<div class="filter-section" style="margin-bottom: 24px;">
+    <div class="form-field" style="margin-bottom: 16px;">
+        <label for="unified-search" style="font-weight: 500; margin-bottom: 8px; display: block;">
+            Quick Search (auto-detects IP or MAC)
+        </label>
+        <div style="display: flex; gap: 12px;">
+            <input type="text" id="unified-search"
+                   placeholder="Enter IP (192.168.1.100) or MAC (aa:bb:cc:dd:ee:ff)"
+                   style="flex: 1; padding: 12px; border: 1px solid var(--md-outline); border-radius: var(--md-shape-corner-small); font-family: monospace;">
+            <button onclick="searchUnified()" class="md-button md-button-filled">
+                <i data-lucide="search" size="16"></i>
+                Search
+            </button>
         </div>
     </div>
 
-    <div style="display: flex; gap: 12px; align-items: center;">
-        <button onclick="searchMAC()" class="md-button md-button-filled">
-            <i data-lucide="search" size="16"></i>
-            Search MAC&nbsp;&nbsp;
+    <details style="margin-top: 16px;">
+        <summary style="cursor: pointer; color: var(--md-on-surface-variant); user-select: none;">
+            Advanced Search Options
+        </summary>
+        <div style="padding-top: 16px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                <div class="form-field">
+                    <label for="mac-search">MAC Address</label>
+                    <input type="text" id="mac-search"
+                           placeholder="aa:bb:cc:dd:ee:ff or partial (aa:bb)"
+                           style="padding: 12px; border: 1px solid var(--md-outline); border-radius: var(--md-shape-corner-small); font-family: monospace;">
+                </div>
+                <div class="form-field">
+                    <label for="ip-search">IP Address</label>
+                    <input type="text" id="ip-search"
+                           placeholder="192.168.1.100 or prefix (192.168.1)"
+                           style="padding: 12px; border: 1px solid var(--md-outline); border-radius: var(--md-shape-corner-small); font-family: monospace;">
+                </div>
+            </div>
+            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                <button onclick="searchMAC()" class="md-button md-button-outlined">
+                    <i data-lucide="hash" size="16"></i>
+                    Search MAC
+                </button>
+                <button onclick="searchIP()" class="md-button md-button-outlined">
+                    <i data-lucide="globe" size="16"></i>
+                    Search IP
+                </button>
+                <div style="display: flex; gap: 16px; margin-left: 12px;">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="history-toggle">
+                        <span class="md-body-medium">Include History</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="exact-toggle">
+                        <span class="md-body-medium">Exact Match</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </details>
+</div>
+
+<!-- Search Info Banner -->
+<div id="search-info" style="display: none; margin-bottom: 16px; padding: 12px 16px; background: var(--md-surface-container); border-radius: var(--md-shape-corner-small);">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <span class="md-body-medium" id="search-info-text"></span>
+        </div>
+        <button onclick="clearSearch()" class="md-button md-button-text" style="padding: 4px 12px;">
+            Clear
         </button>
-        <button onclick="searchIP()" class="md-button md-button-filled">
-            <i data-lucide="search" size="16"></i>
-            Search IP&nbsp;
-        </button>
-        <label style="display: flex; align-items: center; gap: 8px; margin-left: 12px;">
-            <input type="checkbox" id="history-toggle">
-            <span class="md-body-medium">Show History</span>
-        </label>
     </div>
 </div>
 
 <!-- Results Container -->
-<div id="results-container" style="display: none; margin-top: 24px;">
+<div id="results-container" style="display: none;">
     <div class="table-container">
-        <div class="table-header">
+        <div class="table-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <h2 class="md-title-large">Search Results</h2>
-            <span id="result-count" class="md-body-small"></span>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <span id="result-count" class="md-body-small"></span>
+                <button onclick="exportResults()" class="md-button md-button-text" style="padding: 4px 12px;">
+                    <i data-lucide="download" size="14"></i>
+                    Export CSV
+                </button>
+            </div>
         </div>
 
-        <table class="md-table">
-            <thead>
-                <tr>
-                    <th>Timestamp</th>
-                    <th>Device</th>
-                    <th>Context</th>
-                    <th>IP Address</th>
-                    <th>MAC Address</th>
-                    <th>Interface</th>
-                    <th>Type</th>
-                </tr>
-            </thead>
-            <tbody id="results-body">
-            </tbody>
-        </table>
+        <div style="overflow-x: auto;">
+            <table class="md-table">
+                <thead>
+                    <tr>
+                        <th style="cursor: pointer;" onclick="sortResults('capture_timestamp')">
+                            Timestamp <i data-lucide="chevrons-up-down" size="14"></i>
+                        </th>
+                        <th style="cursor: pointer;" onclick="sortResults('hostname')">
+                            Device <i data-lucide="chevrons-up-down" size="14"></i>
+                        </th>
+                        <th>Context</th>
+                        <th style="cursor: pointer;" onclick="sortResults('ip_address')">
+                            IP Address <i data-lucide="chevrons-up-down" size="14"></i>
+                        </th>
+                        <th style="cursor: pointer;" onclick="sortResults('mac_address')">
+                            MAC Address <i data-lucide="chevrons-up-down" size="14"></i>
+                        </th>
+                        <th>Interface</th>
+                        <th>Type</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="results-body">
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -104,32 +163,60 @@
         <i data-lucide="search" size="48"></i>
     </div>
     <p class="md-body-large">Enter a MAC or IP address to search</p>
+    <p class="md-body-small" style="color: var(--md-on-surface-variant); margin-top: 8px;">
+        Supports partial matching: "192.168" or "aa:bb:cc"
+    </p>
+</div>
+
+<!-- No Results State -->
+<div id="no-results-state" class="empty-state" style="display: none;">
+    <div class="empty-state-icon">
+        <i data-lucide="search-x" size="48"></i>
+    </div>
+    <p class="md-body-large" id="no-results-message">No results found</p>
+    <p class="md-body-small" style="color: var(--md-on-surface-variant); margin-top: 8px;">
+        Try a different search term or enable "Include History"
+    </p>
 </div>
 
 <script>
-// Load stats on page load
-document.addEventListener('DOMContentLoaded', async function() {
+let currentResults = [];
+let currentSort = { field: 'capture_timestamp', direction: 'desc' };
+
+document.addEventListener('DOMContentLoaded', function() {
     lucide.createIcons();
     loadStats();
 
-    // Enter key support
-    document.getElementById('mac-search').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') searchMAC();
-    });
-
-    document.getElementById('ip-search').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') searchIP();
+    // Enter key support for all search inputs
+    ['unified-search', 'mac-search', 'ip-search'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    if (id === 'unified-search') searchUnified();
+                    else if (id === 'mac-search') searchMAC();
+                    else if (id === 'ip-search') searchIP();
+                }
+            });
+        }
     });
 });
 
 async function loadStats() {
     try {
         const response = await fetch('/arp/api/stats');
+        if (!response.ok) throw new Error('Failed to load stats');
+
         const stats = await response.json();
 
-        document.getElementById('stat-devices').textContent = stats.total_devices || 0;
-        document.getElementById('stat-entries').textContent = stats.total_arp_entries || 0;
-        document.getElementById('stat-macs').textContent = stats.unique_macs || 0;
+        document.getElementById('stat-devices').textContent =
+            (stats.total_devices || 0).toLocaleString();
+        document.getElementById('stat-entries').textContent =
+            (stats.total_arp_entries || 0).toLocaleString();
+        document.getElementById('stat-macs').textContent =
+            (stats.unique_macs || 0).toLocaleString();
+        document.getElementById('stat-ips').textContent =
+            (stats.unique_ips || 0).toLocaleString();
 
         if (stats.latest_capture) {
             const date = new Date(stats.latest_capture);
@@ -139,18 +226,35 @@ async function loadStats() {
         }
     } catch (error) {
         console.error('Failed to load stats:', error);
+        document.querySelectorAll('[id^="stat-"]').forEach(el => {
+            el.textContent = 'Error';
+        });
     }
+}
+
+async function searchUnified() {
+    const query = document.getElementById('unified-search').value.trim();
+    if (!query) {
+        showError('Please enter a search term');
+        return;
+    }
+
+    const history = document.getElementById('history-toggle').checked;
+    const url = `/arp/api/search/unified?q=${encodeURIComponent(query)}&history=${history}`;
+
+    await performSearch(url, 'auto', query);
 }
 
 async function searchMAC() {
     const mac = document.getElementById('mac-search').value.trim();
     if (!mac) {
-        alert('Please enter a MAC address');
+        showError('Please enter a MAC address');
         return;
     }
 
     const history = document.getElementById('history-toggle').checked;
-    const url = `/arp/api/search/mac/${encodeURIComponent(mac)}?history=${history}`;
+    const exact = document.getElementById('exact-toggle').checked;
+    const url = `/arp/api/search/mac/${encodeURIComponent(mac)}?history=${history}&exact=${exact}`;
 
     await performSearch(url, 'MAC', mac);
 }
@@ -158,78 +262,318 @@ async function searchMAC() {
 async function searchIP() {
     const ip = document.getElementById('ip-search').value.trim();
     if (!ip) {
-        alert('Please enter an IP address');
+        showError('Please enter an IP address');
         return;
     }
 
     const history = document.getElementById('history-toggle').checked;
-    const url = `/arp/api/search/ip/${encodeURIComponent(ip)}?history=${history}`;
+    const exact = document.getElementById('exact-toggle').checked;
+    const url = `/arp/api/search/ip/${encodeURIComponent(ip)}?history=${history}&exact=${exact}`;
 
     await performSearch(url, 'IP', ip);
 }
 
 async function performSearch(url, type, query) {
+    // Show loading state
+    const resultsBody = document.getElementById('results-body');
+    resultsBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px;">Searching...</td></tr>';
+    document.getElementById('results-container').style.display = 'block';
+    document.getElementById('empty-state').style.display = 'none';
+    document.getElementById('no-results-state').style.display = 'none';
+
     try {
         const response = await fetch(url);
         const data = await response.json();
 
-        if (data.success) {
-            displayResults(data.results, data.count, type, query);
-        } else {
-            alert(data.error || 'Search failed');
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || 'Search failed');
         }
+
+        currentResults = data.results;
+
+        // Show search info
+        const searchInfo = document.getElementById('search-info');
+        const searchInfoText = document.getElementById('search-info-text');
+        searchInfo.style.display = 'block';
+
+        let infoText = `Searched for ${type === 'auto' ? 'auto-detected' : type}: <code>${escapeHtml(query)}</code>`;
+        if (data.normalized_query) {
+            infoText += ` (normalized: <code>${data.normalized_query}</code>)`;
+        }
+        infoText += ` | Match: ${data.match_type || 'auto'}`;
+        if (data.include_history) {
+            infoText += ' | <span style="color: var(--md-primary);">Including history</span>';
+        }
+        if (data.oui_available) {
+            infoText += ' | <span style="color: var(--md-tertiary);">OUI lookup enabled</span>';
+        }
+        searchInfoText.innerHTML = infoText;
+
+        displayResults(data.results, data.count, type, query);
+
     } catch (error) {
         console.error('Search error:', error);
-        alert('Search failed');
+        showError(error.message || 'Search failed');
     }
 }
 
 function displayResults(results, count, type, query) {
     const container = document.getElementById('results-container');
     const emptyState = document.getElementById('empty-state');
+    const noResults = document.getElementById('no-results-state');
     const tbody = document.getElementById('results-body');
     const countEl = document.getElementById('result-count');
 
     if (count === 0) {
-        emptyState.style.display = 'block';
-        emptyState.innerHTML = `
-            <div class="empty-state-icon">
-                <i data-lucide="search-x" size="48"></i>
-            </div>
-            <p class="md-body-large">No results found for ${type}: ${query}</p>
-        `;
         container.style.display = 'none';
+        emptyState.style.display = 'none';
+        noResults.style.display = 'block';
+        document.getElementById('no-results-message').textContent =
+            `No results found for ${type}: ${query}`;
         lucide.createIcons();
         return;
     }
 
     emptyState.style.display = 'none';
+    noResults.style.display = 'none';
     container.style.display = 'block';
 
-    countEl.textContent = `${count} ${count === 1 ? 'entry' : 'entries'} found`;
+    countEl.textContent = `${count.toLocaleString()} ${count === 1 ? 'entry' : 'entries'}`;
+    if (count >= 500) {
+        countEl.textContent += ' (limited to 500)';
+    }
+
+    renderResultsTable(results);
+}
+
+function renderResultsTable(results) {
+    const tbody = document.getElementById('results-body');
     tbody.innerHTML = '';
 
     results.forEach(result => {
         const row = document.createElement('tr');
-        const timestamp = result.capture_timestamp ?
-            new Date(result.capture_timestamp).toLocaleString() : '-';
+
+        // Highlight if not current (historical entry)
+        if (result.is_current === 0 || result.is_current === false) {
+            row.style.opacity = '0.7';
+        }
+
+        const timestamp = result.capture_timestamp
+            ? new Date(result.capture_timestamp).toLocaleString()
+            : '-';
 
         row.innerHTML = `
-            <td><span class="md-body-small">${timestamp}</span></td>
             <td>
-                <div class="md-body-medium">${result.hostname || '-'}</div>
-                <div class="md-body-small" style="color: var(--md-on-surface-variant);">${result.vendor || ''}</div>
+                <span class="md-body-small">${timestamp}</span>
+                ${result.is_current === 0 ? '<br><span class="md-badge" style="font-size: 10px;">historical</span>' : ''}
             </td>
-            <td><span class="md-body-medium">${result.context_name || 'default'}</span></td>
-            <td><code style="background: var(--md-surface-container); padding: 2px 6px; border-radius: 2px;">${result.ip_address}</code></td>
-            <td><code style="background: var(--md-surface-container); padding: 2px 6px; border-radius: 2px;">${result.mac_address}</code></td>
-            <td><span class="md-body-small">${result.interface_name || '-'}</span></td>
-            <td><span class="md-badge">${result.entry_type || 'dynamic'}</span></td>
+            <td>
+                <div class="md-body-medium">${escapeHtml(result.hostname || '-')}</div>
+                <div class="md-body-small" style="color: var(--md-on-surface-variant);">
+                    ${escapeHtml(result.vendor || '')}
+                    ${result.site_code ? `· ${escapeHtml(result.site_code)}` : ''}
+                </div>
+            </td>
+            <td>
+                <span class="md-body-medium">${escapeHtml(result.context_name || 'default')}</span>
+                ${result.context_type && result.context_type !== 'vrf'
+                    ? `<br><span class="md-body-small" style="color: var(--md-on-surface-variant);">${escapeHtml(result.context_type)}</span>`
+                    : ''}
+            </td>
+            <td>
+                <code class="searchable" onclick="searchFromResult('ip', '${escapeHtml(result.ip_address)}')"
+                      style="cursor: pointer; background: var(--md-surface-container); padding: 2px 6px; border-radius: 2px;">
+                    ${escapeHtml(result.ip_address)}
+                </code>
+            </td>
+            <td>
+                <code class="searchable" onclick="searchFromResult('mac', '${escapeHtml(result.mac_address)}')"
+                      style="cursor: pointer; background: var(--md-surface-container); padding: 2px 6px; border-radius: 2px;">
+                    ${escapeHtml(result.mac_address)}
+                </code>
+                ${result.oui_vendor
+                    ? `<br><span class="md-body-small" style="color: var(--md-primary);" title="OUI Vendor">${escapeHtml(result.oui_vendor)}</span>`
+                    : (result.mac_address !== result.mac_address_raw && result.mac_address_raw
+                        ? `<br><span class="md-body-small" style="color: var(--md-on-surface-variant);">${escapeHtml(result.mac_address_raw)}</span>`
+                        : '')}
+            </td>
+            <td><span class="md-body-small">${escapeHtml(result.interface_name || '-')}</span></td>
+            <td><span class="md-badge">${escapeHtml(result.entry_type || 'dynamic')}</span></td>
+            <td>
+                <button onclick="showHistory('mac', '${escapeHtml(result.mac_address)}')"
+                        class="md-button md-button-text" style="padding: 4px 8px; font-size: 12px;"
+                        title="MAC History">
+                    <i data-lucide="history" size="14"></i>
+                </button>
+                <button onclick="showHistory('ip', '${escapeHtml(result.ip_address)}')"
+                        class="md-button md-button-text" style="padding: 4px 8px; font-size: 12px;"
+                        title="IP History">
+                    <i data-lucide="git-branch" size="14"></i>
+                </button>
+            </td>
         `;
         tbody.appendChild(row);
     });
 
     lucide.createIcons();
 }
+
+function searchFromResult(type, value) {
+    if (type === 'ip') {
+        document.getElementById('unified-search').value = value;
+    } else {
+        document.getElementById('unified-search').value = value;
+    }
+    searchUnified();
+}
+
+async function showHistory(type, value) {
+    const url = type === 'mac'
+        ? `/arp/api/mac-history/${encodeURIComponent(value)}`
+        : `/arp/api/ip-history/${encodeURIComponent(value)}`;
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.error);
+        }
+
+        // Create a simple modal/alert with history summary
+        let summary = `History for ${type.toUpperCase()}: ${value}\n\n`;
+        summary += `Total occurrences: ${data.summary.total_occurrences}\n`;
+
+        if (type === 'mac') {
+            summary += `Unique IPs: ${data.summary.unique_ips.join(', ')}\n`;
+            summary += `Seen on devices: ${data.summary.devices_seen.join(', ')}`;
+        } else {
+            summary += `Unique MACs: ${data.summary.unique_macs.join(', ')}\n`;
+            summary += `MAC changes: ${data.summary.mac_count > 1 ? 'Yes (' + data.summary.mac_count + ' different MACs)' : 'No'}`;
+        }
+
+        alert(summary);
+
+    } catch (error) {
+        console.error('History error:', error);
+        alert('Failed to load history: ' + error.message);
+    }
+}
+
+function sortResults(field) {
+    if (currentSort.field === field) {
+        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSort.field = field;
+        currentSort.direction = 'asc';
+    }
+
+    currentResults.sort((a, b) => {
+        let aVal = a[field] || '';
+        let bVal = b[field] || '';
+
+        // Handle IP address sorting numerically
+        if (field === 'ip_address') {
+            aVal = ipToNumber(aVal);
+            bVal = ipToNumber(bVal);
+        }
+
+        if (aVal < bVal) return currentSort.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return currentSort.direction === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    renderResultsTable(currentResults);
+}
+
+function ipToNumber(ip) {
+    if (!ip) return 0;
+    const parts = ip.split('.');
+    return parts.reduce((acc, part, i) => acc + (parseInt(part) || 0) * Math.pow(256, 3 - i), 0);
+}
+
+function clearSearch() {
+    document.getElementById('unified-search').value = '';
+    document.getElementById('mac-search').value = '';
+    document.getElementById('ip-search').value = '';
+    document.getElementById('search-info').style.display = 'none';
+    document.getElementById('results-container').style.display = 'none';
+    document.getElementById('no-results-state').style.display = 'none';
+    document.getElementById('empty-state').style.display = 'block';
+    currentResults = [];
+    lucide.createIcons();
+}
+
+function exportResults() {
+    if (!currentResults.length) return;
+
+    const headers = ['timestamp', 'hostname', 'vendor', 'site_code', 'context', 'ip_address', 'mac_address', 'oui_vendor', 'interface', 'type'];
+    const rows = currentResults.map(r => [
+        r.capture_timestamp || '',
+        r.hostname || '',
+        r.vendor || '',
+        r.site_code || '',
+        r.context_name || '',
+        r.ip_address || '',
+        r.mac_address || '',
+        r.oui_vendor || '',
+        r.interface_name || '',
+        r.entry_type || ''
+    ]);
+
+    const csv = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `arp-search-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function showError(message) {
+    alert(message);
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
 </script>
+
+<style>
+.searchable:hover {
+    background: var(--md-primary-container) !important;
+    color: var(--md-on-primary-container);
+}
+
+.md-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--md-surface-container-high);
+    border-radius: 12px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+details summary {
+    padding: 8px 0;
+}
+
+details summary:hover {
+    color: var(--md-primary);
+}
+
+.md-table th {
+    white-space: nowrap;
+}
+
+.md-table th:hover {
+    background: var(--md-surface-container);
+}
+</style>
 {% endblock %}
