@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+
+{% block title %}SSH Terminal - Direct{% endblock %}
+
+{% block head_extra %}
+<!-- Socket.IO Client -->
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+<!-- xterm.js CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+
+<style>
+    .terminal-page {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 88px);
+        gap: 16px;
+    }
+
+    .terminal-header {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        padding: 20px 24px;
+    }
+
+    .terminal-header-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .terminal-header-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .terminal-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0;
+    }
+
+    .connection-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-label-medium);
+        font-weight: 500;
+        margin-left: auto;
+    }
+
+    .status-disconnected {
+        background: var(--md-error-container);
+        color: var(--md-on-error-container);
+    }
+
+    .status-connecting {
+        background: var(--md-warning-container);
+        color: var(--md-on-warning-container);
+    }
+
+    .status-connected {
+        background: var(--md-success-container);
+        color: var(--md-on-success-container);
+    }
+
+    .terminal-controls {
+        display: grid;
+        grid-template-columns: 2fr auto auto auto auto auto;
+        gap: 12px;
+        align-items: center;
+    }
+
+    @media (max-width: 1200px) {
+        .terminal-controls {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    .device-select {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid var(--md-outline);
+        border-radius: var(--md-shape-corner-small);
+        background: var(--md-surface-container);
+        color: var(--md-on-surface);
+        font: var(--md-typescale-body-medium);
+    }
+
+    .credential-input {
+        padding: 10px 14px;
+        border: 1px solid var(--md-outline);
+        border-radius: var(--md-shape-corner-small);
+        background: var(--md-surface-container);
+        color: var(--md-on-surface);
+        font: var(--md-typescale-body-medium);
+        width: 140px;
+    }
+
+    .port-input {
+        width: 80px;
+    }
+
+    .terminal-wrapper {
+        flex: 1;
+        background: #1e1e1e;
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        padding: 16px;
+        overflow: hidden;
+    }
+
+    #terminal {
+        width: 100%;
+        height: 100%;
+    }
+
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--md-primary);
+        text-decoration: none;
+        font: var(--md-typescale-label-medium);
+    }
+
+    .back-link:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="terminal-page">
+    <!-- Terminal Header -->
+    <div class="terminal-header">
+        <div class="terminal-header-row">
+            <a href="{{ url_for('connections.index') }}" class="back-link">
+                <i data-lucide="arrow-left" size="16"></i>
+                Connection Manager
+            </a>
+
+            <h2 class="terminal-title md-title-large">
+                <i data-lucide="terminal" size="24"></i>
+                Direct SSH Terminal
+            </h2>
+
+            <span id="connectionStatus" class="connection-status status-disconnected">
+                <i data-lucide="circle" size="12"></i>
+                Disconnected
+            </span>
+        </div>
+
+        <div class="terminal-controls">
+            <select id="deviceSelect" class="device-select">
+                <option value="">Select a device...</option>
+                {% for device in devices %}
+                <option value="{{ device.id }}"
+                        data-ip="{{ device.management_ip }}"
+                        data-name="{{ device.name }}"
+                        data-vendor="{{ device.vendor_name }}">
+                    {{ device.name }} ({{ device.management_ip }}) - {{ device.vendor_name or 'Unknown' }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <input type="text" id="username" class="credential-input" placeholder="Username" value="admin">
+            <input type="password" id="password" class="credential-input" placeholder="Password">
+            <input type="number" id="port" class="credential-input port-input" placeholder="Port" value="22">
+
+            <button id="connectBtn" class="md-button md-button-filled">
+                <i data-lucide="plug" size="16"></i>
+                Connect
+            </button>
+
+            <button id="disconnectBtn" class="md-button md-button-outlined" disabled>
+                <i data-lucide="plug-zap" size="16"></i>
+                Disconnect
+            </button>
+        </div>
+    </div>
+
+    <!-- Terminal Window -->
+    <div class="terminal-wrapper">
+        <div id="terminal"></div>
+    </div>
+</div>
+
+<!-- xterm.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+
+<script>
+    // Initialize terminal
+    const term = new Terminal({
+        cursorBlink: true,
+        fontSize: 13,
+        fontFamily: '"Cascadia Code", "Fira Code", Menlo, Monaco, "Courier New", monospace',
+        theme: {
+            background: '#1e1e1e',
+            foreground: '#d4d4d4',
+            cursor: '#ffffff',
+            black: '#000000',
+            red: '#cd3131',
+            green: '#0dbc79',
+            yellow: '#e5e510',
+            blue: '#2472c8',
+            magenta: '#bc3fbc',
+            cyan: '#11a8cd',
+            white: '#e5e5e5',
+            brightBlack: '#666666',
+            brightRed: '#f14c4c',
+            brightGreen: '#23d18b',
+            brightYellow: '#f5f543',
+            brightBlue: '#3b8eea',
+            brightMagenta: '#d670d6',
+            brightCyan: '#29b8db',
+            brightWhite: '#e5e5e5'
+        },
+        scrollback: 10000,
+        allowProposedApi: true
+    });
+
+    const fitAddon = new FitAddon.FitAddon();
+    term.loadAddon(fitAddon);
+    term.open(document.getElementById('terminal'));
+
+    // Fit terminal to container
+    setTimeout(() => {
+        fitAddon.fit();
+    }, 100);
+
+    // WebSocket connection
+    let socket = null;
+    let connected = false;
+
+    // UI Elements
+    const deviceSelect = document.getElementById('deviceSelect');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const portInput = document.getElementById('port');
+    const connectBtn = document.getElementById('connectBtn');
+    const disconnectBtn = document.getElementById('disconnectBtn');
+    const statusEl = document.getElementById('connectionStatus');
+
+    // Update connection status
+    function updateStatus(status, message) {
+        statusEl.className = 'connection-status status-' + status;
+        statusEl.innerHTML = `<i data-lucide="circle" size="12"></i> ${message}`;
+        lucide.createIcons();
+    }
+
+    // Connect to device
+    connectBtn.addEventListener('click', function() {
+        const selectedDevice = deviceSelect.options[deviceSelect.selectedIndex];
+        if (!selectedDevice.value) {
+            alert('Please select a device');
+            return;
+        }
+
+        const host = selectedDevice.getAttribute('data-ip');
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value;
+        const port = parseInt(portInput.value) || 22;
+
+        if (!username || !password) {
+            alert('Please enter username and password');
+            return;
+        }
+
+        // Connect to WebSocket
+        updateStatus('connecting', 'Connecting...');
+        connectBtn.disabled = true;
+
+        socket = io('/terminal');
+
+        socket.on('connect', function() {
+            console.log('WebSocket connected');
+            socket.emit('start_session', {
+                host: host,
+                username: username,
+                password: password,
+                port: port
+            });
+        });
+
+        socket.on('connected', function(data) {
+            connected = true;
+            updateStatus('connected', 'Connected');
+            term.writeln('\r\n\x1b[32m✓ Connected to ' + host + '\x1b[0m\r\n');
+            connectBtn.disabled = true;
+            disconnectBtn.disabled = false;
+            deviceSelect.disabled = true;
+            usernameInput.disabled = true;
+            passwordInput.disabled = true;
+            portInput.disabled = true;
+            term.focus();
+        });
+
+        socket.on('output', function(data) {
+            term.write(data.data);
+        });
+
+        socket.on('error', function(data) {
+            term.writeln('\r\n\x1b[31m✗ Error: ' + data.message + '\x1b[0m\r\n');
+            updateStatus('disconnected', 'Error');
+            connectBtn.disabled = false;
+            disconnectBtn.disabled = true;
+            deviceSelect.disabled = false;
+            usernameInput.disabled = false;
+            passwordInput.disabled = false;
+            portInput.disabled = false;
+        });
+
+        socket.on('disconnect', function() {
+            connected = false;
+            updateStatus('disconnected', 'Disconnected');
+            term.writeln('\r\n\x1b[33m○ Disconnected\x1b[0m\r\n');
+            connectBtn.disabled = false;
+            disconnectBtn.disabled = true;
+            deviceSelect.disabled = false;
+            usernameInput.disabled = false;
+            passwordInput.disabled = false;
+            portInput.disabled = false;
+        });
+
+        socket.on('server_disconnected', function(data) {
+            connected = false;
+            updateStatus('disconnected', 'Session Ended');
+            term.writeln('\r\n\x1b[33m○ ' + data.message + '\x1b[0m\r\n');
+            connectBtn.disabled = false;
+            disconnectBtn.disabled = true;
+            deviceSelect.disabled = false;
+            usernameInput.disabled = false;
+            passwordInput.disabled = false;
+            portInput.disabled = false;
+
+            // Clean disconnect from our side too
+            if (socket) {
+                socket.disconnect();
+            }
+        });
+    });
+
+    // Disconnect
+    disconnectBtn.addEventListener('click', function() {
+        if (socket) {
+            socket.disconnect();
+        }
+    });
+
+    // Handle terminal input
+    term.onData(function(data) {
+        if (connected && socket) {
+            socket.emit('input', { data: data });
+        }
+    });
+
+    // Handle terminal resize
+    window.addEventListener('resize', function() {
+        fitAddon.fit();
+        if (connected && socket) {
+            socket.emit('resize', {
+                cols: term.cols,
+                rows: term.rows
+            });
+        }
+    });
+
+    // Initial welcome message
+    term.writeln('\x1b[1;34m╔══════════════════════════════════════════════════════╗\x1b[0m');
+    term.writeln('\x1b[1;34m║\x1b[0m   \x1b[1mVelocityCMDB SSH Terminal - Direct Mode\x1b[0m            \x1b[1;34m║\x1b[0m');
+    term.writeln('\x1b[1;34m╚══════════════════════════════════════════════════════╝\x1b[0m');
+    term.writeln('');
+    term.writeln('Select a device and enter credentials to connect.');
+    term.writeln('');
+    term.writeln('\x1b[33mTip:\x1b[0m Use the Connection Manager to save connections for quick access.');
+    term.writeln('');
+
+    // Initialize icons
+    lucide.createIcons();
+</script>
+{% endblock %}

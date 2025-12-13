@@ -10,6 +10,8 @@ from flask import Flask
 from flask_socketio import SocketIO
 import os
 from pathlib import Path
+
+from velocitycmdb.app.blueprints.connections import connections_bp
 from velocitycmdb.app.config_loader import load_config, get_config_path
 from velocitycmdb.app.blueprints.admin import admin_bp
 from velocitycmdb.app.blueprints.arp import arp_bp
@@ -158,6 +160,7 @@ def create_app(config_name='development'):
     app.register_blueprint(scmaps_bp, url_prefix='/scmaps')
     app.register_blueprint(environment_bp)
     app.register_blueprint(ip_locator_bp)
+    app.register_blueprint(connections_bp, url_prefix='/connections')
 
     # Initialize authentication
     auth_config = config.get('authentication', {})

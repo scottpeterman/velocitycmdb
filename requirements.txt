@@ -35,6 +35,7 @@ ttp>=0.10.0
 ttp-templates>=0.3.7
 netutils>=1.15.1
 mac_vendor_lookup>=0.1.10
+cryptography>=46.0.0
 
 # Juniper support
 junos-eznc>=2.7.5

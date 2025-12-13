@@ -1,10 +1,10 @@
 -- SQLite Database Documentation
 -- Database: users.db
--- Generated: 2025-11-13 19:38:32
--- Path: c:\Users\speterman\.velocitycmdb\data\users.db
+-- Generated: 2025-12-13 05:58:32
+-- Path: /home/speterman/.velocitycmdb/data/users.db
 ================================================================================
 
--- SQLite Version: 3.45.3
+-- SQLite Version: 3.45.1
 
 -- TABLES
 --------------------------------------------------------------------------------

@@ -1063,7 +1063,12 @@ class DatabaseInitializer:
         conn = sqlite3.connect(str(self.users_db))
         cursor = conn.cursor()
 
-        # Users table
+        # Enable foreign keys
+        cursor.execute("PRAGMA foreign_keys = ON")
+
+        # ================================================================
+        # USERS TABLE
+        # ================================================================
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1078,6 +1083,63 @@ class DatabaseInitializer:
                 updated_at TEXT,
                 last_login TEXT,
                 auth_backend TEXT DEFAULT 'database'
+            )
+        """)
+
+        # ================================================================
+        # CREDENTIAL VAULT TABLES
+        # ================================================================
+
+        # User vault keys - per-user encryption key material
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS user_vault_keys (
+                user_id INTEGER PRIMARY KEY,
+                key_salt TEXT NOT NULL,
+                key_check TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        """)
+
+        # User credentials - encrypted credentials per user
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS user_credentials (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                credential_name TEXT NOT NULL,
+                username TEXT NOT NULL,
+                password_encrypted TEXT,
+                ssh_key_encrypted TEXT,
+                ssh_key_passphrase_encrypted TEXT,
+                is_default INTEGER DEFAULT 0,
+                created_at TEXT NOT NULL,
+                updated_at TEXT,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        """)
+
+        # ================================================================
+        # SAVED CONNECTIONS TABLE
+        # ================================================================
+
+        # Saved connections - SSH connection profiles
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS saved_connections (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                connection_name TEXT NOT NULL,
+                device_id INTEGER,
+                host TEXT NOT NULL,
+                port INTEGER DEFAULT 22,
+                credential_id INTEGER,
+                device_type TEXT,
+                notes TEXT,
+                last_used TEXT,
+                use_count INTEGER DEFAULT 0,
+                created_at TEXT NOT NULL,
+                color_tag TEXT,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (credential_id) REFERENCES user_credentials(id) ON DELETE SET NULL
             )
         """)
 

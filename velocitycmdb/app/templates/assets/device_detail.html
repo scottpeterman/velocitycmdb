@@ -855,7 +855,7 @@
             <i data-lucide="edit" size="16"></i>
             Edit&nbsp;&nbsp;&nbsp;
         </a>
-        <button class="md-button md-button-filled" onclick="showComingSoon('SSH Connect')">
+        <button class="md-button md-button-filled" onclick="openSSHModal()" {% if not device.management_ip %}disabled title="No management IP configured"{% endif %}>
             <i data-lucide="terminal" size="16"></i>
             SSH&nbsp;&nbsp;&nbsp;
         </button>
@@ -1485,7 +1485,92 @@
     </div>
 </div>
 
-<!-- Content Viewer Modal -->
+<!-- SSH Connect Modal -->
+<div class="md-modal" id="sshModal">
+    <div class="md-modal-content" style="max-width: 450px;">
+        <div class="md-modal-header">
+            <h2 class="md-modal-title" style="display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="terminal" size="20"></i>
+                SSH Connect
+            </h2>
+            <button class="md-icon-button" onclick="closeSSHModal()">
+                <i data-lucide="x" size="20"></i>
+            </button>
+        </div>
+        <form id="sshConnectForm" method="POST" action="{{ url_for('terminal.device_connect') }}">
+            <div class="md-modal-body">
+                <div style="background: var(--md-surface-container); padding: 12px 16px; border-radius: var(--md-shape-corner-small); margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                        <i data-lucide="monitor" size="16" style="color: var(--md-primary);"></i>
+                        <strong>{{ device.name }}</strong>
+                    </div>
+                    <div style="font: var(--md-typescale-body-small); color: var(--md-on-surface-variant);">
+                        {{ device.management_ip or 'No IP' }}:22
+                    </div>
+                </div>
+
+                <input type="hidden" name="device_id" value="{{ device.id }}">
+                <input type="hidden" name="device_name" value="{{ device.name }}">
+                <input type="hidden" name="host" value="{{ device.management_ip }}">
+
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    <!-- Credential Source Selection -->
+                    <div>
+                        <label style="display: block; font: var(--md-typescale-label-medium); color: var(--md-on-surface-variant); margin-bottom: 6px;">Authentication</label>
+                        <select id="ssh_auth_mode" name="auth_mode" class="md-text-field" style="width: 100%;" onchange="toggleAuthMode()">
+                            <option value="manual">Enter credentials manually</option>
+                            <option value="saved">Use saved credential</option>
+                        </select>
+                    </div>
+
+                    <!-- Saved Credential Selector (hidden by default) -->
+                    <div id="savedCredentialSection" style="display: none;">
+                        <label style="display: block; font: var(--md-typescale-label-medium); color: var(--md-on-surface-variant); margin-bottom: 6px;">Saved Credential</label>
+                        <select id="ssh_credential_id" name="credential_id" class="md-text-field" style="width: 100%;">
+                            <option value="">Loading credentials...</option>
+                        </select>
+                        <div id="credentialInfo" style="margin-top: 8px; font: var(--md-typescale-body-small); color: var(--md-on-surface-variant);"></div>
+                    </div>
+
+                    <!-- Manual Credential Entry -->
+                    <div id="manualCredentialSection">
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <div>
+                                <label for="ssh_username" style="display: block; font: var(--md-typescale-label-medium); color: var(--md-on-surface-variant); margin-bottom: 6px;">Username</label>
+                                <input type="text" id="ssh_username" name="username"
+                                       class="md-text-field" style="width: 100%;"
+                                       placeholder="Enter username" autocomplete="username">
+                            </div>
+                            <div>
+                                <label for="ssh_password" style="display: block; font: var(--md-typescale-label-medium); color: var(--md-on-surface-variant); margin-bottom: 6px;">Password</label>
+                                <input type="password" id="ssh_password" name="password"
+                                       class="md-text-field" style="width: 100%;"
+                                       placeholder="Enter password" autocomplete="current-password">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Port (always visible) -->
+                    <div>
+                        <label for="ssh_port" style="display: block; font: var(--md-typescale-label-medium); color: var(--md-on-surface-variant); margin-bottom: 6px;">Port</label>
+                        <input type="number" id="ssh_port" name="port" value="22"
+                               class="md-text-field" style="width: 100px;"
+                               min="1" max="65535">
+                    </div>
+                </div>
+            </div>
+            <div class="md-modal-footer">
+                <button type="button" class="md-button md-button-text" onclick="closeSSHModal()">
+                    Cancel
+                </button>
+                <button type="submit" class="md-button md-button-filled" id="sshConnectBtn">
+                    <i data-lucide="plug" size="16"></i>
+                    Connect
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 <div class="md-modal content-viewer-modal" id="contentViewerModal">
     <div class="md-modal-content">
         <div class="md-modal-header">
@@ -1739,6 +1824,12 @@ document.getElementById('deleteModal')?.addEventListener('click', function(e) {
     }
 });
 
+document.getElementById('sshModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeSSHModal();
+    }
+});
+
 // Tab switching
 function switchTab(tabName) {
     const allPanes = document.querySelectorAll('.tab-pane');
@@ -1899,6 +1990,111 @@ function showToast(message) {
 function showComingSoon(feature) {
     showToast(`${feature} - Coming Soon`);
 }
+
+function openSSHModal() {
+    document.getElementById('sshModal').classList.add('open');
+    loadSavedCredentials();
+    lucide.createIcons();
+}
+
+function closeSSHModal() {
+    document.getElementById('sshModal').classList.remove('open');
+    // Reset to manual mode
+    document.getElementById('ssh_auth_mode').value = 'manual';
+    toggleAuthMode();
+}
+
+function toggleAuthMode() {
+    const mode = document.getElementById('ssh_auth_mode').value;
+    const manualSection = document.getElementById('manualCredentialSection');
+    const savedSection = document.getElementById('savedCredentialSection');
+    const usernameInput = document.getElementById('ssh_username');
+    const passwordInput = document.getElementById('ssh_password');
+
+    if (mode === 'saved') {
+        manualSection.style.display = 'none';
+        savedSection.style.display = 'block';
+        usernameInput.removeAttribute('required');
+        passwordInput.removeAttribute('required');
+    } else {
+        manualSection.style.display = 'block';
+        savedSection.style.display = 'none';
+        usernameInput.setAttribute('required', '');
+        passwordInput.setAttribute('required', '');
+    }
+}
+
+let credentialsCache = null;
+
+async function loadSavedCredentials() {
+    const select = document.getElementById('ssh_credential_id');
+    const infoDiv = document.getElementById('credentialInfo');
+
+    try {
+        const response = await fetch('/connections/api/credentials');
+
+        if (response.status === 401) {
+            // Vault locked or not set up
+            select.innerHTML = '<option value="">Vault locked - unlock in Connection Manager</option>';
+            infoDiv.innerHTML = '<a href="/connections" style="color: var(--md-primary);">Open Connection Manager</a>';
+            return;
+        }
+
+        const data = await response.json();
+
+        if (data.status === 'success' && data.credentials.length > 0) {
+            credentialsCache = data.credentials;
+            select.innerHTML = '<option value="">Select a credential...</option>';
+
+            data.credentials.forEach(cred => {
+                const keyIndicator = cred.has_ssh_key ? ' 🔑' : '';
+                const defaultIndicator = cred.is_default ? ' (default)' : '';
+                select.innerHTML += `<option value="${cred.id}" data-username="${cred.username}" data-has-key="${cred.has_ssh_key}">${cred.credential_name}${keyIndicator}${defaultIndicator} - ${cred.username}</option>`;
+            });
+
+            // Auto-select default if exists
+            const defaultCred = data.credentials.find(c => c.is_default);
+            if (defaultCred) {
+                select.value = defaultCred.id;
+                updateCredentialInfo();
+            }
+        } else {
+            select.innerHTML = '<option value="">No saved credentials</option>';
+            infoDiv.innerHTML = '<a href="/connections" style="color: var(--md-primary);">Create credentials in Connection Manager</a>';
+        }
+    } catch (error) {
+        console.error('Error loading credentials:', error);
+        select.innerHTML = '<option value="">Error loading credentials</option>';
+    }
+}
+
+function updateCredentialInfo() {
+    const select = document.getElementById('ssh_credential_id');
+    const infoDiv = document.getElementById('credentialInfo');
+    const selectedOption = select.options[select.selectedIndex];
+
+    if (selectedOption && selectedOption.value) {
+        const hasKey = selectedOption.getAttribute('data-has-key') === '1';
+        const username = selectedOption.getAttribute('data-username');
+
+        if (hasKey) {
+            infoDiv.innerHTML = `<span style="color: var(--md-success);"><i data-lucide="key" size="14" style="vertical-align: middle;"></i> SSH Key authentication</span> • User: ${username}`;
+        } else {
+            infoDiv.innerHTML = `<span><i data-lucide="lock" size="14" style="vertical-align: middle;"></i> Password authentication</span> • User: ${username}`;
+        }
+        lucide.createIcons();
+    } else {
+        infoDiv.innerHTML = '';
+    }
+}
+
+// Add event listener for credential selection
+document.addEventListener('DOMContentLoaded', function() {
+    const credSelect = document.getElementById('ssh_credential_id');
+    if (credSelect) {
+        credSelect.addEventListener('change', updateCredentialInfo);
+    }
+});
 
 // Initialize on load
 document.addEventListener('DOMContentLoaded', function() {

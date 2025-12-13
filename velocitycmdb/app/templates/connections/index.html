@@ -1,0 +1,1395 @@
+{% extends "base.html" %}
+
+{% block title %}Connection Manager{% endblock %}
+
+{% block head_extra %}
+<style>
+    .connections-page {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        max-width: 1400px;
+    }
+
+    /* Vault Lock Screen */
+    .vault-lock-screen {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 400px;
+        text-align: center;
+        gap: 24px;
+    }
+
+    .vault-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: var(--md-primary-container);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--md-on-primary-container);
+    }
+
+    .vault-form {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        width: 100%;
+        max-width: 360px;
+    }
+
+    .vault-input {
+        padding: 14px 16px;
+        border: 1px solid var(--md-outline);
+        border-radius: var(--md-shape-corner-small);
+        background: var(--md-surface-container);
+        color: var(--md-on-surface);
+        font: var(--md-typescale-body-large);
+        text-align: center;
+    }
+
+    .vault-input:focus {
+        outline: none;
+        border-color: var(--md-primary);
+    }
+
+    /* Page Header */
+    .page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .page-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .vault-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-label-medium);
+    }
+
+    .vault-status.unlocked {
+        background: var(--md-success-container);
+        color: var(--md-on-success-container);
+    }
+
+    /* Tabs */
+    .tabs {
+        display: flex;
+        gap: 4px;
+        border-bottom: 1px solid var(--md-outline-variant);
+        margin-bottom: 24px;
+    }
+
+    .tab {
+        padding: 12px 24px;
+        background: transparent;
+        border: none;
+        color: var(--md-on-surface-variant);
+        font: var(--md-typescale-title-small);
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -1px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: color 0.2s;
+    }
+
+    .tab:hover {
+        color: var(--md-on-surface);
+    }
+
+    .tab.active {
+        color: var(--md-primary);
+        border-bottom-color: var(--md-primary);
+    }
+
+    .tab-panel {
+        display: none;
+    }
+
+    .tab-panel.active {
+        display: block;
+    }
+
+    /* Connections Grid */
+    .connections-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 16px;
+    }
+
+    .table-container {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        overflow: hidden;
+    }
+
+    .connection-card {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        transition: box-shadow 0.2s, border-color 0.2s;
+        position: relative;
+    }
+
+    .connection-card:hover {
+        border-color: var(--md-outline);
+        box-shadow: var(--md-elevation-1);
+    }
+
+    .connection-card.color-red { border-left: 4px solid #ef4444; }
+    .connection-card.color-orange { border-left: 4px solid #f97316; }
+    .connection-card.color-yellow { border-left: 4px solid #eab308; }
+    .connection-card.color-green { border-left: 4px solid #22c55e; }
+    .connection-card.color-blue { border-left: 4px solid #3b82f6; }
+    .connection-card.color-purple { border-left: 4px solid #a855f7; }
+
+    .connection-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .connection-name {
+        font: var(--md-typescale-title-medium);
+        color: var(--md-on-surface);
+        margin: 0;
+        word-break: break-word;
+    }
+
+    .connection-menu-btn {
+        background: transparent;
+        border: none;
+        padding: 4px;
+        cursor: pointer;
+        color: var(--md-on-surface-variant);
+        border-radius: var(--md-shape-corner-small);
+    }
+
+    .connection-menu-btn:hover {
+        background: var(--md-surface-container);
+    }
+
+    .connection-details {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font: var(--md-typescale-body-small);
+        color: var(--md-on-surface-variant);
+    }
+
+    .connection-detail {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .connection-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: auto;
+        padding-top: 12px;
+        border-top: 1px solid var(--md-outline-variant);
+    }
+
+    .connection-actions .md-button {
+        flex: 1;
+    }
+
+    /* Quick Connect Panel */
+    .quick-connect-panel {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .quick-connect-form {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 80px auto;
+        gap: 12px;
+        align-items: end;
+    }
+
+    @media (max-width: 900px) {
+        .quick-connect-form {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .form-label {
+        font: var(--md-typescale-label-medium);
+        color: var(--md-on-surface-variant);
+    }
+
+    .form-input, .form-select {
+        padding: 10px 14px;
+        border: 1px solid var(--md-outline);
+        border-radius: var(--md-shape-corner-small);
+        background: var(--md-surface-container);
+        color: var(--md-on-surface);
+        font: var(--md-typescale-body-medium);
+    }
+
+    .form-input:focus, .form-select:focus {
+        outline: none;
+        border-color: var(--md-primary);
+    }
+
+    /* Credentials Table */
+    .credentials-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        overflow: hidden;
+    }
+
+    .credentials-table th,
+    .credentials-table td {
+        padding: 14px 16px;
+        text-align: left;
+        border-bottom: 1px solid var(--md-outline-variant);
+    }
+
+    .credentials-table th {
+        background: var(--md-surface-container);
+        font: var(--md-typescale-label-medium);
+        color: var(--md-on-surface-variant);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .credentials-table td {
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-surface);
+    }
+
+    .credentials-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .credentials-table tr:hover td {
+        background: var(--md-surface-container-low);
+    }
+
+    .default-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: var(--md-shape-corner-small);
+        background: var(--md-primary-container);
+        color: var(--md-on-primary-container);
+        font: var(--md-typescale-label-small);
+    }
+
+    .key-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: var(--md-shape-corner-small);
+        background: var(--md-tertiary-container);
+        color: var(--md-on-tertiary-container);
+        font: var(--md-typescale-label-small);
+    }
+
+    /* Modal */
+    .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        padding: 24px;
+    }
+
+    .modal-backdrop.show {
+        display: flex;
+    }
+
+    .modal {
+        background: var(--md-surface);
+        border-radius: var(--md-shape-corner-large);
+        max-width: 500px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--md-outline-variant);
+    }
+
+    .modal-title {
+        font: var(--md-typescale-headline-small);
+        color: var(--md-on-surface);
+        margin: 0;
+    }
+
+    .modal-close {
+        background: transparent;
+        border: none;
+        padding: 8px;
+        cursor: pointer;
+        color: var(--md-on-surface-variant);
+        border-radius: var(--md-shape-corner-small);
+    }
+
+    .modal-close:hover {
+        background: var(--md-surface-container);
+    }
+
+    .modal-body {
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        padding: 16px 24px;
+        border-top: 1px solid var(--md-outline-variant);
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 48px 24px;
+        color: var(--md-on-surface-variant);
+    }
+
+    .empty-state-icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 16px;
+        opacity: 0.5;
+    }
+
+    /* Color Picker */
+    .color-picker {
+        display: flex;
+        gap: 8px;
+    }
+
+    .color-option {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 2px solid transparent;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+    .color-option:hover {
+        transform: scale(1.1);
+    }
+
+    .color-option.selected {
+        border-color: var(--md-on-surface);
+    }
+
+    .color-option.none { background: var(--md-surface-container); border: 2px dashed var(--md-outline); }
+    .color-option.red { background: #ef4444; }
+    .color-option.orange { background: #f97316; }
+    .color-option.yellow { background: #eab308; }
+    .color-option.green { background: #22c55e; }
+    .color-option.blue { background: #3b82f6; }
+    .color-option.purple { background: #a855f7; }
+
+    /* Textarea */
+    .form-textarea {
+        padding: 10px 14px;
+        border: 1px solid var(--md-outline);
+        border-radius: var(--md-shape-corner-small);
+        background: var(--md-surface-container);
+        color: var(--md-on-surface);
+        font: var(--md-typescale-body-medium);
+        font-family: monospace;
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .form-textarea:focus {
+        outline: none;
+        border-color: var(--md-primary);
+    }
+
+    .danger-zone {
+        border: 1px solid var(--md-error);
+        border-radius: var(--md-shape-corner-medium);
+        padding: 16px;
+        margin-top: 24px;
+    }
+
+    .danger-zone-title {
+        color: var(--md-error);
+        font: var(--md-typescale-title-small);
+        margin-bottom: 8px;
+    }
+
+    .danger-zone-text {
+        color: var(--md-on-surface-variant);
+        font: var(--md-typescale-body-small);
+        margin-bottom: 12px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="connections-page">
+
+    {% if not has_vault %}
+    <!-- First Time Setup -->
+    <div class="vault-lock-screen">
+        <div class="vault-icon">
+            <i data-lucide="shield" size="40"></i>
+        </div>
+        <h2 class="md-headline-medium">Set Up Your Credential Vault</h2>
+        <p class="md-body-large" style="color: var(--md-on-surface-variant); max-width: 480px;">
+            Create a master password to encrypt your saved credentials.
+            This password is required to unlock your vault each session.
+        </p>
+        <div class="vault-form">
+            <input type="password" id="setupPassword" class="vault-input"
+                   placeholder="Master Password (min 8 characters)" autocomplete="new-password">
+            <input type="password" id="setupPasswordConfirm" class="vault-input"
+                   placeholder="Confirm Password" autocomplete="new-password">
+            <button id="setupVaultBtn" class="md-button md-button-filled" style="width: 100%;">
+                <i data-lucide="lock" size="18"></i>
+                Create Vault
+            </button>
+        </div>
+    </div>
+
+    {% elif not vault_unlocked %}
+    <!-- Vault Locked -->
+    <div class="vault-lock-screen">
+        <div class="vault-icon">
+            <i data-lucide="lock" size="40"></i>
+        </div>
+        <h2 class="md-headline-medium">Vault Locked</h2>
+        <p class="md-body-large" style="color: var(--md-on-surface-variant);">
+            Enter your master password to access saved credentials.
+        </p>
+        <div class="vault-form">
+            <input type="password" id="unlockPassword" class="vault-input"
+                   placeholder="Master Password" autocomplete="current-password">
+            <button id="unlockVaultBtn" class="md-button md-button-filled" style="width: 100%;">
+                <i data-lucide="unlock" size="18"></i>
+                Unlock Vault
+            </button>
+            <button id="resetVaultBtn" class="md-button md-button-text" style="width: 100%;">
+                Forgot Password? Reset Vault
+            </button>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Main Connection Manager -->
+    <div class="page-header">
+        <h1 class="page-title md-headline-medium">
+            <i data-lucide="server" size="28"></i>
+            Connection Manager
+        </h1>
+        <div class="header-actions">
+            <span class="vault-status unlocked">
+                <i data-lucide="shield-check" size="16"></i>
+                Vault Unlocked
+            </span>
+            <button id="lockVaultBtn" class="md-button md-button-outlined">
+                <i data-lucide="lock" size="16"></i>
+                Lock
+            </button>
+        </div>
+    </div>
+
+    <!-- Quick Connect -->
+    <div class="quick-connect-panel">
+        <h3 class="md-title-medium" style="margin: 0 0 16px 0;">
+            <i data-lucide="zap" size="20" style="vertical-align: -4px;"></i>
+            Quick Connect
+        </h3>
+        <div class="quick-connect-form">
+            <div class="form-group">
+                <label class="form-label">Device / Host</label>
+                <select id="quickDevice" class="form-select">
+                    <option value="">Select device or enter manually...</option>
+                    {% for device in devices %}
+                    <option value="{{ device.management_ip }}" data-name="{{ device.name }}">
+                        {{ device.name }} ({{ device.management_ip }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Authentication</label>
+                <select id="quickAuthMode" class="form-select" onchange="toggleQuickAuthMode()">
+                    <option value="manual">Enter manually</option>
+                    <option value="saved">Use saved credential</option>
+                </select>
+            </div>
+            <div id="quickManualAuth">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="form-group">
+                        <label class="form-label">Username</label>
+                        <input type="text" id="quickUsername" class="form-input" placeholder="admin">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" id="quickPassword" class="form-input" placeholder="••••••••">
+                    </div>
+                </div>
+            </div>
+            <div id="quickSavedAuth" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label">Credential</label>
+                    <select id="quickCredential" class="form-select">
+                        <option value="">Select credential...</option>
+                        {% for cred in credentials %}
+                        <option value="{{ cred.id }}" data-username="{{ cred.username }}" data-has-key="{{ cred.has_ssh_key }}">
+                            {{ cred.credential_name }}{% if cred.has_ssh_key %} 🔑{% endif %}{% if cred.is_default %} (default){% endif %} - {{ cred.username }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Port</label>
+                <input type="number" id="quickPort" class="form-input" value="22" style="width: 80px;">
+            </div>
+            <div class="form-group">
+                <label class="form-label">&nbsp;</label>
+                <button id="quickConnectBtn" class="md-button md-button-filled">
+                    <i data-lucide="terminal" size="16"></i>
+                    Connect
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab active" data-tab="connections">
+            <i data-lucide="link" size="18"></i>
+            Saved Connections
+            <span style="opacity: 0.7;">({{ connections|length }})</span>
+        </button>
+        <button class="tab" data-tab="credentials">
+            <i data-lucide="key" size="18"></i>
+            Credentials
+            <span style="opacity: 0.7;">({{ credentials|length }})</span>
+        </button>
+    </div>
+
+    <!-- Connections Tab -->
+    <div id="tab-connections" class="tab-panel active">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <input type="text" id="connectionSearch" class="form-input"
+                   placeholder="Search connections..." style="width: 300px;">
+            <button id="newConnectionBtn" class="md-button md-button-filled">
+                <i data-lucide="plus" size="16"></i>
+                New Connection
+            </button>
+        </div>
+
+        {% if connections %}
+        <div class="table-container">
+            <table class="credentials-table" id="connectionsTable">
+                <thead>
+                    <tr>
+                        <th style="width: 4px; padding: 0;"></th>
+                        <th>Name</th>
+                        <th>Host</th>
+                        <th>Credential</th>
+                        <th>Usage</th>
+                        <th>Last Used</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for conn in connections %}
+                    <tr data-id="{{ conn.id }}" data-name="{{ conn.connection_name|lower }}" data-host="{{ conn.host }}">
+                        <td style="padding: 0; {% if conn.color_tag %}background: {% if conn.color_tag == 'red' %}#ef4444{% elif conn.color_tag == 'orange' %}#f97316{% elif conn.color_tag == 'yellow' %}#eab308{% elif conn.color_tag == 'green' %}#22c55e{% elif conn.color_tag == 'blue' %}#3b82f6{% elif conn.color_tag == 'purple' %}#a855f7{% endif %};{% endif %}"></td>
+                        <td>
+                            <strong>{{ conn.connection_name }}</strong>
+                            {% if conn.notes %}
+                            <div class="md-body-small" style="color: var(--md-on-surface-variant); margin-top: 2px;">{{ conn.notes[:50] }}{% if conn.notes|length > 50 %}...{% endif %}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <code style="background: var(--md-surface-container); padding: 2px 6px; border-radius: 4px;">{{ conn.host }}:{{ conn.port }}</code>
+                        </td>
+                        <td>
+                            {% if conn.credential_name %}
+                            <span style="display: inline-flex; align-items: center; gap: 4px;">
+                                {{ conn.credential_name }}
+                                <span style="opacity: 0.7;">({{ conn.username }})</span>
+                            </span>
+                            {% else %}
+                            <span style="color: var(--md-on-surface-variant);">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if conn.use_count > 0 %}
+                            {{ conn.use_count }}×
+                            {% else %}
+                            <span style="color: var(--md-on-surface-variant);">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if conn.last_used %}
+                            <span class="md-body-small">{{ conn.last_used[:10] }}</span>
+                            {% else %}
+                            <span style="color: var(--md-on-surface-variant);">Never</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 4px;">
+                                <button class="md-button md-button-filled" style="padding: 6px 12px;" onclick="launchConnection({{ conn.id }})" title="Connect">
+                                    <i data-lucide="terminal" size="14"></i>
+                                </button>
+                                <button class="md-button md-button-outlined" style="padding: 6px 10px;" onclick="editConnection({{ conn.id }})" title="Edit">
+                                    <i data-lucide="edit-2" size="14"></i>
+                                </button>
+                                <button class="md-button md-button-text" style="padding: 6px 10px; color: var(--md-error);" onclick="deleteConnection({{ conn.id }}, '{{ conn.connection_name }}')" title="Delete">
+                                    <i data-lucide="trash-2" size="14"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i data-lucide="link" size="64"></i>
+            </div>
+            <h3 class="md-title-large">No Saved Connections</h3>
+            <p>Save your frequently used connections for quick access.</p>
+            <button id="emptyNewConnectionBtn" class="md-button md-button-filled" style="margin-top: 16px;">
+                <i data-lucide="plus" size="16"></i>
+                Create Your First Connection
+            </button>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Credentials Tab -->
+    <div id="tab-credentials" class="tab-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <p class="md-body-medium" style="margin: 0; color: var(--md-on-surface-variant);">
+                Manage your encrypted credentials. These can be linked to saved connections.
+            </p>
+            <button id="newCredentialBtn" class="md-button md-button-filled">
+                <i data-lucide="plus" size="16"></i>
+                New Credential
+            </button>
+        </div>
+
+        {% if credentials %}
+        <table class="credentials-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Username</th>
+                    <th>Type</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cred in credentials %}
+                <tr data-id="{{ cred.id }}">
+                    <td>
+                        {{ cred.credential_name }}
+                        {% if cred.is_default %}
+                        <span class="default-badge">Default</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ cred.username }}</td>
+                    <td>
+                        {% if cred.has_ssh_key %}
+                        <span class="key-badge">
+                            <i data-lucide="key" size="12"></i>
+                            SSH Key
+                        </span>
+                        {% else %}
+                        Password
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button class="md-button md-button-text" onclick="editCredential({{ cred.id }})">
+                            Edit
+                        </button>
+                        <button class="md-button md-button-text" style="color: var(--md-error);"
+                                onclick="deleteCredential({{ cred.id }}, '{{ cred.credential_name }}')">
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i data-lucide="key" size="64"></i>
+            </div>
+            <h3 class="md-title-large">No Saved Credentials</h3>
+            <p>Create credentials to quickly connect to your devices.</p>
+        </div>
+        {% endif %}
+
+        <!-- Vault Settings -->
+        <div class="danger-zone">
+            <div class="danger-zone-title">
+                <i data-lucide="alert-triangle" size="16" style="vertical-align: -3px;"></i>
+                Danger Zone
+            </div>
+            <div class="danger-zone-text">
+                Resetting your vault will delete all saved credentials. Saved connections will be preserved but will need credentials re-assigned.
+            </div>
+            <button id="resetVaultDangerBtn" class="md-button md-button-outlined"
+                    style="border-color: var(--md-error); color: var(--md-error);">
+                Reset Vault
+            </button>
+        </div>
+    </div>
+
+    {% endif %}
+</div>
+
+<!-- New/Edit Connection Modal -->
+<div id="connectionModal" class="modal-backdrop">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 class="modal-title" id="connectionModalTitle">New Connection</h2>
+            <button class="modal-close" onclick="closeModal('connectionModal')">
+                <i data-lucide="x" size="20"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editConnectionId">
+
+            <div class="form-group">
+                <label class="form-label">Connection Name *</label>
+                <input type="text" id="connName" class="form-input" placeholder="e.g., Core Router - Site A">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Device</label>
+                <select id="connDevice" class="form-select">
+                    <option value="">Select from inventory or enter manually</option>
+                    {% for device in devices %}
+                    <option value="{{ device.id }}" data-ip="{{ device.management_ip }}" data-name="{{ device.name }}">
+                        {{ device.name }} ({{ device.management_ip }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 100px; gap: 12px;">
+                <div class="form-group">
+                    <label class="form-label">Host / IP *</label>
+                    <input type="text" id="connHost" class="form-input" placeholder="192.168.1.1">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Port</label>
+                    <input type="number" id="connPort" class="form-input" value="22">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Credential</label>
+                <select id="connCredential" class="form-select">
+                    <option value="">Select saved credential</option>
+                    {% for cred in credentials %}
+                    <option value="{{ cred.id }}" {% if cred.is_default %}selected{% endif %}>
+                        {{ cred.credential_name }} ({{ cred.username }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Color Tag</label>
+                <div class="color-picker" id="connColorPicker">
+                    <div class="color-option none selected" data-color=""></div>
+                    <div class="color-option red" data-color="red"></div>
+                    <div class="color-option orange" data-color="orange"></div>
+                    <div class="color-option yellow" data-color="yellow"></div>
+                    <div class="color-option green" data-color="green"></div>
+                    <div class="color-option blue" data-color="blue"></div>
+                    <div class="color-option purple" data-color="purple"></div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Notes</label>
+                <textarea id="connNotes" class="form-input" rows="2"
+                          placeholder="Optional notes about this connection"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="md-button md-button-text" onclick="closeModal('connectionModal')">Cancel</button>
+            <button id="saveConnectionBtn" class="md-button md-button-filled">Save Connection</button>
+        </div>
+    </div>
+</div>
+
+<!-- New/Edit Credential Modal -->
+<div id="credentialModal" class="modal-backdrop">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 class="modal-title" id="credentialModalTitle">New Credential</h2>
+            <button class="modal-close" onclick="closeModal('credentialModal')">
+                <i data-lucide="x" size="20"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editCredentialId">
+
+            <div class="form-group">
+                <label class="form-label">Credential Name *</label>
+                <input type="text" id="credName" class="form-input" placeholder="e.g., Lab Admin, Production RO">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Username *</label>
+                <input type="text" id="credUsername" class="form-input" placeholder="admin">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" id="credPassword" class="form-input" placeholder="Leave blank to keep existing">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">SSH Private Key (optional)</label>
+                <textarea id="credSshKey" class="form-textarea"
+                          placeholder="Paste your private key here (-----BEGIN RSA PRIVATE KEY-----)"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">SSH Key Passphrase</label>
+                <input type="password" id="credKeyPassphrase" class="form-input"
+                       placeholder="If key is encrypted">
+            </div>
+
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="credIsDefault">
+                    <span class="form-label" style="margin: 0;">Set as default credential</span>
+                </label>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="md-button md-button-text" onclick="closeModal('credentialModal')">Cancel</button>
+            <button id="saveCredentialBtn" class="md-button md-button-filled">Save Credential</button>
+        </div>
+    </div>
+</div>
+
+<!-- Reset Vault Confirmation Modal -->
+<div id="resetVaultModal" class="modal-backdrop">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 class="modal-title">Reset Vault</h2>
+            <button class="modal-close" onclick="closeModal('resetVaultModal')">
+                <i data-lucide="x" size="20"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div style="color: var(--md-error); margin-bottom: 16px;">
+                <i data-lucide="alert-triangle" size="20" style="vertical-align: -4px;"></i>
+                <strong>Warning: This action cannot be undone!</strong>
+            </div>
+            <p>Resetting your vault will permanently delete all saved credentials.
+               You will need to set a new master password and re-enter all credentials.</p>
+
+            <div class="form-group" style="margin-top: 16px;">
+                <label class="form-label">New Master Password</label>
+                <input type="password" id="resetNewPassword" class="form-input"
+                       placeholder="Min 8 characters">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Confirm New Password</label>
+                <input type="password" id="resetConfirmPassword" class="form-input">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="md-button md-button-text" onclick="closeModal('resetVaultModal')">Cancel</button>
+            <button id="confirmResetBtn" class="md-button md-button-filled"
+                    style="background: var(--md-error);">
+                Reset Vault
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ========== Modal Helpers ==========
+    function openModal(id) {
+        document.getElementById(id).classList.add('show');
+        lucide.createIcons();
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('show');
+    }
+
+    // ========== Vault Setup ==========
+    {% if not has_vault %}
+    document.getElementById('setupVaultBtn').addEventListener('click', async function() {
+        const password = document.getElementById('setupPassword').value;
+        const confirm = document.getElementById('setupPasswordConfirm').value;
+
+        if (password.length < 8) {
+            alert('Password must be at least 8 characters');
+            return;
+        }
+        if (password !== confirm) {
+            alert('Passwords do not match');
+            return;
+        }
+
+        const response = await fetch('/connections/api/vault/setup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ master_password: password })
+        });
+
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            const data = await response.json();
+            alert(data.message || 'Setup failed');
+        }
+    });
+    {% endif %}
+
+    // ========== Vault Unlock ==========
+    {% if has_vault and not vault_unlocked %}
+    document.getElementById('unlockVaultBtn').addEventListener('click', async function() {
+        const password = document.getElementById('unlockPassword').value;
+
+        const response = await fetch('/connections/api/vault/unlock', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ master_password: password })
+        });
+
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            alert('Invalid master password');
+        }
+    });
+
+    document.getElementById('unlockPassword').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            document.getElementById('unlockVaultBtn').click();
+        }
+    });
+
+    document.getElementById('resetVaultBtn').addEventListener('click', function() {
+        openModal('resetVaultModal');
+    });
+    {% endif %}
+
+    {% if vault_unlocked %}
+    // ========== Tab Switching ==========
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+
+            this.classList.add('active');
+            document.getElementById('tab-' + this.dataset.tab).classList.add('active');
+        });
+    });
+
+    // ========== Lock Vault ==========
+    document.getElementById('lockVaultBtn').addEventListener('click', async function() {
+        await fetch('/connections/api/vault/lock', { method: 'POST' });
+        window.location.reload();
+    });
+
+    // ========== Quick Connect ==========
+    document.getElementById('quickDevice').addEventListener('change', function() {
+        const option = this.selectedOptions[0];
+        if (option && option.value) {
+            // If a device is selected, the value is the IP
+            // But we might want to allow manual override
+        }
+    });
+
+    // Toggle Quick Auth Mode
+    function toggleQuickAuthMode() {
+        const mode = document.getElementById('quickAuthMode').value;
+        document.getElementById('quickManualAuth').style.display = mode === 'manual' ? 'block' : 'none';
+        document.getElementById('quickSavedAuth').style.display = mode === 'saved' ? 'block' : 'none';
+    }
+    window.toggleQuickAuthMode = toggleQuickAuthMode;
+
+    document.getElementById('quickConnectBtn').addEventListener('click', async function() {
+        const deviceSelect = document.getElementById('quickDevice');
+        const host = deviceSelect.value;
+        const port = parseInt(document.getElementById('quickPort').value) || 22;
+        const authMode = document.getElementById('quickAuthMode').value;
+
+        if (!host) {
+            alert('Please select a device or enter a host');
+            return;
+        }
+
+        const deviceName = deviceSelect.selectedOptions[0]?.dataset?.name || host;
+
+        let requestBody = {
+            host: host,
+            port: port,
+            device_name: deviceName,
+            auth_mode: authMode
+        };
+
+        if (authMode === 'saved') {
+            const credentialId = document.getElementById('quickCredential').value;
+            if (!credentialId) {
+                alert('Please select a credential');
+                return;
+            }
+            requestBody.credential_id = parseInt(credentialId);
+        } else {
+            const username = document.getElementById('quickUsername').value.trim();
+            const password = document.getElementById('quickPassword').value;
+            if (!username) {
+                alert('Please enter a username');
+                return;
+            }
+            requestBody.username = username;
+            requestBody.password = password;
+        }
+
+        const response = await fetch('/connections/api/quick-connect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            window.open(data.terminal_url, '_blank');
+        } else {
+            alert(data.message || 'Failed to start connection');
+        }
+    });
+
+    // ========== Connection Search ==========
+    document.getElementById('connectionSearch')?.addEventListener('input', function() {
+        const search = this.value.toLowerCase();
+        document.querySelectorAll('#connectionsTable tbody tr').forEach(row => {
+            const name = row.dataset.name || '';
+            const host = row.dataset.host || '';
+            row.style.display = (name.includes(search) || host.includes(search)) ? '' : 'none';
+        });
+    });
+
+    // Delete connection
+    async function deleteConnection(id, name) {
+        if (!confirm(`Delete connection "${name}"? This cannot be undone.`)) return;
+
+        const response = await fetch(`/connections/api/connections/${id}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            const data = await response.json();
+            alert(data.message || 'Failed to delete connection');
+        }
+    }
+    window.deleteConnection = deleteConnection;
+
+    // ========== Connection Modal ==========
+    document.getElementById('newConnectionBtn')?.addEventListener('click', function() {
+        document.getElementById('connectionModalTitle').textContent = 'New Connection';
+        document.getElementById('editConnectionId').value = '';
+        document.getElementById('connName').value = '';
+        document.getElementById('connDevice').value = '';
+        document.getElementById('connHost').value = '';
+        document.getElementById('connPort').value = '22';
+        document.getElementById('connCredential').value = '';
+        document.getElementById('connNotes').value = '';
+        selectColor('');
+        openModal('connectionModal');
+    });
+
+    document.getElementById('emptyNewConnectionBtn')?.addEventListener('click', function() {
+        document.getElementById('newConnectionBtn').click();
+    });
+
+    // Device selection auto-fills host
+    document.getElementById('connDevice')?.addEventListener('change', function() {
+        const option = this.selectedOptions[0];
+        if (option && option.dataset.ip) {
+            document.getElementById('connHost').value = option.dataset.ip;
+            if (!document.getElementById('connName').value) {
+                document.getElementById('connName').value = option.dataset.name;
+            }
+        }
+    });
+
+    // Color picker
+    function selectColor(color) {
+        document.querySelectorAll('#connColorPicker .color-option').forEach(opt => {
+            opt.classList.toggle('selected', opt.dataset.color === color);
+        });
+    }
+
+    document.querySelectorAll('#connColorPicker .color-option').forEach(opt => {
+        opt.addEventListener('click', function() {
+            selectColor(this.dataset.color);
+        });
+    });
+
+    // Save connection
+    document.getElementById('saveConnectionBtn')?.addEventListener('click', async function() {
+        const id = document.getElementById('editConnectionId').value;
+        const name = document.getElementById('connName').value.trim();
+        const host = document.getElementById('connHost').value.trim();
+        const port = parseInt(document.getElementById('connPort').value) || 22;
+        const deviceId = document.getElementById('connDevice').value || null;
+        const credentialId = document.getElementById('connCredential').value || null;
+        const notes = document.getElementById('connNotes').value.trim();
+        const colorTag = document.querySelector('#connColorPicker .color-option.selected')?.dataset.color || null;
+
+        if (!name || !host) {
+            alert('Connection name and host are required');
+            return;
+        }
+
+        const url = id ? `/connections/api/connections/${id}` : '/connections/api/connections';
+        const method = id ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                connection_name: name,
+                host: host,
+                port: port,
+                device_id: deviceId,
+                credential_id: credentialId,
+                notes: notes,
+                color_tag: colorTag
+            })
+        });
+
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            const data = await response.json();
+            alert(data.message || 'Failed to save connection');
+        }
+    });
+
+    // Launch connection
+    async function launchConnection(id) {
+        const response = await fetch(`/connections/api/connections/${id}/launch`, {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            // Open terminal with connection info (stored in session on server)
+            window.open(`/terminal/session/${id}`, '_blank');
+        } else {
+            const data = await response.json();
+            if (data.code === 'VAULT_LOCKED') {
+                window.location.reload();
+            } else {
+                alert(data.message || 'Failed to launch connection');
+            }
+        }
+    }
+
+    // Edit connection
+    async function editConnection(id) {
+        // For now, just open the modal - in production you'd fetch the connection details
+        document.getElementById('connectionModalTitle').textContent = 'Edit Connection';
+        document.getElementById('editConnectionId').value = id;
+        // Would need to populate form from API
+        openModal('connectionModal');
+    }
+
+    // ========== Credential Modal ==========
+    document.getElementById('newCredentialBtn')?.addEventListener('click', function() {
+        document.getElementById('credentialModalTitle').textContent = 'New Credential';
+        document.getElementById('editCredentialId').value = '';
+        document.getElementById('credName').value = '';
+        document.getElementById('credUsername').value = '';
+        document.getElementById('credPassword').value = '';
+        document.getElementById('credSshKey').value = '';
+        document.getElementById('credKeyPassphrase').value = '';
+        document.getElementById('credIsDefault').checked = false;
+        openModal('credentialModal');
+    });
+
+    // Save credential
+    document.getElementById('saveCredentialBtn')?.addEventListener('click', async function() {
+        const id = document.getElementById('editCredentialId').value;
+        const name = document.getElementById('credName').value.trim();
+        const username = document.getElementById('credUsername').value.trim();
+        const password = document.getElementById('credPassword').value;
+        const sshKey = document.getElementById('credSshKey').value.trim();
+        const keyPassphrase = document.getElementById('credKeyPassphrase').value;
+        const isDefault = document.getElementById('credIsDefault').checked;
+
+        if (!name || !username) {
+            alert('Credential name and username are required');
+            return;
+        }
+
+        if (!id && !password && !sshKey) {
+            alert('Either password or SSH key is required');
+            return;
+        }
+
+        const url = id ? `/connections/api/credentials/${id}` : '/connections/api/credentials';
+        const method = id ? 'PUT' : 'POST';
+
+        const body = {
+            credential_name: name,
+            username: username,
+            is_default: isDefault
+        };
+
+        if (password) body.password = password;
+        if (sshKey) body.ssh_key = sshKey;
+        if (keyPassphrase) body.ssh_key_passphrase = keyPassphrase;
+
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            const data = await response.json();
+            alert(data.message || 'Failed to save credential');
+        }
+    });
+
+    // Edit credential
+    function editCredential(id) {
+        document.getElementById('credentialModalTitle').textContent = 'Edit Credential';
+        document.getElementById('editCredentialId').value = id;
+        // Would need to populate from API (without password)
+        openModal('credentialModal');
+    }
+
+    // Delete credential
+    async function deleteCredential(id, name) {
+        if (!confirm(`Delete credential "${name}"? This cannot be undone.`)) return;
+
+        const response = await fetch(`/connections/api/credentials/${id}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            const data = await response.json();
+            alert(data.message || 'Failed to delete credential');
+        }
+    }
+
+    // ========== Reset Vault ==========
+    document.getElementById('resetVaultDangerBtn')?.addEventListener('click', function() {
+        openModal('resetVaultModal');
+    });
+
+    document.getElementById('confirmResetBtn')?.addEventListener('click', async function() {
+        const newPassword = document.getElementById('resetNewPassword').value;
+        const confirmPassword = document.getElementById('resetConfirmPassword').value;
+
+        if (newPassword.length < 8) {
+            alert('Password must be at least 8 characters');
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            alert('Passwords do not match');
+            return;
+        }
+
+        const response = await fetch('/connections/api/vault/reset', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                new_master_password: newPassword,
+                confirm_reset: true
+            })
+        });
+
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            const data = await response.json();
+            alert(data.message || 'Reset failed');
+        }
+    });
+
+    {% endif %}
+
+    // Initialize icons
+    lucide.createIcons();
+</script>
+{% endblock %}

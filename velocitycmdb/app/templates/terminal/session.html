@@ -1,0 +1,473 @@
+{% extends "base.html" %}
+
+{% block title %}{{ connection.name }} - Terminal{% endblock %}
+
+{% block head_extra %}
+<!-- Socket.IO Client -->
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+<!-- xterm.js CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+
+<style>
+    .terminal-page {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 88px);
+        gap: 12px;
+    }
+
+    /* Compact Header */
+    .terminal-header {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+    }
+
+    .terminal-info {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .terminal-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0;
+        font: var(--md-typescale-title-medium);
+    }
+
+    .terminal-meta {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font: var(--md-typescale-body-small);
+        color: var(--md-on-surface-variant);
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .connection-status {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-label-medium);
+        font-weight: 500;
+    }
+
+    .status-disconnected {
+        background: var(--md-error-container);
+        color: var(--md-on-error-container);
+    }
+
+    .status-connecting {
+        background: var(--md-warning-container);
+        color: var(--md-on-warning-container);
+    }
+
+    .status-connected {
+        background: var(--md-success-container);
+        color: var(--md-on-success-container);
+    }
+
+    .terminal-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Terminal Window - takes remaining space */
+    .terminal-wrapper {
+        flex: 1;
+        background: #1e1e1e;
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        padding: 12px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    #terminal {
+        width: 100%;
+        height: 100%;
+    }
+
+    /* Loading overlay */
+    .terminal-loading {
+        position: absolute;
+        inset: 0;
+        background: rgba(30, 30, 30, 0.95);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        color: #d4d4d4;
+        z-index: 10;
+    }
+
+    .terminal-loading.hidden {
+        display: none;
+    }
+
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #333;
+        border-top-color: #0dbc79;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Small button variant */
+    .md-button-small {
+        padding: 6px 12px;
+        font: var(--md-typescale-label-medium);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="terminal-page">
+    <!-- Compact Header -->
+    <div class="terminal-header">
+        <div class="terminal-info">
+            <h2 class="terminal-title">
+                <i data-lucide="terminal" size="20"></i>
+                {{ connection.name }}
+            </h2>
+            <div class="terminal-meta">
+                <span class="meta-item">
+                    <i data-lucide="monitor" size="14"></i>
+                    {{ connection.host }}:{{ connection.port }}
+                </span>
+                <span class="meta-item">
+                    <i data-lucide="user" size="14"></i>
+                    {{ connection.username or 'N/A' }}
+                </span>
+            </div>
+        </div>
+
+        <div class="terminal-controls">
+            <span id="connectionStatus" class="connection-status status-disconnected">
+                <i data-lucide="circle" size="10"></i>
+                Disconnected
+            </span>
+
+            <button id="connectBtn" class="md-button md-button-filled md-button-small">
+                <i data-lucide="plug" size="14"></i>
+                Connect
+            </button>
+
+            <button id="reconnectBtn" class="md-button md-button-outlined md-button-small" style="display: none;">
+                <i data-lucide="refresh-cw" size="14"></i>
+                Reconnect
+            </button>
+
+            <button id="disconnectBtn" class="md-button md-button-outlined md-button-small" disabled>
+                <i data-lucide="plug-zap" size="14"></i>
+                Disconnect
+            </button>
+        </div>
+    </div>
+
+    <!-- Terminal Window -->
+    <div class="terminal-wrapper">
+        <div id="terminalLoading" class="terminal-loading">
+            <div class="loading-spinner"></div>
+            <div id="loadingMessage">Initializing terminal...</div>
+        </div>
+        <div id="terminal"></div>
+    </div>
+</div>
+
+<!-- xterm.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+
+<script>
+    // Connection info from server
+    const connectionInfo = {
+        id: {{ connection.id | tojson }},
+        name: {{ connection.name | tojson }},
+        host: {{ connection.host | tojson }},
+        port: {{ connection.port | tojson }},
+        username: {{ connection.username | tojson }},
+        mode: {{ connection.mode | tojson }}
+    };
+
+    // Initialize terminal
+    const term = new Terminal({
+        cursorBlink: true,
+        fontSize: 13,
+        fontFamily: '"Cascadia Code", "Fira Code", Menlo, Monaco, "Courier New", monospace',
+        theme: {
+            background: '#1e1e1e',
+            foreground: '#d4d4d4',
+            cursor: '#ffffff',
+            cursorAccent: '#1e1e1e',
+            selection: 'rgba(255, 255, 255, 0.3)',
+            black: '#000000',
+            red: '#cd3131',
+            green: '#0dbc79',
+            yellow: '#e5e510',
+            blue: '#2472c8',
+            magenta: '#bc3fbc',
+            cyan: '#11a8cd',
+            white: '#e5e5e5',
+            brightBlack: '#666666',
+            brightRed: '#f14c4c',
+            brightGreen: '#23d18b',
+            brightYellow: '#f5f543',
+            brightBlue: '#3b8eea',
+            brightMagenta: '#d670d6',
+            brightCyan: '#29b8db',
+            brightWhite: '#e5e5e5'
+        },
+        scrollback: 10000,
+        allowProposedApi: true
+    });
+
+    const fitAddon = new FitAddon.FitAddon();
+    term.loadAddon(fitAddon);
+    term.open(document.getElementById('terminal'));
+
+    // WebSocket connection
+    let socket = null;
+    let connected = false;
+    let credentials = null;
+
+    // UI Elements
+    const connectBtn = document.getElementById('connectBtn');
+    const reconnectBtn = document.getElementById('reconnectBtn');
+    const disconnectBtn = document.getElementById('disconnectBtn');
+    const statusEl = document.getElementById('connectionStatus');
+    const loadingEl = document.getElementById('terminalLoading');
+    const loadingMsg = document.getElementById('loadingMessage');
+
+    // Update connection status
+    function updateStatus(status, message) {
+        statusEl.className = 'connection-status status-' + status;
+        statusEl.innerHTML = `<i data-lucide="circle" size="10"></i> ${message}`;
+        lucide.createIcons();
+    }
+
+    // Show/hide loading
+    function setLoading(show, message = 'Connecting...') {
+        loadingMsg.textContent = message;
+        loadingEl.classList.toggle('hidden', !show);
+    }
+
+    // Fit terminal to container
+    function fitTerminal() {
+        setTimeout(() => {
+            fitAddon.fit();
+            if (connected && socket) {
+                socket.emit('resize', {
+                    cols: term.cols,
+                    rows: term.rows
+                });
+            }
+        }, 100);
+    }
+
+    // Fetch credentials and connect
+    async function fetchCredentialsAndConnect() {
+        setLoading(true, 'Fetching credentials...');
+        
+        try {
+            let response;
+            
+            if (connectionInfo.mode === 'session') {
+                response = await fetch(`/terminal/api/session-credentials/${connectionInfo.id}`, {
+                    method: 'POST'
+                });
+            } else if (connectionInfo.mode === 'quick') {
+                response = await fetch('/terminal/api/quick-credentials', {
+                    method: 'POST'
+                });
+            }
+            
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.message || 'Failed to get credentials');
+            }
+            
+            const data = await response.json();
+            credentials = data.credentials;
+            
+            connect();
+            
+        } catch (error) {
+            setLoading(false);
+            term.writeln(`\r\n\x1b[31m✗ ${error.message}\x1b[0m\r\n`);
+            updateStatus('disconnected', 'Error');
+            connectBtn.disabled = false;
+            reconnectBtn.style.display = 'inline-flex';
+        }
+    }
+
+    // Connect to SSH
+    function connect() {
+        if (!credentials) {
+            fetchCredentialsAndConnect();
+            return;
+        }
+        
+        setLoading(true, `Connecting to ${connectionInfo.host}...`);
+        updateStatus('connecting', 'Connecting...');
+        connectBtn.disabled = true;
+        reconnectBtn.style.display = 'none';
+
+        socket = io('/terminal');
+
+        socket.on('connect', function() {
+            console.log('WebSocket connected');
+            socket.emit('start_session', {
+                host: credentials.host,
+                username: credentials.username,
+                password: credentials.password || null,
+                port: credentials.port,
+                private_key: credentials.private_key || null,
+                key_passphrase: credentials.key_passphrase || null
+            });
+        });
+
+        socket.on('connected', function(data) {
+            connected = true;
+            setLoading(false);
+            updateStatus('connected', 'Connected');
+            term.writeln(`\r\n\x1b[32m✓ Connected to ${connectionInfo.host}\x1b[0m\r\n`);
+            
+            connectBtn.disabled = true;
+            connectBtn.style.display = 'none';
+            disconnectBtn.disabled = false;
+            reconnectBtn.style.display = 'none';
+            
+            // Focus terminal
+            term.focus();
+            fitTerminal();
+        });
+
+        socket.on('output', function(data) {
+            term.write(data.data);
+        });
+
+        socket.on('error', function(data) {
+            setLoading(false);
+            term.writeln(`\r\n\x1b[31m✗ Error: ${data.message}\x1b[0m\r\n`);
+            updateStatus('disconnected', 'Error');
+            
+            connectBtn.disabled = false;
+            connectBtn.style.display = 'inline-flex';
+            disconnectBtn.disabled = true;
+            reconnectBtn.style.display = 'inline-flex';
+        });
+
+        socket.on('disconnect', function() {
+            connected = false;
+            setLoading(false);
+            updateStatus('disconnected', 'Disconnected');
+            term.writeln('\r\n\x1b[33m○ Disconnected\x1b[0m\r\n');
+            
+            connectBtn.disabled = false;
+            connectBtn.style.display = 'inline-flex';
+            disconnectBtn.disabled = true;
+            reconnectBtn.style.display = 'inline-flex';
+        });
+
+        socket.on('server_disconnected', function(data) {
+            connected = false;
+            setLoading(false);
+            updateStatus('disconnected', 'Session Ended');
+            term.writeln(`\r\n\x1b[33m○ ${data.message}\x1b[0m\r\n`);
+
+            connectBtn.disabled = false;
+            connectBtn.style.display = 'inline-flex';
+            disconnectBtn.disabled = true;
+            reconnectBtn.style.display = 'inline-flex';
+
+            // Clean disconnect from our side too
+            if (socket) {
+                socket.disconnect();
+            }
+        });
+    }
+
+    // Event handlers
+    connectBtn.addEventListener('click', connect);
+
+    reconnectBtn.addEventListener('click', function() {
+        term.clear();
+        connect();
+    });
+
+    disconnectBtn.addEventListener('click', function() {
+        if (socket) {
+            socket.disconnect();
+        }
+    });
+
+    // Handle terminal input
+    term.onData(function(data) {
+        if (connected && socket) {
+            socket.emit('input', { data: data });
+        }
+    });
+
+    // Handle window resize
+    window.addEventListener('resize', fitTerminal);
+
+    // Initial setup
+    fitTerminal();
+
+    // Welcome message
+    term.writeln('\x1b[1;34m╔══════════════════════════════════════════════════════╗\x1b[0m');
+    term.writeln('\x1b[1;34m║\x1b[0m   \x1b[1mVelocityCMDB SSH Terminal\x1b[0m                          \x1b[1;34m║\x1b[0m');
+    term.writeln('\x1b[1;34m╚══════════════════════════════════════════════════════╝\x1b[0m');
+    term.writeln('');
+    term.writeln(`Target: \x1b[36m${connectionInfo.name}\x1b[0m`);
+    term.writeln(`Host:   \x1b[36m${connectionInfo.host}:${connectionInfo.port}\x1b[0m`);
+    term.writeln(`User:   \x1b[36m${connectionInfo.username || 'N/A'}\x1b[0m`);
+    term.writeln('');
+
+    // Auto-connect if we have everything
+    if (connectionInfo.mode === 'session' || connectionInfo.mode === 'quick') {
+        term.writeln('\x1b[33mAuto-connecting...\x1b[0m');
+        setTimeout(fetchCredentialsAndConnect, 500);
+    } else {
+        term.writeln('Click \x1b[32mConnect\x1b[0m to start the SSH session.');
+    }
+    term.writeln('');
+
+    // Initialize icons
+    lucide.createIcons();
+
+    // Update page title with connection name
+    document.title = `${connectionInfo.name} - Terminal`;
+    if (window.innerWidth > 768) {
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.querySelector('.main-content');
+    if (sidebar && !sidebar.classList.contains('collapsed')) {
+        sidebar.classList.add('collapsed');
+        if (mainContent) mainContent.classList.add('sidebar-collapsed');
+    }
+}
+</script>
+{% endblock %}
