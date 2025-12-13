@@ -1,40 +1,85 @@
-- folder_name: ENG Site
+- folder_name: Englad Site
   sessions:
-  - DeviceType: arista_eos_ssh
-    Model: vEOS-lab
-    SerialNumber: E27FFE00B86A47A3B1CA6F823EE92404
-    SoftwareVersion: 4.33.1F
-    Vendor: Arista Networks
-    credsid: '2'
-    display_name: eng-spine-1
-    host: 172.16.2.2
+  - DeviceType: Network
+    Model: vios_l2-ADVENTERPRISEK9-M
+    SerialNumber: ''
+    SoftwareVersion: 15.2(4.0.55)E
+    Vendor: Cisco Systems
+    credsid: '1'
+    display_name: eng-leaf-1
+    host: 172.16.11.41
     port: '22'
-  - DeviceType: arista_eos_ssh
-    Model: vEOS-lab
-    SerialNumber: 9DDC67D084D5FE7416739E4F5A4EFA6E
-    SoftwareVersion: 4.33.1F
-    Vendor: Arista Networks
-    credsid: '2'
-    display_name: eng-spine-2
-    host: 172.16.2.6
+  - DeviceType: Network
+    Model: vios_l2-ADVENTERPRISEK9-M
+    SerialNumber: ''
+    SoftwareVersion: 15.2(4.0.55)E
+    Vendor: Cisco Systems
+    credsid: '1'
+    display_name: eng-leaf-2
+    host: 172.16.11.42
     port: '22'
-- folder_name: USA Site
+  - DeviceType: Network
+    Model: vios_l2-ADVENTERPRISEK9-M
+    SerialNumber: ''
+    SoftwareVersion: 15.2(4.0.55)E
+    Vendor: Cisco Systems
+    credsid: '1'
+    display_name: eng-leaf-3
+    host: 172.16.11.43
+    port: '22'
+  - DeviceType: Network
+    Model: VIOS-ADVENTERPRISEK9-M
+    SerialNumber: ''
+    SoftwareVersion: 15.6(2)T
+    Vendor: Cisco Systems
+    credsid: '1'
+    display_name: eng-rtr-1
+    host: 172.16.128.6
+    port: '22'
+- folder_name: US Site
   sessions:
-  - DeviceType: arista_eos_ssh
-    Model: vEOS-lab
-    SerialNumber: BD466EB6AC9F330960C86507DE3C89E6
-    SoftwareVersion: 4.33.1F
-    Vendor: Arista Networks
-    credsid: '2'
-    display_name: usa-spine-1
-    host: 172.16.10.2
+  - DeviceType: Network
+    Model: vios_l2-ADVENTERPRISEK9-M
+    SerialNumber: ''
+    SoftwareVersion: 15.2(4.0.55)E
+    Vendor: Cisco Systems
+    credsid: '1'
+    display_name: usa-leaf-1
+    host: 172.16.10.21
     port: '22'
-  - DeviceType: arista_eos_ssh
-    Model: vEOS-lab
-    SerialNumber: 051724A990DDC1A3B29B961A96B88718
-    SoftwareVersion: 4.33.1F
-    Vendor: Arista Networks
-    credsid: '2'
-    display_name: usa-spine-2
-    host: 172.16.1.6
+  - DeviceType: Network
+    Model: vios_l2-ADVENTERPRISEK9-M
+    SerialNumber: ''
+    SoftwareVersion: 15.2(4.0.55)E
+    Vendor: Cisco Systems
+    credsid: '1'
+    display_name: usa-leaf-2
+    host: 172.16.10.22
+    port: '22'
+  - DeviceType: Network
+    Model: vios_l2-ADVENTERPRISEK9-M
+    SerialNumber: ''
+    SoftwareVersion: 15.2(4.0.55)E
+    Vendor: Cisco Systems
+    credsid: '1'
+    display_name: usa-leaf-3
+    host: 172.16.10.23
+    port: '22'
+  - DeviceType: Network
+    Model: VIOS-ADVENTERPRISEK9-M
+    SerialNumber: ''
+    SoftwareVersion: 15.6(2)T
+    Vendor: Cisco Systems
+    credsid: '1'
+    display_name: usa-rtr-1
+    host: 172.16.100.2
+    port: '22'
+  - DeviceType: Network
+    Model: C7200-ADVENTERPRISEK9-M
+    SerialNumber: ''
+    SoftwareVersion: 15.2(4)M11
+    Vendor: Cisco Systems
+    credsid: '1'
+    display_name: wan-core-1
+    host: 172.16.100.1
     port: '22'

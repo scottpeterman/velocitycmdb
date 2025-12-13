@@ -52,8 +52,8 @@ class DatabaseCoverageReporter:
                 LEFT JOIN sites s ON d.site_code = s.code
                 LEFT JOIN vendors v ON d.vendor_id = v.id
                 WHERE EXISTS (
-                    SELECT 1 FROM fingerprint_extractions fe 
-                    WHERE fe.device_id = d.id
+                    SELECT 1 FROM capture_snapshots cs 
+                    WHERE cs.device_id = d.id
                 )
                 ORDER BY d.name
             """)

@@ -21,9 +21,6 @@ import click
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Consistent default paths
-DEFAULT_DATA_DIR = '~/.velocitycmdb/data'
-
 
 class CaptureLoader:
     """Main loader class for processing network capture files"""
@@ -32,9 +29,8 @@ class CaptureLoader:
     CAPTURE_TYPES = [
         'arp',
         'configs',
-        'ospf-neighbor',
+        'etherchannel',
         'interface-status',
-        'bgp-summary',
         'inventory',
         'lldp',
         'lldp-detail',
@@ -46,34 +42,22 @@ class CaptureLoader:
     # Capture types that get change tracking (all get stored as snapshots)
     CHANGE_TRACKED_TYPES = {'configs', 'version', 'inventory'}
 
-    def __init__(self, db_path: str = None, data_dir: Path = None, diff_subdir: str = 'diffs'):
+    def __init__(self, db_path: str, data_dir: Path, diff_subdir: str = 'diffs'):
         """
         Initialize capture loader
 
         Args:
-            db_path: Path to SQLite database (default: {data_dir}/assets.db)
-            data_dir: Base data directory (default: ~/.velocitycmdb/data)
-            diff_subdir: Subdirectory name for diffs within data_dir (default: diffs)
+            db_path: Path to SQLite database
+            data_dir: Base data directory (VELOCITYCMDB_DATA_DIR)
+            diff_subdir: Subdirectory name for diffs within data_dir
         """
-        # Resolve data directory with consistent default
-        if data_dir:
-            self.data_dir = Path(data_dir).expanduser().resolve()
-        else:
-            self.data_dir = Path(DEFAULT_DATA_DIR).expanduser().resolve()
-
-        # Resolve database path
-        if db_path:
-            self.db_path = str(Path(db_path).expanduser().resolve())
-        else:
-            self.db_path = str(self.data_dir / 'assets.db')
-
-        # Diff output directory
+        self.db_path = db_path
+        self.data_dir = Path(data_dir).expanduser().resolve()
         self.diff_output_dir = self.data_dir / diff_subdir
         self.diff_output_dir.mkdir(parents=True, exist_ok=True)
         self.device_cache = {}  # Cache device IDs by normalized name
 
         logger.info(f"Data directory: {self.data_dir}")
-        logger.info(f"Database path: {self.db_path}")
         logger.info(f"Diff output directory: {self.diff_output_dir}")
 
     def get_db_connection(self) -> sqlite3.Connection:
@@ -364,11 +348,14 @@ class CaptureLoader:
                 continue
             lines.append(line)
 
-        return '\n'.join(lines)
+        # Clean excessive whitespace
+        result = '\n'.join(lines)
+        result = re.sub(r'\n\s*\n\s*\n', '\n\n', result)
+        return result.strip()
 
-    def generate_diff(self, old_content: str, new_content: str, capture_type: str) -> str:
-        """Generate unified diff between old and new content"""
-        # Normalize both contents before diffing
+    def generate_diff(self, old_content: str, new_content: str, capture_type: str = 'configs') -> str:
+        """Generate unified diff between two text contents, filtering noise"""
+        # Normalize before diffing
         old_normalized = self.normalize_config_for_diff(old_content, capture_type)
         new_normalized = self.normalize_config_for_diff(new_content, capture_type)
 
@@ -386,8 +373,13 @@ class CaptureLoader:
         return ''.join(diff)
 
     def save_diff_file(self, device_id: int, capture_type: str, timestamp: datetime, diff_content: str) -> str:
-        """Save diff to file and return path"""
-        # Create directory structure: diffs/device_id/capture_type/
+        """
+        Save diff to file and return RELATIVE path (relative to data_dir)
+
+        This ensures the path stored in DB can be resolved by the web UI
+        using: data_dir / diff_path
+        """
+        # Create directory structure: {data_dir}/diffs/device_id/capture_type/
         device_dir = self.diff_output_dir / str(device_id) / capture_type
         device_dir.mkdir(parents=True, exist_ok=True)
 
@@ -396,77 +388,120 @@ class CaptureLoader:
         diff_path = device_dir / filename
 
         diff_path.write_text(diff_content)
-        return str(diff_path)
+
+        # Return path RELATIVE to data_dir for DB storage
+        # This allows the web UI to resolve: data_dir / relative_path
+        try:
+            relative_path = diff_path.relative_to(self.data_dir)
+            logger.debug(f"  Diff saved: {diff_path} (stored as: {relative_path})")
+            return str(relative_path)
+        except ValueError:
+            # Fallback if somehow not relative to data_dir
+            logger.warning(f"  Diff path {diff_path} not relative to {self.data_dir}, storing absolute")
+            return str(diff_path)
 
     def classify_severity(self, capture_type: str, diff_content: str) -> str:
-        """Classify change severity based on content"""
-        diff_lower = diff_content.lower()
+        """Classify change severity based on capture type and diff size"""
+        lines_added = diff_content.count('\n+')
+        lines_removed = diff_content.count('\n-')
+        total_changes = lines_added + lines_removed
 
-        # Critical severity patterns
-        critical_patterns = [
-            'username', 'password', 'secret', 'enable password',
-            'crypto', 'aaa ', 'tacacs', 'radius',
-            'access-list', 'ip access-group', 'firewall',
-            'route-map', 'prefix-list', 'bgp',
-            'shutdown', 'no shutdown'
-        ]
+        # Critical: large config changes
+        if capture_type == 'configs' and total_changes > 50:
+            return 'critical'
 
-        # Moderate severity patterns
-        moderate_patterns = [
-            'interface', 'vlan', 'spanning-tree',
-            'ntp', 'logging', 'snmp',
-            'ip address', 'ip route'
-        ]
+        # Version changes: check if it's just uptime/memory stats
+        if capture_type == 'version':
+            if self._is_uptime_only_change(diff_content):
+                return 'minor'
+            # Actual version/firmware changes are still critical
+            return 'critical'
 
-        for pattern in critical_patterns:
-            if pattern in diff_lower:
-                return 'critical'
+        # Moderate: any config change
+        if capture_type == 'configs' and total_changes > 0:
+            return 'moderate'
 
-        for pattern in moderate_patterns:
-            if pattern in diff_lower:
-                return 'moderate'
+        # Moderate: inventory changes (hardware swap)
+        if capture_type == 'inventory' and total_changes > 5:
+            return 'moderate'
 
         return 'minor'
 
+    def _is_uptime_only_change(self, diff_content: str) -> bool:
+        """Check if version diff only contains uptime/memory/timestamp changes"""
+        significant_changes = []
+
+        for line in diff_content.splitlines():
+            # Skip diff metadata
+            if line.startswith(('---', '+++', '@@', ' ')):
+                continue
+
+            # Check for actual change lines
+            if line.startswith(('+', '-')):
+                # Ignore lines that are just dynamic stats
+                lower_line = line.lower()
+                if any(keyword in lower_line for keyword in
+                       ['uptime:', 'uptime ', 'free memory:', 'total memory:',
+                        'last reboot', 'system time:', 'current time:', 'processor load']):
+                    continue
+
+                # This is a significant change
+                significant_changes.append(line)
+
+        # If no significant changes found, it's uptime-only
+        return len(significant_changes) == 0
+
     def load_capture_file(self, file_path: Path) -> bool:
-        """Load a single capture file"""
-        device_info = self.extract_device_info_from_filename(file_path)
-        if not device_info:
+        """Load a single capture file into the database"""
+        try:
+            # Extract device and capture info from filename
+            device_info = self.extract_device_info_from_filename(file_path)
+            if not device_info:
+                logger.warning(f"Could not parse filename: {file_path}")
+                return False
+
+            site_code, device_name, capture_type = device_info
+
+            # Find device ID
+            conn = self.get_db_connection()
+            device_id = self.get_device_id_by_name(conn, device_name, site_code)
+            conn.close()
+
+            if not device_id:
+                logger.warning(f"Device not found for file: {file_path} "
+                               f"(device: {device_name}, site: {site_code})")
+                return False
+
+            logger.debug(f"Processing: {device_name} ({capture_type})")
+
+            # ALL captures go through snapshot storage
+            return self.load_capture_snapshot(file_path, device_id, site_code,
+                                              device_name, capture_type)
+
+        except Exception as e:
+            logger.error(f"Error loading {file_path}: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
             return False
 
-        site_code, device_name, capture_type = device_info
-        logger.debug(f"Processing: {device_name} ({site_code}) - {capture_type}")
-
-        conn = self.get_db_connection()
-        device_id = self.get_device_id_by_name(conn, device_name, site_code)
-        conn.close()
-
-        if not device_id:
-            logger.warning(f"Device not found in database: {device_name} - skipping")
-            return False
-
-        return self.load_capture_snapshot(file_path, device_id, site_code, device_name, capture_type)
-
-    def load_captures_directory(self, captures_dir: Path,
-                                capture_types: Optional[List[str]] = None) -> Dict:
-        """Load all capture files from directory structure"""
+    def load_captures_directory(self, captures_dir: Path, capture_types: List[str] = None) -> Dict[str, int]:
+        """Load capture files from directory structure"""
         results = {
-            'total': 0,
             'success': 0,
             'failed': 0,
+            'total': 0,
+            'by_type': {},
             'changes_detected': 0,
-            'snapshots_created': 0,
-            'by_type': {}
+            'snapshots_created': 0
         }
 
         if not captures_dir.exists():
             logger.error(f"Captures directory not found: {captures_dir}")
             return results
 
-        # Determine which types to process
-        types_to_process = capture_types if capture_types else self.CAPTURE_TYPES
+        types_to_process = capture_types or self.CAPTURE_TYPES
 
-        # Find all capture files
+        # Collect all files to process
         files_to_process = []
 
         for capture_type in types_to_process:
@@ -549,8 +584,8 @@ class CaptureLoader:
 
 @click.command()
 @click.option('--data-dir', envvar='VELOCITYCMDB_DATA_DIR',
-              default=DEFAULT_DATA_DIR,
-              help=f'Base data directory (default: {DEFAULT_DATA_DIR} or VELOCITYCMDB_DATA_DIR env)')
+              default='~/.velocitycmdb/data',
+              help='Base data directory (default: ~/.velocitycmdb/data or VELOCITYCMDB_DATA_DIR env)')
 @click.option('--db-path', default=None,
               help='Path to SQLite database (default: {data-dir}/assets.db)')
 @click.option('--captures-dir', default=None,

@@ -1,40 +1,59 @@
 # VelocityCMDB
 
-**Tactical, highly portable network CMDB with automated discovery, change detection, and operational intelligence for Windows, Mac or Linux**
+**Network inventory, maps and operational data collection plus configuration change detection for engineers who don't have time to fish**
 
-## Important Notice
-VelocityCMDB is currently in Proof of Concept (POC) stage and is under active development. While functional, it is not yet recommended for production environments. The codebase and features are subject to significant changes. Feel free to test, contribute, and provide feedback, but please exercise caution in production or security-critical environments.
+![VelocityCMDB Demo](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/slides.gif)
 
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-GPLv3-green.svg)](LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/velocitycmdb)](https://pypi.org/project/velocitycmdb/)
 
-> **New site onboarded in under 1 hour** - Automated discovery, configuration capture, and topology visualization out of the box.
+"Managing network infrastructure means you don't have time to hunt for information. You need instant visibility."
+---
 
-![Secure Cartography Visualization](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/slides1.gif)
+## The Problem
+
+You don't have time to SSH device-to-device, grep through configs, or manually track changes. You need **operational intelligence now**.
 
 ---
 
-## What is VelocityCMDB?
+## The Solution
 
-VelocityCMDB is a **pip-installable network CMDB** that combines asset management, automated discovery, configuration tracking, and operational intelligence in a unified platform.
+VelocityCMDB gives you the visibility and change tracking you need to run production.
 
-**Key Features:**
-- **Automated Discovery** - LLDP/CDP-based topology mapping
-- **Device Inventory** - Complete asset tracking with components, sites, vendors, roles
-- **Change Detection** - Real-time configuration and other CLI captured information monitoring with severity classification
-- **Topology Visualization** - Interactive maps with export to GraphML/DrawIO/PNG
-- **Map Library** - Import existing Visio/DrawIO diagrams organized by folder
-- **Operational Search** - Full-text search across 8,891+ captures (Config, ARP, MAC, Inventory and more)
-- **Integrated Documentation** - Wiki-style notes linked to devices
-- **Web SSH Terminal** - Browser-based device access with authentication
-- **Multi-Auth** - LDAP, local database, and OS authentication
+### Find Things Fast
 
-**Why VelocityCMDB?**
-- **Fast Setup** - `pip install velocitycmdb && velocitycmdb init && velocitycmdb run`
-- **Wizard-Driven** - Discovery and collection wizards guide deployment
-- **Enterprise Friendly** - Basic role-based access, audit logging, backup/restore
-- **Engineer-Focused** - CLI tools, REST API, and scriptable workflows, run locally or on a server
+![Dashboard](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/dashboard_dark.png)
+*Operational overview - devices, sites, captures, and change tracking at a glance*
+
+**Search routing tables across all devices:**
+
+![IP Locator](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/route_table_search_dark.png)
+*"Where is 172.16.128.0 advertised?" - 5 devices, multiple protocols, one search. See directly connected routes vs OSPF-learned paths in seconds.*
+
+**Track down mystery devices:**
+
+![ARP Search](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/arp_search_dark.png)
+*Search MAC and IP addresses across 11 devices with 60 ARP entries. Auto-detects input type, includes OUI vendor lookup.*
+
+### Know What Changed
+
+![Change Detection](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/change_detection_dark.png)
+*Automatic snapshot-based change tracking. Know what changed in the last 24 hours before the incident call starts.*
+
+![Change History](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/change_history_dark.png)
+*Complete audit trail with severity classification - critical config changes stand out*
+
+![Change Diff](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/change_diff_dark.png)
+*Unified diffs show exactly what changed - no manual config comparison needed*
+
+### Document Your Network
+
+![Network Topology](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/drawio_export.png)
+*Draw.io integration with proper Cisco icons - topology that actually matches reality*
+
+![Export Options](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/export_drawio_dark.png)
+*Export to GraphML, DrawIO, PNG - documentation that travels with you*
 
 ---
 
@@ -47,221 +66,280 @@ VelocityCMDB is a **pip-installable network CMDB** that combines asset managemen
 pip install velocitycmdb
 
 # Initialize databases, directories, config, and admin user
+# Creates ~/.velocitycmdb/ directory structure
 velocitycmdb init
 
-# Start the web server
-velocitycmdb run
+# Start the web server (Flask development server)
+python -m velocitycmdb.app.run
 ```
 
 Access the dashboard at `http://localhost:8086`
 
-Default credentials: **admin / admin** (change after first login)
+Default credentials: **admin / you_set_at_init** (change after first login)
 
-### Onboard Your First Site
+### Service Account Setup (Recommended)
 
-**Step 1: Run Discovery Wizard** (15 minutes)
-- Navigate to Discovery > Wizard
-- Enter seed device credentials
-- Let LLDP/CDP discover your network
-- Review topology map
+For production or small group multi-user deployments:
 
-**Step 2: Run Collection Wizard** (30 minutes)
-- Select discovered devices
-- Choose capture types (configs, routes, MACs, etc.)
-- Execute concurrent collection
-- Review capture status
+```bash
+# Create dedicated service account
+sudo useradd -r -s /bin/bash -m velocitycmdb
 
-**Total Time: ~45 minutes**
+# Install as service account
+sudo -u velocitycmdb pip install velocitycmdb
+sudo -u velocitycmdb velocitycmdb init
+
+# Data will be stored in /home/velocitycmdb/.velocitycmdb/
+```
+
+### First Capture Cycle
+
+![Capture Options](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/capture_collection_options_dark.png)
+*Select what to capture - configs, routes, ARP, MAC tables, inventory, and more*
+
+![Capture Progress](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/capture_progress_dark.png)
+*Concurrent collection with real-time progress - 8 devices running simultaneously*
+
+![Capture Commands](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/capture_commands_dark.png)
+*100+ pre-built command templates for Cisco, Arista, Juniper, HPE*
+
+---
+
+## Core Features
+
+### Device & Asset Management
+
+![Device Inventory](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/device_inventory_dark.png)
+*Complete device inventory with sites, vendors, roles, and filtering*
+
+![Device Details](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/device_details_captures_dark.png)
+*Per-device capture status - see what's been collected and when*
+
+![Hardware Components](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/device_detail_components_dark.png)
+*Track hardware components - modules, chassis, supervisors, and more across your infrastructure*
+
+![Component Parsing](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/components_parsed_dark.png)
+*Automatic hardware inventory parsing with normalization*
+
+![Create Device](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/create_device_dark.png)
+*Quick device creation with site, vendor, and role assignment*
+
+![Bulk Operations](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/bulk_ops_dark.png)
+*Bulk device operations with preview-commit workflow*
+
+### Search & Analysis
+
+![Capture Search](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/capture_search_view_dark.png)
+*Full-text search across all captured data - configs, routes, ARP, MAC tables*
+
+![Inventory Search](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/capture_search_inventory.png)
+*Search inventory captures for specific hardware components*
+
+![Exact Inventory Match](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/capture_search_inventory_exact.png)
+*Exact match searching for precise hardware tracking*
+
+### Operational Intelligence
+
+![OS Version Tracking](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/os_ver_dark.png)
+*Track OS versions across infrastructure for compliance and upgrade planning*
+
+![OS Version Detail](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/os_version_detail.png)
+*Detailed version breakdown by device type*
+
+![Coverage Analysis](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/coverage_analysis_dark.png)
+*Capture coverage metrics - identify gaps in data collection*
+
+![Coverage Gaps](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/coverage_gap_dark.png)
+*Specific gap identification for targeted remediation*
+
+![Environmental Diagnostics](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/env_diag_dark.png)
+*Environmental monitoring - power supplies, fans, temperature sensors*
+
+### Topology & Visualization
+
+![Secure Cartography Maps](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/scart_maps_dark.png)
+*LLDP/CDP-based topology discovery with vendor-specific icons*
+
+![Maps by Site](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/maps_by_site.png)
+*Organize topology views by site for multi-location infrastructure*
+
+### Maintenance & Utilities
+
+![Maintenance Utilities](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/maint_utils_dark.png)
+*Database maintenance, backup/restore, and system health checks*
+
+![Additional Utilities](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/dark/main_utils2.png)
+*Advanced utilities for data management and troubleshooting*
 
 ---
 
 ## Architecture
 
-VelocityCMDB is built on proven open-source components:
+VelocityCMDB is built on proven open-source foundations:
 
-**Foundation:**
-- [Secure Cartography](https://github.com/scottpeterman/secure_cartography) - Network discovery (134+ stars, 21 forks)
-- Paramiko - SSH automation
-- TextFSM - Multi-vendor parsing (100+ templates)
+**Core Technologies:**
+- [Secure Cartography](https://github.com/scottpeterman/secure_cartography) - Network discovery engine (134+ stars)
+- Paramiko - Multi-vendor SSH automation
+- TextFSM - Command output parsing (100+ templates)
 - Flask + SocketIO - Real-time web interface
-- SQLite FTS5 - Full-text search
+- SQLite FTS5 - Full-text search across captures
 
 **Novel Contributions:**
-- Pip-installable packaging with CLI entry points
-- Wizard-driven workflows for discovery and collection
+- Snapshot-based change detection with automatic diff generation
 - Component-level hardware tracking with normalization
+- Dual-database architecture (assets + operational data)
+- Wizard-driven workflows for discovery and collection
 - Integrated knowledge system with device associations
-- Dual-database architecture (assets + ARP tracking)
-- Configuration change detection with content hashing
-
-**Structure:**
-```
-velocitycmdb/
-├── cli.py                 # Command-line interface
-├── app/                   # Flask web application
-│   ├── blueprints/       # 13+ modular features
-│   └── templates/        # Material Design 3 UI
-├── services/             # Business logic
-│   ├── discovery.py      # LLDP-based topology
-│   ├── collection.py     # Data capture orchestration
-│   └── fingerprint.py    # Device classification
-├── db/                   # Database management
-└── pcng/                 # Capture engine (100+ job templates)
-```
 
 ---
 
-## Features
+## Change Detection System
 
-### Asset Management
-- **Devices** - Full CRUD with sites, vendors, roles, stacks
-- **Components** - Hardware inventory (1,684 components tracked)
-- **Sites/Vendors/Roles** - Complete taxonomy management
-- **Bulk Operations** - Preview-commit workflow for batch changes
+### How It Works
 
-### Discovery and Topology
-- **Automated Discovery** - LLDP/CDP-based network mapping
-- **Topology Maps** - Interactive visualization with export
-- **Secure Cartography** - Enhanced topology with vendor icons
-- **Multiple Formats** - GraphML (yEd), DrawIO, PNG, SVG
+VelocityCMDB tracks **intentional changes** - configuration modifications, version upgrades, hardware changes - not transient operational state.
 
-### Network Map Library
+**Tracked Types:**
+- **configs** - Running configuration changes
+- **version** - Software/firmware versions  
+- **inventory** - Hardware components
 
-Centralize your network documentation alongside CMDB data - no discovery required.
+**Not Tracked:** ARP tables, MAC tables, interface status, routing tables - these change constantly due to normal network operations.
 
-- **Bring Your Own Diagrams** - Import SVG exports from Visio, DrawIO, Lucidchart, or any diagramming tool
-- **Flexible Organization** - Group by site, region, project, technology, or any folder structure
-- **Automatic Thumbnails** - Preview images generated on first view
-- **Multiple Formats** - Store companion files (.json, .graphml, .drawio) alongside SVGs
-- **In-App Help** - Built-in guidance shows directory structure and setup
+### Automatic Severity Classification
 
-**Use Cases:**
-- Legacy Visio diagrams maintained over years
-- Compliance and audit documentation that must remain static
-- Reference architectures and design templates
-- Vendor-provided network diagrams
-- Hand-crafted documentation for specific systems
+**Critical:**
+- Config changes > 50 lines
+- Any version change (firmware upgrades are high-risk)
+- Inventory changes > 5 lines (major hardware work)
 
-**Directory Structure:**
+**Moderate:**
+- Any config change (someone modified something)
+- Moderate inventory changes
+
+**Minor:**
+- Small, routine changes
+
+### Operational Value
+
+**For New Environment Onboarding:**
+- Day 1: Establish baseline
+- Day 2: Detect changes made by others
+- Week 1: Historical record of all modifications
+- Week 2: Pattern analysis - which devices change frequently
+
+**For Accountability:**
+When working alongside contractors or distributed teams:
+- Evidence of what changed and when
+- No reliance on memory or documentation
+- Clear audit trail for troubleshooting
+- Protection when "nobody touched anything" but logs show otherwise
+
+**For Incident Response:**
+```sql
+-- What changed in the 24 hours before the incident?
+SELECT * FROM capture_changes 
+WHERE detected_at BETWEEN '2025-09-29 18:00' AND '2025-09-30 18:00'
+ORDER BY severity DESC;
 ```
-~/.velocitycmdb/data/maps/
-├── datacenter-east/        # Any folder name becomes a group
-│   ├── core-topology.svg
-│   └── wan-design.svg
-├── compliance-docs/        # Organize however you want
-│   └── pci-network.svg
-└── projects/
-    └── 2025-refresh.svg
-```
 
-Maps with an SVG file appear automatically in the UI. Optional companion files (.json, .graphml, .drawio) are available for download when present.
-
-
-### Operational Intelligence
-- **Capture Search** - Full-text search across configurations
-- **Change Detection** - Real-time config monitoring with diffs
-- **Coverage Analysis** - Gap identification and success metrics
-- **OS Version Tracking** - Compliance monitoring
-- **ARP Search** - MAC address lookup with vendor OUI
-
-### Collaboration
-- **Notes System** - Wiki-style documentation with rich text
-- **Device Associations** - Link notes to devices and sites
-- **Internal Linking** - `[[Note Title]]` syntax for knowledge graphs
-- **Full-Text Search** - Unified search across notes + captures
-
-### Security and Administration
-- **Multi-Auth Backend** - LDAP, database, OS authentication
-- **Role-Based Access** - Admin, operator, viewer groups
-- **Audit Logging** - Track all administrative actions
-- **Backup/Restore** - Complete system lifecycle management
-- **User Management** - Full CRUD with password policies
-
-### Automation
-- **SSH Terminal** - WebSocket-based browser access
-- **Collection Wizard** - Concurrent capture execution
-- **100+ Job Templates** - Pre-built for Cisco, Arista, Juniper, HPE
-- **REST API** - Programmatic access to all features
+See [README_Archive_change_detection.md](README_Archive_change_detection.md) for complete implementation details.
 
 ---
 
-## Screenshots
+## System Specifications
 
-<table>
-<tr>
-<td width="50%">
+### Capacity and Scale
 
-### Device Inventory
-![Device List](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/devices_light.png)
-*12 devices across sites with vendor/role filtering*
+**Designed for:**
+- Up to 500 managed network devices
+- Concurrent collection across multiple devices
+- ~30-60 GB data growth per year
+- Development use: 1-3 users
+- Small team deployment: Up to 10 simultaneous users
 
-</td>
-<td width="50%">
+**System Requirements:**
 
-### Device Detail
-![Device Detail](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/device_detail_light.png)
-*Hardware components with capture status*
+**Minimum:**
+- 4 CPU cores
+- 8 GB RAM
+- 10 GB available disk space
+- Python 3.10+
 
-</td>
-</tr>
-<tr>
-<td width="50%">
+**Recommended:**
+- 8+ CPU cores
+- 24 GB RAM
+- 100 GB available disk space (for growth)
+- Python 3.12 (tested)
+- SSD storage for database performance
 
-### Change Tracking
-![Changes](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/changes_light.png)
-*33 configuration changes with severity*
+**Platform Support:**
+- Linux (Ubuntu 24.04+, RHEL 9+, Debian 11+)
+- macOS (12+)
+- Windows via WSL2
 
-</td>
-<td width="50%">
+### Deployment Options
 
-### Collection Wizard
-![Collection](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/collection_running_light.png)
-*Real-time concurrent capture execution*
+**Desktop/Development (Current Phase):**
+```bash
+# Runs Flask development server by default
+python -m velocitycmdb.app.run --port 8086
+```
 
-</td>
-</tr>
-<tr>
-<td width="50%">
+**Server Deployment:**
+```bash
+# Can run as systemd service
+# Limited to ~10 concurrent users (Flask dev server)
+python -m velocitycmdb.app.run --host 0.0.0.0 --port 8086 --no-debug
+```
 
-### Capture Search
-![Search](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/capture_search_light.png)
-*Full-text search across operational data*
+**SSL Support:**
+```bash
+# Self-signed certificate (SocketIO requires full module syntax)
+python -m velocitycmdb.app.run --port 8443 --ssl
+```
 
-</td>
-<td width="50%">
+**Data Storage:**
+- All artifacts stored in `~/.velocitycmdb/` of service account
+- Requires dedicated service account for production deployments
+- Backup entire directory for complete system recovery
 
-### SSH Terminal
-![SSH](https://raw.githubusercontent.com/scottpeterman/velocitycmdb/main/screenshots/ssh_light.png)
-*Web-based device access with credentials*
+### Performance Characteristics
 
-</td>
-</tr>
-</table>
+**Discovery:**
+- 200-300 devices: 45-90 minutes (LLDP/CDP-based)
+- Concurrent SSH sessions: 8 (configurable)
 
----
+**Fingerprinting:**
+- Device classification: 8 concurrent processes
+- 200-300 devices: 60-120 minutes
 
-## Proven at Scale
+**Data Collection:**
+- Concurrent captures: 8 devices simultaneously
+- Full capture cycle: 15-30 minutes for 100 devices
 
-**Production Deployment Stats:**
-- 357 devices managed
-- 53 sites across infrastructure  
-- 126 switch stacks tracked
-- 1,684 hardware components
-- 8,891 successful captures
-- 99.3% device classification accuracy
+**Web Interface:**
+- Dashboard response: <500ms typical
+- Search queries: <1s for most operations
+- Backup creation: 15-30 seconds
 
-**Performance:**
-- Discovery: 45-60 min for 295 devices
-- Fingerprinting: 60-90 min (8 concurrent processes)
-- Full onboarding cycle: ~4 hours (manual)
-- Dashboard response: <500ms
-- Backup: 15-30 sec (58 MB compressed)
+**Database:**
+- SQLite with FTS5 full-text indexing
+- Backup size: ~50-100 MB compressed (varies with capture volume)
+- No external database server required
 
-**Vendor Support:**
+### Vendor Support
+
+**Production Ready:**
 - Cisco IOS/IOS-XE/NX-OS
 - Arista EOS
-- HPE ProCurve/Aruba
-- Juniper Junos (beta)
+
+**Beta Support:**
+- Juniper Junos
+
+**TextFSM Templates:**
+- 100+ pre-built parsing templates
+- Custom template support via TFSM wizard
 
 ---
 
@@ -269,106 +347,204 @@ Maps with an SVG file appear automatically in the UI. Optional companion files (
 
 Comprehensive guides for every component:
 
-**Getting Started:**
-- [Quick Start Guide](QUICKSTART.md)
+### Getting Started
+- [Quick Start Guide](README_QuickStart.md)
 - [Authentication Configuration](README_Auth_Config.md)
 - [Shadow Users Guide](SHADOW_USERS_GUIDE.md)
 
-**Core Workflows:**
-- Network Discovery - See Quick Start
-- Data Collection - See Quick Start
-- Change Detection - Built-in, automatic
+### Core Features
+- [Change Detection System](README_Archive_change_detection.md)
+- [Device Fingerprinting](README_Fingerprinting.md)
+- [Capture Collection Wizard](README_CAPTURE_Wizard.md)
+- [Hardware Component Tracking](README_Inventory_components.md)
 
-**Administration:**
-- User Management - Admin > User Management
-- Backup/Restore - Admin > Maintenance
+### Search & Analysis
+- [ARP/MAC Search](README_arp_cat.md)
+- [Capture Search](db_doc_arp_cat.md)
+- [Full-Text Search](README_Progress.md)
+
+### Administration
+- [Maintenance Utilities](README_Maint_utils.md)
+- [File Persistence](README_File_Persistance.md)
+- [Database Rebaseline](README_REBASELINE_DB_ChangeTracking.md)
+
+### Advanced Topics
+- [TextFSM Template Help](README_TFSM_help.md)
+- [Notes System](README_Notes.md)
+- [Database Schema - Assets](db_doc_assets.md)
+- [Database Schema - ARP Catalog](db_doc_arp_cat.md)
+
+### Experimental
+- [VelocityMaps Import](velocitymaps_import_experimental.py) - Import discovery results from VelocityMaps
+
+---
+
+## Experimental: VelocityMaps Import
+
+VelocityCMDB's native discovery uses [Secure Cartography](https://github.com/scottpeterman/secure_cartography) for SSH-based topology mapping via LLDP/CDP neighbor discovery. For environments where SNMP discovery is preferred, the experimental [VelocityMaps](https://github.com/scottpeterman/velocitymaps) importer provides an alternative path to populate device inventory from SNMP sysDescr data.
+
+Import device inventory directly from VelocityMaps SNMP discovery results. This experimental importer parses `device.json` files and populates VelocityCMDB with vendor, model, and OS version information extracted from sysDescr.
+
+```bash
+# Preview import (dry run)
+python velocitymaps_import_experimental.py --results-dir /path/to/velocitymaps/tests --dry-run
+
+# Import devices
+python velocitymaps_import_experimental.py --results-dir /path/to/velocitymaps/tests
+
+# Strip domain suffixes from hostnames during import
+python velocitymaps_import_experimental.py --results-dir /path/to/results --remove-domains "example.com,internal.net"
+
+# Custom database path
+python velocitymaps_import_experimental.py --results-dir /path/to/results --db-path /custom/assets.db
+```
+
+**Supported Vendors:** Cisco (IOS/IOS-XE/NX-OS), Arista EOS, Juniper Junos
+
+**Features:**
+- Automatic vendor detection and normalization
+- Model and OS version parsing from sysDescr
+- Hostname domain stripping (useful for FQDN cleanup)
+- Dry-run mode for safe previewing
+- Creates missing vendors/sites automatically
 
 ---
 
 ## CLI Reference
 
+### Initialization
+
 ```bash
 # Initialize system (first time setup)
+# Creates ~/.velocitycmdb/ directory structure
 velocitycmdb init
 
 # Re-initialize and overwrite config
 velocitycmdb init --force
-
-# Start web server (default: port 8086)
-velocitycmdb run
-
-# Start with SSL enabled
-velocitycmdb run --ssl
-
-# Start on custom port
-velocitycmdb run -p 8443
-
-# Start on custom host and port
-velocitycmdb run --host 127.0.0.1 --port 5000
-
-# Disable debug mode (for production)
-velocitycmdb run --no-debug
-
-# Show help
-velocitycmdb --help
-velocitycmdb init --help
-velocitycmdb run --help
 ```
+
+### Running the Server
+
+**Note:** Due to SocketIO requirements, use full Python module syntax for server startup.
+
+```bash
+# Default: port 8086, no SSL, debug mode
+python -m velocitycmdb.app.run
+
+# Custom port
+python -m velocitycmdb.app.run --port 8443
+
+# Enable SSL with self-signed certificate
+python -m velocitycmdb.app.run --port 8443 --ssl
+
+# Production mode (disable debug)
+python -m velocitycmdb.app.run --no-debug
+
+# Custom host binding
+python -m velocitycmdb.app.run --host 0.0.0.0 --port 8086
+
+# Show all options
+python -m velocitycmdb.app.run --help
+```
+
+### Examples
+
+```bash
+# Desktop development (default)
+python -m velocitycmdb.app.run
+
+# Server deployment with SSL
+python -m velocitycmdb.app.run --host 0.0.0.0 --port 8443 --ssl --no-debug
+
+# Custom port without SSL
+python -m velocitycmdb.app.run --port 5000
+
+# Systemd service deployment
+python -m velocitycmdb.app.run --host 0.0.0.0 --port 8086 --no-debug
+```
+
+### Data Directory
+
+**Default location:** `~/.velocitycmdb/`
 
 ---
 
-## Roadmap
+## Important Notice
 
-### v1.0 - Foundation (Current)
-- [x] Pip-installable package
-- [x] Wizard-driven workflows
-- [x] 13+ feature modules
-- [x] Multi-auth backend
-- [x] Material Design 3 UI
+**Current Development Phase:** Desktop/Small Team Deployment
 
-### v1.1 - Enhanced Automation (Q1 2026)
-- [ ] Job scheduler UI
-- [ ] Webhook notifications
-- [ ] Prometheus exporter
-- [ ] Advanced search filters
+VelocityCMDB is functional and used in production environments, but is currently optimized for:
+- **Desktop development** - Single user, local instance
+- **Small team deployment** - Up to 10 simultaneous users
+- **Flask development server** - Not production WSGI/ASGI server
 
-### v1.2 - Integration (Q2 2026)
-- [ ] NetBox plugin/sync
-- [ ] REST API expansion
-- [ ] Custom collection jobs
-- [ ] Device driver plugins
+**Limitations:**
+- Flask development server (not Gunicorn/uWSGI)
+- ~10 concurrent user limit
+- Self-signed SSL only (no Let's Encrypt integration yet)
+- Single-instance only (no clustering/high availability)
 
-### v2.0 - Enterprise (Q3 2026)
-- [ ] Multi-tenancy
-- [ ] SSO integration
-- [ ] Distributed monitoring
-- [ ] GitOps workflows
+**Production Recommendations:**
+- Use dedicated service account
+- Run on server with 8+ cores, 24 GB RAM
+- Plan for 30-60 GB data growth per year
+- Limit deployment to 500 devices maximum
+- Consider systemd service for server deployment
+
+**License:** GPLv3 (see LICENSE file)
+
+**Tested On:** Python 3.12 (requires Python 3.10+)
 
 ---
 
 ## Community and Support
 
-**Resources:**
-- [Documentation](QUICKSTART.md)
-- [Discussions](https://github.com/scottpeterman/velocitycmdb/discussions)
-- [Issue Tracker](https://github.com/scottpeterman/velocitycmdb/issues)
+### Resources
+- **Documentation:** [GitHub Wiki](https://github.com/scottpeterman/velocitycmdb/wiki) (coming soon)
+- **Discussions:** [GitHub Discussions](https://github.com/scottpeterman/velocitycmdb/discussions)
+- **Issue Tracker:** [GitHub Issues](https://github.com/scottpeterman/velocitycmdb/issues)
 
-**Contributing:**
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+### Contributing
+We welcome contributions! Areas where help is needed:
+- Additional TextFSM templates for vendors
+- Device fingerprinting profiles
+- Documentation improvements
+- Bug reports and feature requests
 
-**Professional Support:**
-Enterprise support and training available - contact via GitHub.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+### Professional Support
+Enterprise support, training, and custom development available - contact via GitHub.
 
 ---
 
 ## Related Projects
 
-Part of the VelociTerm ecosystem:
+Part of the network automation toolkit ecosystem:
 
-- [VelociTerm](https://github.com/scottpeterman/velociterm) - Web SSH terminal framework
-- [Secure Cartography](https://github.com/scottpeterman/secure_cartography) - Network discovery engine
-- [TerminalTelemetry](https://github.com/scottpeterman/terminaltelemetry) - SSH automation patterns
-- [PyCorpus](https://github.com/scottpeterman/pycorpus) - Knowledge management (coming soon)
+- **[VelociTerm](https://github.com/scottpeterman/velociterm)** - Web SSH terminal framework
+- **[Secure Cartography](https://github.com/scottpeterman/secure_cartography)** - Network discovery engine
+- **[TerminalTelemetry](https://github.com/scottpeterman/terminaltelemetry)** - SSH automation patterns
+- **[python-librenms-mibs](https://github.com/scottpeterman/python-librenms-mibs)** - 4,242 compiled MIBs from 298 vendors
+
+All designed with the same philosophy: **practical tools that solve real operational problems**.
+
+---
+
+## Philosophy
+
+VelocityCMDB embodies the "100-year-old hammer" mentality:
+
+> Use the tools you have to solve the problem in front of you. Don't wait for perfect solutions. Build what works, ship it, iterate.
+
+**Design Principles:**
+- **Solve real problems** - Features driven by operational necessity, not theory
+- **Ship complete solutions** - Not just dashboards or data collection, but end-to-end workflows
+- **Work alone** - Designed for engineers managing infrastructure solo
+- **Pip-installable** - No complex deployment, no external dependencies
+- **Multi-vendor by default** - Real networks aren't single-vendor
+
+Built by a network engineer, for network engineers, to solve the problems you face every day.
 
 ---
 
@@ -380,20 +556,21 @@ GPLv3 License - See [LICENSE](LICENSE) for details.
 
 ## Credits
 
-Created by [Scott Peterman](https://github.com/scottpeterman)
+**Created by:** [Scott Peterman](https://github.com/scottpeterman)  
 
-Built with:
+**Built with:**
 - Flask and SocketIO
-- Cytoscape.js
+- Cytoscape.js for topology
 - Material Design 3
 - TextFSM and Paramiko
 - NetworkX and SQLite
 
-**Acknowledgments:**
-- NetBox Labs for community support
-- Network automation community for feedback
-- Contributors and early adopters
+**Special Thanks:**
+- Network automation community for feedback and testing
+- Early adopters who provided real-world validation
 
 ---
 
-*VelocityCMDB v1.0 - Production Ready | November 2025*
+**VelocityCMDB** - *Because you don't have time to fish.*
+
+*December 2025*

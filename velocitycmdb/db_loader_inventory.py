@@ -39,6 +39,50 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 
+def find_textfsm_db() -> str:
+    """
+    Find tfsm_templates.db in the expected locations.
+
+    Search order:
+    1. Same directory as this script (for pip-installed package)
+    2. Parent directory of this script
+    3. Current working directory
+
+    Returns:
+        Path to tfsm_templates.db
+
+    Raises:
+        FileNotFoundError: If tfsm_templates.db cannot be found
+    """
+    db_filename = "tfsm_templates.db"
+
+    # Get the directory where this script is located
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    search_paths = [
+        # 1. Same directory as script (pip-installed package location)
+        os.path.join(script_dir, db_filename),
+
+        # 2. Parent directory of script
+        os.path.join(os.path.dirname(script_dir), db_filename),
+
+        # 3. Current working directory (backward compatibility)
+        os.path.join(os.getcwd(), db_filename),
+    ]
+
+    for path in search_paths:
+        if os.path.exists(path):
+            logger.info(f"Found tfsm_templates.db at: {path}")
+            return path
+
+    # Not found - provide helpful error message
+    searched = "\n  ".join(search_paths)
+    raise FileNotFoundError(
+        f"Cannot find {db_filename}. Searched:\n  {searched}\n"
+        f"Please ensure tfsm_templates.db is in the package directory or parent directory."
+    )
+
+
 # =============================================================================
 # SHARED PATTERNS
 # =============================================================================
@@ -197,10 +241,16 @@ class InventoryLoader:
     MINIMUM_SCORE = 2
 
     def __init__(self, assets_db_path: str = "assets.db",
-                 textfsm_db_path: str = "tfsm_templates.db",
+                 textfsm_db_path: Optional[str] = None,
                  ignore_sn: bool = False):
         self.assets_db_path = assets_db_path
-        self.textfsm_db_path = textfsm_db_path
+
+        # Auto-locate tfsm_templates.db if not explicitly provided
+        if textfsm_db_path is None:
+            self.textfsm_db_path = find_textfsm_db()
+        else:
+            self.textfsm_db_path = textfsm_db_path
+
         self.textfsm_engine = None
         self.ignore_sn = ignore_sn
         self.patterns = ComponentPatterns()
@@ -1212,11 +1262,17 @@ class ComponentMaintenance:
 def cmd_load(args):
     """Handle load subcommand"""
     try:
-        loader = InventoryLoader(
-            assets_db_path=args.assets_db,
-            textfsm_db_path=args.textfsm_db,
-            ignore_sn=args.ignore_sn
-        )
+        # Create loader - only pass textfsm_db_path if user explicitly provided it
+        loader_kwargs = {
+            'assets_db_path': args.assets_db,
+            'ignore_sn': args.ignore_sn
+        }
+
+        # Only pass textfsm_db_path if user specified it (not using default)
+        if args.textfsm_db is not None:
+            loader_kwargs['textfsm_db_path'] = args.textfsm_db
+
+        loader = InventoryLoader(**loader_kwargs)
 
         # Purge if requested
         if args.purge:
@@ -1401,7 +1457,8 @@ Examples:
 
     # Load subcommand
     load_parser = subparsers.add_parser("load", help="Load inventory data")
-    load_parser.add_argument("--textfsm-db", default="tfsm_templates.db")
+    load_parser.add_argument("--textfsm-db", default=None,
+                             help="Path to TextFSM templates database (auto-discovered if not specified)")
     load_parser.add_argument("--from-directory", help="Load from directory (bypass capture database)")
     load_parser.add_argument("--max-files", type=int, help="Maximum files to process")
     load_parser.add_argument("--device-filter", help="Filter devices by name pattern")

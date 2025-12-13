@@ -195,9 +195,20 @@ class CollectionOrchestrator:
                 'progress': 5
             })
 
-        sessions_file = self.pcng_dir / 'sessions.yaml'
+        sessions_file = self.data_dir / 'sessions.yaml'  # FIX: was self.pcng_dir
         db_path = self.data_dir / 'assets.db'
         db_to_sessions_script = Path(__file__).parent.parent / 'db_to_sessions.py'
+
+        # DEBUG: Log all paths with full resolution
+        logger.info(f"DEBUG _generate_sessions_file paths:")
+        logger.info(f"  data_dir:            {self.data_dir}")
+        logger.info(f"  data_dir (resolved): {self.data_dir.resolve()}")
+        logger.info(f"  sessions_file:       {sessions_file}")
+        logger.info(f"  sessions_file (abs): {sessions_file.resolve()}")
+        logger.info(f"  db_path:             {db_path}")
+        logger.info(f"  db_path (exists):    {db_path.exists()}")
+        logger.info(f"  script:              {db_to_sessions_script}")
+        logger.info(f"  script (exists):     {db_to_sessions_script.exists()}")
 
         cmd = [
             sys.executable,
@@ -212,7 +223,7 @@ class CollectionOrchestrator:
         if device_filters.get('site'):
             cmd.extend(['--site', device_filters['site']])
 
-        logger.info(f"Generating sessions.yaml: {' '.join(cmd)}")
+        logger.info(f"DEBUG: Full command: {' '.join(cmd)}")
 
         try:
             env = os.environ.copy()
@@ -237,10 +248,28 @@ class CollectionOrchestrator:
                 error_msg = result.stderr or result.stdout or "Unknown error"
                 raise RuntimeError(f"db_to_sessions.py failed: {error_msg}")
 
-            if not sessions_file.exists():
-                raise RuntimeError(f"sessions.yaml was not created")
+            # DEBUG: Verify file creation
+            logger.info(f"DEBUG: Checking if sessions_file was created...")
+            logger.info(f"  sessions_file.exists(): {sessions_file.exists()}")
+            if sessions_file.exists():
+                file_size = sessions_file.stat().st_size
+                logger.info(f"  sessions_file size:     {file_size} bytes")
+                logger.info(f"  sessions_file (real):   {sessions_file.resolve()}")
+            else:
+                # Check if it ended up somewhere else
+                alt_locations = [
+                    self.pcng_dir / 'sessions.yaml',
+                    Path.cwd() / 'sessions.yaml',
+                    Path.home() / 'sessions.yaml'
+                ]
+                for alt in alt_locations:
+                    if alt.exists():
+                        logger.warning(f"  FOUND at alternate location: {alt.resolve()}")
 
-            logger.info(f"✓ Generated {sessions_file}")
+            if not sessions_file.exists():
+                raise RuntimeError(f"sessions.yaml was not created at {sessions_file.resolve()}")
+
+            logger.info(f"✓ Generated {sessions_file.resolve()}")
             return sessions_file
 
         except subprocess.TimeoutExpired:

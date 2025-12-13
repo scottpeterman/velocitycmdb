@@ -259,14 +259,14 @@ def run_collection_task(app, job_id, device_ids, capture_types, credentials,
                     logger.info(f"Found sessions file: {sessions_file}")
                     break
 
-            if not sessions_file:
-                searched = [str(p) for p in possible_paths]
-                raise FileNotFoundError(
-                    f"Sessions file not found. Searched: {searched}. "
-                    f"Run discovery first or place sessions.yaml in {data_dir}"
-                )
-
-            logger.info(f"Using sessions file: {sessions_file}")
+            # if not sessions_file:
+            #     searched = [str(p) for p in possible_paths]
+            #     raise FileNotFoundError(
+            #         f"Sessions file not found. Searched: {searched}. "
+            #         f"Run discovery first or place sessions.yaml in {data_dir}"
+            #     )
+            #
+            # logger.info(f"Using sessions file: {sessions_file}")
 
             # Create orchestrator
             orchestrator = CollectionOrchestrator(data_dir=data_dir)

@@ -12,7 +12,7 @@ import os
 
 # Read version from velocitycmdb/__init__.py or cli.py
 
-VERSION = "0.10.9"
+VERSION = "0.10.13"
 
 # Read README for long description
 readme_path = Path(__file__).parent / "README.md"

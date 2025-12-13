@@ -11,7 +11,7 @@ from . import scmaps_bp
 
 try:
     from secure_cartography.graphml_mapper4 import NetworkGraphMLExporter
-    from secure_cartography.drawio_mapper2 import NetworkDrawioExporter
+    from velocitycmdb.app.blueprints.scmaps.drawio_mapper2 import NetworkDrawioExporter
 except ImportError:
     NetworkGraphMLExporter = None
     NetworkDrawioExporter = None
