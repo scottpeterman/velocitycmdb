@@ -19,6 +19,7 @@ def index():
     search = request.args.get('search', '').strip()
     type_filter = request.args.get('type', '')
     vendor_filter = request.args.get('vendor', '')
+    device_filter = request.args.get('device', '')
     has_serial = request.args.get('has_serial', '')
 
     per_page = min(max(per_page, 10), 200)
@@ -65,6 +66,10 @@ def index():
             if vendor_filter:
                 conditions.append("v.name = ?")
                 params.append(vendor_filter)
+
+            if device_filter:
+                conditions.append("d.id = ?")
+                params.append(int(device_filter))
 
             if has_serial == 'yes':
                 conditions.append("c.have_sn = 1")
@@ -130,6 +135,15 @@ def index():
             """)
             vendors = [row[0] for row in cursor.fetchall()]
 
+            # Get devices that have components for filter dropdown
+            cursor.execute("""
+                SELECT DISTINCT d.id, d.name
+                FROM devices d
+                JOIN components c ON c.device_id = d.id
+                ORDER BY d.name
+            """)
+            devices = [dict(row) for row in cursor.fetchall()]
+
             cursor.execute("""
                 SELECT 
                     COUNT(*) as total,
@@ -158,10 +172,12 @@ def index():
                                    overall_stats=overall_stats,
                                    types=types,
                                    vendors=vendors,
+                                   devices=devices,
                                    filters={
                                        'search': search,
                                        'type': type_filter,
                                        'vendor': vendor_filter,
+                                       'device': device_filter,
                                        'has_serial': has_serial
                                    })
 
@@ -174,6 +190,7 @@ def index():
                                overall_stats={'total': 0, 'with_serials': 0, 'unique_devices': 0},
                                types=[],
                                vendors=[],
+                               devices=[],
                                filters={},
                                error=str(e))
 
@@ -399,6 +416,7 @@ def export_csv():
     search = request.args.get('search', '').strip()
     type_filter = request.args.get('type', '')
     vendor_filter = request.args.get('vendor', '')
+    device_filter = request.args.get('device', '')
     has_serial = request.args.get('has_serial', '')
 
     try:
@@ -436,6 +454,10 @@ def export_csv():
             if vendor_filter:
                 conditions.append("v.name = ?")
                 params.append(vendor_filter)
+
+            if device_filter:
+                conditions.append("d.id = ?")
+                params.append(int(device_filter))
 
             if has_serial == 'yes':
                 conditions.append("c.have_sn = 1")

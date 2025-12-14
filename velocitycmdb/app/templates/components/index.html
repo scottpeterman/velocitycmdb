@@ -35,8 +35,9 @@
 
     /* Filter Controls */
     .filter-section { background: var(--md-surface); border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-corner-medium); padding: 20px; margin-bottom: 24px; }
-    .filter-controls { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto auto; gap: 12px; align-items: end; }
-    @media (max-width: 1200px) { .filter-controls { grid-template-columns: 1fr 1fr 1fr; } }
+    .filter-controls { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto auto; gap: 12px; align-items: end; }
+    @media (max-width: 1400px) { .filter-controls { grid-template-columns: 1fr 1fr 1fr 1fr; } }
+    @media (max-width: 1024px) { .filter-controls { grid-template-columns: 1fr 1fr 1fr; } }
     @media (max-width: 768px)  { .filter-controls { grid-template-columns: 1fr; } }
     .form-group { display: flex; flex-direction: column; gap: 8px; }
     .form-label { font: var(--md-typescale-body-small); color: var(--md-on-surface-variant); font-weight: 500; }
@@ -178,13 +179,13 @@
         <div class="empty-state-icon"><i data-lucide="inbox" size="64"></i></div>
         <h3 class="md-headline-small" style="margin: 0 0 8px 0;">No components found</h3>
         <p class="md-body-large">
-            {% if filters.search or filters.type or filters.vendor or filters.has_serial %}
+            {% if filters.search or filters.type or filters.vendor or filters.device or filters.has_serial %}
                 No components match your current filters. Try adjusting your search criteria.
             {% else %}
                 No hardware components have been discovered yet. Run inventory captures to populate this data.
             {% endif %}
         </p>
-        {% if filters.search or filters.type or filters.vendor or filters.has_serial %}
+        {% if filters.search or filters.type or filters.vendor or filters.device or filters.has_serial %}
         <a href="{{ url_for('components.index') }}" class="md-button md-button-filled" style="margin-top: 16px;">
             <i data-lucide="x" size="16"></i> Clear Filters
         </a>
@@ -255,6 +256,18 @@
     </div>
 
     <div class="form-group">
+      <label class="form-label">Device</label>
+      <select name="device" class="form-select">
+        <option value="">All Devices</option>
+        {% for device in devices %}
+          <option value="{{ device.id }}" {% if filters.device|string == device.id|string %}selected{% endif %}>
+            {{ device.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
       <label class="form-label">Serial Number</label>
       <select name="has_serial" class="form-select">
         <option value="">All</option>
@@ -270,7 +283,7 @@
     </div>
 
     <div class="form-group">
-      <a id="exportBtn" class="md-button md-button-outlined" href="{{ url_for('components.export_csv', search=filters.search, type=filters.type, vendor=filters.vendor, has_serial=filters.has_serial) }}">
+      <a id="exportBtn" class="md-button md-button-outlined" href="{{ url_for('components.export_csv', search=filters.search, type=filters.type, vendor=filters.vendor, device=filters.device, has_serial=filters.has_serial) }}">
         <i data-lucide="download" size="16"></i> Export CSV
       </a>
     </div>
@@ -379,6 +392,7 @@
                 search=filters.search,
                 type=filters.type,
                 vendor=filters.vendor,
+                device=filters.device,
                 has_serial=filters.has_serial) }}">« First</a>
             <a class="md-button md-button-tonal" href="{{ url_for('components.index',
                 page=pagination.prev_num,
@@ -386,6 +400,7 @@
                 search=filters.search,
                 type=filters.type,
                 vendor=filters.vendor,
+                device=filters.device,
                 has_serial=filters.has_serial) }}">‹ Prev</a>
             {% else %}
             <button class="md-button" disabled>« First</button>
@@ -399,6 +414,7 @@
                 search=filters.search,
                 type=filters.type,
                 vendor=filters.vendor,
+                device=filters.device,
                 has_serial=filters.has_serial) }}">Next ›</a>
             <a class="md-button md-button-tonal" href="{{ url_for('components.index',
                 page=pagination.total_pages,
@@ -406,6 +422,7 @@
                 search=filters.search,
                 type=filters.type,
                 vendor=filters.vendor,
+                device=filters.device,
                 has_serial=filters.has_serial) }}">Last »</a>
             {% else %}
             <button class="md-button" disabled>Next ›</button>
