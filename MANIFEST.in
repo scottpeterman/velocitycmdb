@@ -22,6 +22,7 @@ include velocitycmdb/pcng/command_templates.json
 
 # Database schema files
 recursive-include velocitycmdb/db *.sql
+recursive-include velocitycmdb/ *.db
 
 # Configuration examples
 include velocitycmdb/app/config_loader.py

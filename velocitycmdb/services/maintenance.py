@@ -16,6 +16,16 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Import capture type mappings for UI name → directory name translation
+try:
+    from .capture_job_mappings import CAPTURE_TYPE_MAPPINGS
+except ImportError:
+    try:
+        from velocitycmdb.services.capture_job_mappings import CAPTURE_TYPE_MAPPINGS
+    except ImportError:
+        # Fallback: empty dict means no translation (pass-through)
+        CAPTURE_TYPE_MAPPINGS = {}
+
 # Consistent default paths
 DEFAULT_DATA_DIR = '~/.velocitycmdb/data'
 
@@ -507,11 +517,37 @@ class MaintenanceOrchestrator:
             logger.info(f"TextFSM database: {textfsm_db}")
             logger.info(f"Captures directory: {captures_dir}")
 
+            # Emit resolved paths for troubleshooting
             if progress_callback:
                 progress_callback({
                     'stage': 'arp',
-                    'message': 'Processing ARP captures...',
-                    'progress': 20
+                    'message': f'Python: {sys.executable}',
+                    'progress': 8
+                })
+                progress_callback({
+                    'stage': 'arp',
+                    'message': f'Script: {arp_loader_script}',
+                    'progress': 10
+                })
+                progress_callback({
+                    'stage': 'arp',
+                    'message': f'Assets DB: {self.assets_db}',
+                    'progress': 12
+                })
+                progress_callback({
+                    'stage': 'arp',
+                    'message': f'ARP DB: {arp_db}',
+                    'progress': 14
+                })
+                progress_callback({
+                    'stage': 'arp',
+                    'message': f'TextFSM DB: {textfsm_db}',
+                    'progress': 16
+                })
+                progress_callback({
+                    'stage': 'arp',
+                    'message': f'Captures dir: {captures_dir}',
+                    'progress': 18
                 })
 
             # Build command with correct arguments
@@ -524,6 +560,14 @@ class MaintenanceOrchestrator:
                 '--captures-dir', str(captures_dir),
                 '-v'  # Verbose output
             ]
+
+            # Emit full command for troubleshooting
+            if progress_callback:
+                progress_callback({
+                    'stage': 'arp',
+                    'message': f'Command: {" ".join(cmd)}',
+                    'progress': 20
+                })
 
             logger.info(f"Executing: {' '.join(cmd)}")
 
@@ -693,11 +737,27 @@ class MaintenanceOrchestrator:
             logger.info(f"Assets database: {self.assets_db}")
             logger.info(f"Captures directory: {captures_dir}")
 
+            # Emit resolved paths for troubleshooting
             if progress_callback:
                 progress_callback({
                     'stage': 'captures',
-                    'message': 'Loading capture files into database...',
-                    'progress': 20
+                    'message': f'Python: {sys.executable}',
+                    'progress': 8
+                })
+                progress_callback({
+                    'stage': 'captures',
+                    'message': f'Script: {load_script}',
+                    'progress': 10
+                })
+                progress_callback({
+                    'stage': 'captures',
+                    'message': f'Data dir: {self.data_dir}',
+                    'progress': 12
+                })
+                progress_callback({
+                    'stage': 'captures',
+                    'message': f'Captures dir: {captures_dir}',
+                    'progress': 14
                 })
 
             # Build command with --data-dir for proper diff path storage
@@ -712,8 +772,33 @@ class MaintenanceOrchestrator:
             ]
 
             # Add capture type filter if specified
+            # Translate UI names (e.g., 'lldp') to actual directory names (e.g., 'lldp-detail')
             if capture_types:
-                cmd.extend(['--capture-types', ','.join(capture_types)])
+                translated_types = []
+                for ct in capture_types:
+                    if ct in CAPTURE_TYPE_MAPPINGS:
+                        # Use job_suffix which matches the actual capture directory name
+                        dir_name = CAPTURE_TYPE_MAPPINGS[ct].get('job_suffix', ct)
+                        translated_types.append(dir_name)
+                        if dir_name != ct:
+                            logger.info(f"Translated capture type: {ct} → {dir_name}")
+                            if progress_callback:
+                                progress_callback({
+                                    'stage': 'captures',
+                                    'message': f'Translated: {ct} → {dir_name}',
+                                    'progress': 16
+                                })
+                    else:
+                        translated_types.append(ct)  # Pass through unknown types
+                cmd.extend(['--capture-types', ','.join(translated_types)])
+
+            # Emit full command for troubleshooting
+            if progress_callback:
+                progress_callback({
+                    'stage': 'captures',
+                    'message': f'Command: {" ".join(cmd)}',
+                    'progress': 18
+                })
 
             logger.info(f"Executing: {' '.join(cmd)}")
 
@@ -1605,6 +1690,12 @@ class MaintenanceOrchestrator:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             output_file = maps_dir / f'topology_{root_device}_{timestamp}.json'
 
+            # Emit resolved paths for troubleshooting
+            emit_progress(f'Python: {sys.executable}', 8)
+            emit_progress(f'Script: {topo_script}', 10)
+            emit_progress(f'Assets DB: {self.assets_db}', 12)
+            emit_progress(f'TextFSM DB: {textfsm_db}', 14)
+            emit_progress(f'Output: {output_file}', 16)
             emit_progress('Building topology map...', 20)
 
             # Build command - POSITIONAL ARGS MUST COME BEFORE FLAGS
@@ -1637,6 +1728,9 @@ class MaintenanceOrchestrator:
             for i, arg in enumerate(cmd):
                 logger.info(f"  cmd[{i}] = {repr(arg)}")
             logger.info("=" * 70)
+
+            # Emit full command for troubleshooting
+            emit_progress(f'Command: {" ".join(cmd)}', 22)
 
             # Execute and capture output
             result = subprocess.run(

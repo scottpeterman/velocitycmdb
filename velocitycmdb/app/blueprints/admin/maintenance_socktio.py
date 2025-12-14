@@ -13,6 +13,7 @@ import subprocess
 import threading
 import logging
 import re
+import sys
 
 logger = logging.getLogger(__name__)
 
@@ -79,11 +80,32 @@ def register_maintenance_socketio_handlers(socketio, app):
         """
         script_path, data_dir = get_loader_paths(app)
 
+        # Emit resolved paths for troubleshooting
+        socketio.emit('maintenance_progress', {
+            'stage': 'resolving',
+            'message': f'Python interpreter: {sys.executable}',
+            'progress': 2
+        })
+
         if not script_path:
+            # Show where we looked
+            script_candidates = [
+                Path(app.root_path).parent / 'db_loader_inventory.py',
+                Path(app.root_path).parent / 'scripts' / 'db_loader_inventory.py',
+                data_dir.parent / 'db_loader_inventory.py',
+                data_dir.parent / 'scripts' / 'db_loader_inventory.py',
+            ]
             socketio.emit('maintenance_error', {
-                'error': 'db_loader_inventory.py not found. Check scripts directory.'
+                'error': 'db_loader_inventory.py not found. Searched:\n' +
+                         '\n'.join(f'  - {p}' for p in script_candidates)
             })
             return
+
+        socketio.emit('maintenance_progress', {
+            'stage': 'resolving',
+            'message': f'Script: {script_path}',
+            'progress': 3
+        })
 
         if not data_dir.exists():
             socketio.emit('maintenance_error', {
@@ -91,8 +113,27 @@ def register_maintenance_socketio_handlers(socketio, app):
             })
             return
 
-        cmd = ['python3', str(script_path),
+        socketio.emit('maintenance_progress', {
+            'stage': 'resolving',
+            'message': f'Data dir: {data_dir}',
+            'progress': 4
+        })
+
+        cmd = [sys.executable, str(script_path),
                '--assets-db', str(data_dir) + "/assets.db"] + args
+
+        # Emit full command for troubleshooting
+        socketio.emit('maintenance_progress', {
+            'stage': 'executing',
+            'message': f'Command: {" ".join(cmd)}',
+            'progress': 5
+        })
+        socketio.emit('maintenance_progress', {
+            'stage': 'executing',
+            'message': f'Working dir: {script_path.parent}',
+            'progress': 6
+        })
+
         logger.info(f"Running inventory loader: {' '.join(cmd)}")
 
         try:
