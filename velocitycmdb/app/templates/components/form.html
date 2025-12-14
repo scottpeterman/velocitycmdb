@@ -1,0 +1,557 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if mode == 'edit' else 'Add' }} Component{% endblock %}
+
+{% block head_extra %}
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 32px;
+        gap: 24px;
+    }
+
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        list-style: none;
+        padding: 0;
+    }
+
+    .breadcrumb-item {
+        color: var(--md-on-surface-variant);
+        font: var(--md-typescale-body-medium);
+    }
+
+    .breadcrumb-item a {
+        color: var(--md-primary);
+        text-decoration: none;
+    }
+
+    .breadcrumb-item a:hover {
+        text-decoration: underline;
+    }
+
+    .breadcrumb-item:not(:last-child)::after {
+        content: "/";
+        margin-left: 8px;
+        color: var(--md-on-surface-variant);
+    }
+
+    .form-card {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        overflow: hidden;
+    }
+
+    .form-card-header {
+        background: var(--md-surface-container);
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--md-outline-variant);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .form-card-header h2 {
+        margin: 0;
+        font: var(--md-typescale-title-large);
+        color: var(--md-on-surface);
+    }
+
+    .form-card-content {
+        padding: 24px;
+    }
+
+    .form-section {
+        margin-bottom: 32px;
+    }
+
+    .form-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .form-section-title {
+        font: var(--md-typescale-title-medium);
+        color: var(--md-on-surface);
+        margin: 0 0 16px 0;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--md-outline-variant);
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .form-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .form-label {
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-surface);
+        font-weight: 500;
+    }
+
+    .form-label .required {
+        color: var(--md-error);
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+        padding: 12px 16px;
+        border: 1px solid var(--md-outline);
+        border-radius: var(--md-shape-corner-small);
+        background: var(--md-surface);
+        color: var(--md-on-surface);
+        font: var(--md-typescale-body-medium);
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+        outline: none;
+        border-color: var(--md-primary);
+        box-shadow: 0 0 0 2px rgba(var(--md-primary-rgb), 0.1);
+    }
+
+    .form-textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    .form-hint {
+        font: var(--md-typescale-body-small);
+        color: var(--md-on-surface-variant);
+        margin-top: 4px;
+    }
+
+    .device-selector {
+        position: relative;
+    }
+
+    .device-search-input {
+        width: 100%;
+    }
+
+    .device-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        max-height: 300px;
+        overflow-y: auto;
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline);
+        border-radius: var(--md-shape-corner-small);
+        box-shadow: var(--md-elevation-2);
+        z-index: 100;
+        display: none;
+    }
+
+    .device-dropdown.show {
+        display: block;
+    }
+
+    .device-option {
+        padding: 12px 16px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--md-outline-variant);
+    }
+
+    .device-option:last-child {
+        border-bottom: none;
+    }
+
+    .device-option:hover {
+        background: var(--md-surface-container);
+    }
+
+    .device-option.selected {
+        background: var(--md-primary-container);
+    }
+
+    .device-option-name {
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-surface);
+        font-weight: 500;
+    }
+
+    .device-option-meta {
+        font: var(--md-typescale-body-small);
+        color: var(--md-on-surface-variant);
+        margin-top: 2px;
+    }
+
+    .selected-device-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: var(--md-primary-container);
+        color: var(--md-on-primary-container);
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-body-medium);
+        margin-top: 8px;
+    }
+
+    .selected-device-badge button {
+        background: none;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+        padding: 0;
+        display: flex;
+        align-items: center;
+    }
+
+    .type-suggestions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    .type-chip {
+        padding: 4px 12px;
+        background: var(--md-surface-container);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-label-medium);
+        color: var(--md-on-surface-variant);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .type-chip:hover {
+        background: var(--md-primary-container);
+        color: var(--md-on-primary-container);
+        border-color: var(--md-primary);
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        padding-top: 24px;
+        border-top: 1px solid var(--md-outline-variant);
+        margin-top: 24px;
+    }
+
+    .extraction-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 16px;
+        background: var(--md-surface-container);
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-body-small);
+        color: var(--md-on-surface-variant);
+    }
+
+    .extraction-info.manual {
+        background: var(--md-primary-container);
+        color: var(--md-on-primary-container);
+    }
+
+    .extraction-info.discovered {
+        background: var(--md-tertiary-container);
+        color: var(--md-on-tertiary-container);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="page-header">
+        <div>
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('components.index') }}">Components</a></li>
+                {% if mode == 'edit' and component %}
+                <li class="breadcrumb-item"><a href="{{ url_for('components.detail', component_id=component.id) }}">{{ component.name }}</a></li>
+                <li class="breadcrumb-item">Edit</li>
+                {% else %}
+                <li class="breadcrumb-item">Add New</li>
+                {% endif %}
+            </ul>
+            <h1 class="md-headline-medium" style="margin: 0;">
+                {{ 'Edit Component' if mode == 'edit' else 'Add Component' }}
+            </h1>
+        </div>
+    </div>
+
+    <div class="form-card">
+        <div class="form-card-header">
+            <i data-lucide="{{ 'edit' if mode == 'edit' else 'plus-circle' }}" size="24"></i>
+            <h2>{{ 'Edit Component Details' if mode == 'edit' else 'New Component Details' }}</h2>
+        </div>
+
+        <div class="form-card-content">
+            <form method="POST" action="{{ url_for('components.edit', component_id=component.id) if mode == 'edit' else url_for('components.add') }}">
+                <input type="hidden" name="next" value="{{ next }}">
+
+                <!-- Device Selection -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Device Assignment</h3>
+
+                    <div class="form-group">
+                        <label class="form-label">Device <span class="required">*</span></label>
+                        <div class="device-selector">
+                            <input type="text"
+                                   id="deviceSearch"
+                                   class="form-input device-search-input"
+                                   placeholder="Search for a device..."
+                                   autocomplete="off"
+                                   {% if selected_device %}value="{{ selected_device.name }}"{% endif %}>
+                            <input type="hidden" name="device_id" id="deviceId"
+                                   value="{{ selected_device.id if selected_device else '' }}" required>
+
+                            <div class="device-dropdown" id="deviceDropdown">
+                                {% for device in devices %}
+                                <div class="device-option"
+                                     data-id="{{ device.id }}"
+                                     data-name="{{ device.name }}"
+                                     onclick="selectDevice({{ device.id }}, '{{ device.name }}')">
+                                    <div class="device-option-name">{{ device.name }}</div>
+                                    <div class="device-option-meta">
+                                        {{ device.vendor_name or 'Unknown vendor' }}
+                                        {% if device.model %} • {{ device.model }}{% endif %}
+                                        {% if device.site_code %} • {{ device.site_code }}{% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% if selected_device %}
+                        <div class="selected-device-badge" id="selectedDeviceBadge">
+                            <i data-lucide="server" size="16"></i>
+                            <span>{{ selected_device.name }}</span>
+                            {% if selected_device.vendor_name %}<span style="opacity: 0.7;">• {{ selected_device.vendor_name }}</span>{% endif %}
+                            <button type="button" onclick="clearDevice()" title="Change device">
+                                <i data-lucide="x" size="16"></i>
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Component Details -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Component Information</h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="name">Name <span class="required">*</span></label>
+                            <input type="text"
+                                   id="name"
+                                   name="name"
+                                   class="form-input"
+                                   value="{{ component.name if component else '' }}"
+                                   placeholder="e.g., GigabitEthernet0/0/1"
+                                   required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="type">Type</label>
+                            <input type="text"
+                                   id="type"
+                                   name="type"
+                                   class="form-input"
+                                   value="{{ component.type if component else '' }}"
+                                   placeholder="e.g., module, psu, fan"
+                                   list="typeList">
+                            <datalist id="typeList">
+                                {% for t in existing_types %}
+                                <option value="{{ t }}">
+                                {% endfor %}
+                            </datalist>
+                            {% if existing_types %}
+                            <div class="type-suggestions">
+                                {% for t in existing_types[:8] %}
+                                <span class="type-chip" onclick="document.getElementById('type').value='{{ t }}'">{{ t }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label class="form-label" for="description">Description</label>
+                            <textarea id="description"
+                                      name="description"
+                                      class="form-textarea"
+                                      placeholder="Component description or part number">{{ component.description if component else '' }}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="serial">Serial Number</label>
+                            <input type="text"
+                                   id="serial"
+                                   name="serial"
+                                   class="form-input"
+                                   value="{{ component.serial if component else '' }}"
+                                   placeholder="e.g., FDO12345678"
+                                   style="font-family: 'Courier New', monospace;">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="position">Position</label>
+                            <input type="text"
+                                   id="position"
+                                   name="position"
+                                   class="form-input"
+                                   value="{{ component.position if component else '' }}"
+                                   placeholder="e.g., slot 0, bay 1">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="subtype">Subtype</label>
+                            <input type="text"
+                                   id="subtype"
+                                   name="subtype"
+                                   class="form-input"
+                                   value="{{ component.subtype if component else '' }}"
+                                   placeholder="e.g., SFP+, 10GBASE-SR">
+                        </div>
+                    </div>
+                </div>
+
+                {% if mode == 'edit' and component %}
+                <!-- Extraction Info (edit mode only) -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Extraction Information</h3>
+                    <div class="extraction-info {{ 'manual' if component.extraction_source == 'manual' else 'discovered' }}">
+                        <i data-lucide="{{ 'user' if component.extraction_source == 'manual' else 'cpu' }}" size="16"></i>
+                        {% if component.extraction_source == 'manual' %}
+                        <span>Manually added component</span>
+                        {% else %}
+                        <span>
+                            Auto-discovered
+                            {% if component.extraction_source %}via {{ component.extraction_source }}{% endif %}
+                            {% if component.extraction_confidence %}
+                            • {{ "%.0f"|format(component.extraction_confidence * 100) }}% confidence
+                            {% endif %}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="form-actions">
+                    <a href="{{ url_for('components.detail', component_id=component.id) if mode == 'edit' and component else url_for('components.index') }}"
+                       class="md-button md-button-outlined">
+                        Cancel
+                    </a>
+                    <button type="submit" class="md-button md-button-filled">
+                        <i data-lucide="{{ 'save' if mode == 'edit' else 'plus' }}" size="16"></i>
+                        {{ 'Save Changes' if mode == 'edit' else 'Add Component' }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    lucide.createIcons();
+
+    const searchInput = document.getElementById('deviceSearch');
+    const dropdown = document.getElementById('deviceDropdown');
+    const deviceIdInput = document.getElementById('deviceId');
+    const options = dropdown.querySelectorAll('.device-option');
+
+    // Filter devices on search
+    searchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase();
+        let hasVisible = false;
+
+        options.forEach(option => {
+            const name = option.dataset.name.toLowerCase();
+            const text = option.textContent.toLowerCase();
+            if (name.includes(query) || text.includes(query)) {
+                option.style.display = 'block';
+                hasVisible = true;
+            } else {
+                option.style.display = 'none';
+            }
+        });
+
+        dropdown.classList.toggle('show', hasVisible && query.length > 0);
+    });
+
+    // Show dropdown on focus
+    searchInput.addEventListener('focus', function() {
+        if (this.value.length > 0) {
+            dropdown.classList.add('show');
+        }
+    });
+
+    // Hide dropdown on click outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.device-selector')) {
+            dropdown.classList.remove('show');
+        }
+    });
+});
+
+function selectDevice(id, name) {
+    document.getElementById('deviceId').value = id;
+    document.getElementById('deviceSearch').value = name;
+    document.getElementById('deviceDropdown').classList.remove('show');
+
+    // Update or create badge
+    let badge = document.getElementById('selectedDeviceBadge');
+    if (!badge) {
+        badge = document.createElement('div');
+        badge.id = 'selectedDeviceBadge';
+        badge.className = 'selected-device-badge';
+        document.querySelector('.device-selector').appendChild(badge);
+    }
+    badge.innerHTML = `
+        <i data-lucide="server" size="16"></i>
+        <span>${name}</span>
+        <button type="button" onclick="clearDevice()" title="Change device">
+            <i data-lucide="x" size="16"></i>
+        </button>
+    `;
+    lucide.createIcons();
+}
+
+function clearDevice() {
+    document.getElementById('deviceId').value = '';
+    document.getElementById('deviceSearch').value = '';
+    const badge = document.getElementById('selectedDeviceBadge');
+    if (badge) badge.remove();
+}
+</script>
+{% endblock %}

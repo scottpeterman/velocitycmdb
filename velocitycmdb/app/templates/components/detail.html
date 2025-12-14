@@ -1,0 +1,594 @@
+{% extends "base.html" %}
+
+{% block title %}{{ component.name }} - Component Details{% endblock %}
+
+{% block head_extra %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 32px;
+        gap: 24px;
+    }
+
+    .page-header-content {
+        flex: 1;
+    }
+
+    .page-header-actions {
+        display: flex;
+        gap: 12px;
+        flex-shrink: 0;
+    }
+
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        list-style: none;
+        padding: 0;
+    }
+
+    .breadcrumb-item {
+        color: var(--md-on-surface-variant);
+        font: var(--md-typescale-body-medium);
+    }
+
+    .breadcrumb-item a {
+        color: var(--md-primary);
+        text-decoration: none;
+    }
+
+    .breadcrumb-item a:hover {
+        text-decoration: underline;
+    }
+
+    .breadcrumb-item:not(:last-child)::after {
+        content: "/";
+        margin-left: 8px;
+        color: var(--md-on-surface-variant);
+    }
+
+    .component-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+    }
+
+    .component-type-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-label-medium);
+        font-weight: 500;
+        text-transform: capitalize;
+        background: var(--md-primary-container);
+        color: var(--md-on-primary-container);
+    }
+
+    .content-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 24px;
+    }
+
+    @media (max-width: 1024px) {
+        .content-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .info-card {
+        background: var(--md-surface);
+        border: 1px solid var(--md-outline-variant);
+        border-radius: var(--md-shape-corner-medium);
+        overflow: hidden;
+    }
+
+    .info-card-header {
+        background: var(--md-surface-container);
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--md-outline-variant);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .info-card-header h3 {
+        margin: 0;
+        font: var(--md-typescale-title-medium);
+        color: var(--md-on-surface);
+        font-weight: 500;
+    }
+
+    .info-card-content {
+        padding: 24px;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--md-outline-variant);
+        gap: 16px;
+    }
+
+    .info-row:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .info-row:first-child {
+        padding-top: 0;
+    }
+
+    .info-label {
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-surface-variant);
+        font-weight: 500;
+        min-width: 140px;
+        flex-shrink: 0;
+    }
+
+    .info-value {
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-surface);
+        text-align: right;
+        flex: 1;
+        word-break: break-word;
+    }
+
+    .info-value code {
+        background: var(--md-surface-container);
+        padding: 4px 8px;
+        border-radius: var(--md-shape-corner-small);
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+    }
+
+    .info-value .text-muted {
+        color: var(--md-on-surface-variant);
+        font-style: italic;
+    }
+
+    .device-link {
+        color: var(--md-primary);
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .device-link:hover {
+        text-decoration: underline;
+    }
+
+    .confidence-display {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        justify-content: flex-end;
+    }
+
+    .confidence-bar {
+        width: 100px;
+        height: 8px;
+        background: var(--md-surface-container);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .confidence-fill {
+        height: 100%;
+        border-radius: 4px;
+    }
+
+    .confidence-high { background: var(--md-success); }
+    .confidence-medium { background: var(--md-warning); }
+    .confidence-low { background: var(--md-error); }
+
+    .extraction-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: var(--md-shape-corner-small);
+        font: var(--md-typescale-label-small);
+    }
+
+    .extraction-badge.manual {
+        background: var(--md-primary-container);
+        color: var(--md-on-primary-container);
+    }
+
+    .extraction-badge.discovered {
+        background: var(--md-tertiary-container);
+        color: var(--md-on-tertiary-container);
+    }
+
+    /* Siblings Card */
+    .siblings-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .sibling-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px;
+        background: var(--md-surface-container);
+        border-radius: var(--md-shape-corner-small);
+        text-decoration: none;
+        color: var(--md-on-surface);
+        transition: background 0.2s;
+    }
+
+    .sibling-item:hover {
+        background: var(--md-surface-container-high);
+    }
+
+    .sibling-name {
+        font: var(--md-typescale-body-medium);
+        font-weight: 500;
+    }
+
+    .sibling-meta {
+        font: var(--md-typescale-body-small);
+        color: var(--md-on-surface-variant);
+    }
+
+    .sibling-type {
+        font: var(--md-typescale-label-small);
+        padding: 2px 8px;
+        background: var(--md-surface);
+        border-radius: var(--md-shape-corner-small);
+        text-transform: capitalize;
+    }
+
+    /* Delete Modal */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-overlay.show {
+        display: flex;
+    }
+
+    .modal-content {
+        background: var(--md-surface);
+        border-radius: var(--md-shape-corner-large);
+        padding: 24px;
+        max-width: 400px;
+        width: 90%;
+    }
+
+    .modal-title {
+        font: var(--md-typescale-headline-small);
+        color: var(--md-on-surface);
+        margin: 0 0 16px 0;
+    }
+
+    .modal-body {
+        font: var(--md-typescale-body-medium);
+        color: var(--md-on-surface-variant);
+        margin-bottom: 24px;
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    .btn-danger {
+        background: var(--md-error);
+        color: var(--md-on-error);
+    }
+
+    .btn-danger:hover {
+        background: var(--md-error-container);
+        color: var(--md-on-error-container);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-content">
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('components.index') }}">Components</a></li>
+            <li class="breadcrumb-item">{{ component.name }}</li>
+        </ul>
+        <div class="component-title">
+            <h1 class="md-headline-large" style="margin: 0;">{{ component.name }}</h1>
+            {% if component.type %}
+            <span class="component-type-badge">{{ component.type }}</span>
+            {% endif %}
+        </div>
+        {% if component.description %}
+        <p class="md-body-large" style="color: var(--md-on-surface-variant); margin: 0;">
+            {{ component.description }}
+        </p>
+        {% endif %}
+    </div>
+    <div class="page-header-actions">
+        <a href="{{ url_for('components.edit', component_id=component.id) }}" class="md-button md-button-tonal">
+            <i data-lucide="edit" size="16"></i> Edit
+        </a>
+        <button class="md-button md-button-outlined" onclick="showDeleteModal()" style="color: var(--md-error); border-color: var(--md-error);">
+            <i data-lucide="trash-2" size="16"></i> Delete
+        </button>
+    </div>
+</div>
+
+<div class="content-grid">
+    <div class="main-content">
+        <!-- Component Details Card -->
+        <div class="info-card" style="margin-bottom: 24px;">
+            <div class="info-card-header">
+                <i data-lucide="cpu" size="20"></i>
+                <h3>Component Details</h3>
+            </div>
+            <div class="info-card-content">
+                <div class="info-row">
+                    <span class="info-label">Name</span>
+                    <span class="info-value">{{ component.name }}</span>
+                </div>
+
+                {% if component.description %}
+                <div class="info-row">
+                    <span class="info-label">Description</span>
+                    <span class="info-value">{{ component.description }}</span>
+                </div>
+                {% endif %}
+
+                <div class="info-row">
+                    <span class="info-label">Type</span>
+                    <span class="info-value">{{ component.type or 'Not specified' }}</span>
+                </div>
+
+                {% if component.subtype %}
+                <div class="info-row">
+                    <span class="info-label">Subtype</span>
+                    <span class="info-value">{{ component.subtype }}</span>
+                </div>
+                {% endif %}
+
+                <div class="info-row">
+                    <span class="info-label">Serial Number</span>
+                    <span class="info-value">
+                        {% if component.serial %}
+                        <code>{{ component.serial }}</code>
+                        {% else %}
+                        <span class="text-muted">No serial number</span>
+                        {% endif %}
+                    </span>
+                </div>
+
+                {% if component.position %}
+                <div class="info-row">
+                    <span class="info-label">Position</span>
+                    <span class="info-value">{{ component.position }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Device Information Card -->
+        <div class="info-card" style="margin-bottom: 24px;">
+            <div class="info-card-header">
+                <i data-lucide="server" size="20"></i>
+                <h3>Parent Device</h3>
+            </div>
+            <div class="info-card-content">
+                <div class="info-row">
+                    <span class="info-label">Device Name</span>
+                    <span class="info-value">
+                        <a href="{{ url_for('assets.device_detail', device_id=component.device_id) }}" class="device-link">
+                            {{ component.device_name }}
+                        </a>
+                    </span>
+                </div>
+
+                {% if component.device_model %}
+                <div class="info-row">
+                    <span class="info-label">Model</span>
+                    <span class="info-value">{{ component.device_model }}</span>
+                </div>
+                {% endif %}
+
+                {% if component.vendor_name %}
+                <div class="info-row">
+                    <span class="info-label">Vendor</span>
+                    <span class="info-value">{{ component.vendor_name }}</span>
+                </div>
+                {% endif %}
+
+                {% if component.management_ip %}
+                <div class="info-row">
+                    <span class="info-label">Management IP</span>
+                    <span class="info-value"><code>{{ component.management_ip }}</code></span>
+                </div>
+                {% endif %}
+
+                {% if component.site_code %}
+                <div class="info-row">
+                    <span class="info-label">Site</span>
+                    <span class="info-value">{{ component.site_code }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Extraction Information Card -->
+        <div class="info-card">
+            <div class="info-card-header">
+                <i data-lucide="info" size="20"></i>
+                <h3>Extraction Information</h3>
+            </div>
+            <div class="info-card-content">
+                <div class="info-row">
+                    <span class="info-label">Source</span>
+                    <span class="info-value">
+                        {% if component.extraction_source == 'manual' %}
+                        <span class="extraction-badge manual">
+                            <i data-lucide="user" size="12"></i> Manually Added
+                        </span>
+                        {% elif component.extraction_source %}
+                        <span class="extraction-badge discovered">
+                            <i data-lucide="cpu" size="12"></i> {{ component.extraction_source }}
+                        </span>
+                        {% else %}
+                        <span class="text-muted">Unknown</span>
+                        {% endif %}
+                    </span>
+                </div>
+
+                {% if component.extraction_confidence is not none %}
+                <div class="info-row">
+                    <span class="info-label">Confidence</span>
+                    <span class="info-value">
+                        <div class="confidence-display">
+                            <div class="confidence-bar">
+                                <div class="confidence-fill
+                                    {% if component.extraction_confidence >= 0.7 %}confidence-high
+                                    {% elif component.extraction_confidence >= 0.4 %}confidence-medium
+                                    {% else %}confidence-low{% endif %}"
+                                    style="width: {{ (component.extraction_confidence * 100)|round }}%">
+                                </div>
+                            </div>
+                            <span>{{ "%.0f"|format(component.extraction_confidence * 100) }}%</span>
+                        </div>
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <!-- Sibling Components Card -->
+        <div class="info-card">
+            <div class="info-card-header">
+                <i data-lucide="layers" size="20"></i>
+                <h3>Other Components</h3>
+            </div>
+            <div class="info-card-content">
+                {% if siblings %}
+                <div class="siblings-list">
+                    {% for sibling in siblings %}
+                    <a href="{{ url_for('components.detail', component_id=sibling.id) }}" class="sibling-item">
+                        <div>
+                            <div class="sibling-name">{{ sibling.name }}</div>
+                            {% if sibling.serial %}
+                            <div class="sibling-meta">{{ sibling.serial }}</div>
+                            {% endif %}
+                        </div>
+                        {% if sibling.type %}
+                        <span class="sibling-type">{{ sibling.type }}</span>
+                        {% endif %}
+                    </a>
+                    {% endfor %}
+                </div>
+                {% if siblings|length == 10 %}
+                <div style="margin-top: 16px; text-align: center;">
+                    <a href="{{ url_for('assets.device_detail', device_id=component.device_id) }}#components-tab"
+                       class="md-button md-button-tonal" style="width: 100%;">
+                        View All on Device
+                    </a>
+                </div>
+                {% endif %}
+                {% else %}
+                <p class="text-muted" style="text-align: center; margin: 0;">
+                    No other components on this device
+                </p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Actions Card -->
+        <div class="info-card" style="margin-top: 24px;">
+            <div class="info-card-header">
+                <i data-lucide="zap" size="20"></i>
+                <h3>Quick Actions</h3>
+            </div>
+            <div class="info-card-content">
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <a href="{{ url_for('assets.device_detail', device_id=component.device_id) }}"
+                       class="md-button md-button-tonal" style="width: 100%; justify-content: flex-start;">
+                        <i data-lucide="server" size="16"></i> View Device
+                    </a>
+                    <a href="{{ url_for('components.add', device_id=component.device_id) }}"
+                       class="md-button md-button-tonal" style="width: 100%; justify-content: flex-start;">
+                        <i data-lucide="plus" size="16"></i> Add Component to Device
+                    </a>
+                    <a href="{{ url_for('components.index', type=component.type) if component.type else url_for('components.index') }}"
+                       class="md-button md-button-tonal" style="width: 100%; justify-content: flex-start;">
+                        <i data-lucide="filter" size="16"></i> View All {{ component.type or 'Components' }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-content">
+        <h2 class="modal-title">Delete Component?</h2>
+        <div class="modal-body">
+            <p>Are you sure you want to delete <strong>{{ component.name }}</strong>?</p>
+            <p>This action cannot be undone.</p>
+        </div>
+        <div class="modal-actions">
+            <button class="md-button md-button-outlined" onclick="hideDeleteModal()">Cancel</button>
+            <form method="POST" action="{{ url_for('components.delete', component_id=component.id) }}" style="margin: 0;">
+                <button type="submit" class="md-button btn-danger">
+                    <i data-lucide="trash-2" size="16"></i> Delete
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    lucide.createIcons();
+});
+
+function showDeleteModal() {
+    document.getElementById('deleteModal').classList.add('show');
+}
+
+function hideDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('show');
+}
+
+// Close modal on overlay click
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideDeleteModal();
+    }
+});
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        hideDeleteModal();
+    }
+});
+</script>
+{% endblock %}

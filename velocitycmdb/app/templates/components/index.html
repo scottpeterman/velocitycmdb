@@ -7,6 +7,8 @@
     /* Component Inventory Styles */
     .inventory-header { margin-bottom: 32px; }
     .inventory-title { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .inventory-title-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+    .inventory-actions { display: flex; gap: 12px; flex-shrink: 0; }
 
     /* Statistics Cards */
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 32px; }
@@ -52,6 +54,8 @@
     .component-table td { padding: 16px; font: var(--md-typescale-body-medium); color: var(--md-on-surface); }
 
     .component-name { font-weight: 500; color: var(--md-on-surface); }
+    .component-name a { color: var(--md-on-surface); text-decoration: none; }
+    .component-name a:hover { color: var(--md-primary); text-decoration: underline; }
     .component-description { font: var(--md-typescale-body-small); color: var(--md-on-surface-variant); margin-top: 4px; }
 
     .component-type { display: inline-block; padding: 4px 12px; border-radius: var(--md-shape-corner-small); font: var(--md-typescale-label-small); font-weight: 500; text-transform: capitalize; }
@@ -75,6 +79,18 @@
     .device-link { color: var(--md-primary); text-decoration: none; font-weight: 500; }
     .device-link:hover { text-decoration: underline; }
 
+    /* Source Badge */
+    .source-badge { display: inline-flex; align-items: center; gap: 4px; font: var(--md-typescale-label-small); padding: 2px 6px; border-radius: var(--md-shape-corner-small); }
+    .source-badge.manual { background: var(--md-primary-container); color: var(--md-on-primary-container); }
+    .source-badge.discovered { background: var(--md-surface-container); color: var(--md-on-surface-variant); }
+
+    /* Actions Column */
+    .actions-cell { white-space: nowrap; }
+    .action-btn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: none; background: transparent; color: var(--md-on-surface-variant); border-radius: var(--md-shape-corner-small); cursor: pointer; transition: all 0.2s; }
+    .action-btn:hover { background: var(--md-surface-container-high); color: var(--md-on-surface); }
+    .action-btn.edit:hover { color: var(--md-primary); }
+    .action-btn.delete:hover { color: var(--md-error); background: var(--md-error-container); }
+
     /* Empty State */
     .empty-state { text-align: center; padding: 64px 24px; color: var(--md-on-surface-variant); }
     .empty-state-icon { margin-bottom: 16px; opacity: 0.6; }
@@ -83,18 +99,36 @@
     .pagination-container { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-top: 1px solid var(--md-outline-variant); }
     .pagination-info { font: var(--md-typescale-body-small); color: var(--md-on-surface-variant); }
     .pagination-controls { display: flex; gap: 8px; }
+
+    /* Delete Modal */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-overlay.show { display: flex; }
+    .modal-content { background: var(--md-surface); border-radius: var(--md-shape-corner-large); padding: 24px; max-width: 400px; width: 90%; }
+    .modal-title { font: var(--md-typescale-headline-small); color: var(--md-on-surface); margin: 0 0 16px 0; }
+    .modal-body { font: var(--md-typescale-body-medium); color: var(--md-on-surface-variant); margin-bottom: 24px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 12px; }
+    .btn-danger { background: var(--md-error); color: var(--md-on-error); }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="inventory-header">
-    <div class="inventory-title">
-        <i data-lucide="cpu" size="28"></i>
-        <h1 class="md-headline-large" style="margin: 0;">Component Inventory</h1>
+    <div class="inventory-title-row">
+        <div>
+            <div class="inventory-title">
+                <i data-lucide="cpu" size="28"></i>
+                <h1 class="md-headline-large" style="margin: 0;">Component Inventory</h1>
+            </div>
+            <p class="md-body-large" style="color: var(--md-on-surface-variant); margin: 0;">
+                Comprehensive tracking of network device components across your infrastructure
+            </p>
+        </div>
+        <div class="inventory-actions">
+            <a href="{{ url_for('components.add') }}" class="md-button md-button-filled">
+                <i data-lucide="plus" size="16"></i> Add Component
+            </a>
+        </div>
     </div>
-    <p class="md-body-large" style="color: var(--md-on-surface-variant); margin: 0;">
-        Comprehensive tracking of network device components across your infrastructure
-    </p>
 </div>
 
 <!-- Overall Statistics -->
@@ -153,6 +187,10 @@
         {% if filters.search or filters.type or filters.vendor or filters.has_serial %}
         <a href="{{ url_for('components.index') }}" class="md-button md-button-filled" style="margin-top: 16px;">
             <i data-lucide="x" size="16"></i> Clear Filters
+        </a>
+        {% else %}
+        <a href="{{ url_for('components.add') }}" class="md-button md-button-filled" style="margin-top: 16px;">
+            <i data-lucide="plus" size="16"></i> Add Component Manually
         </a>
         {% endif %}
     </div>
@@ -257,15 +295,23 @@
                 <th>Device</th>
                 <th>Vendor</th>
                 <th>Confidence</th>
+                <th style="width: 80px;">Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for comp in components %}
             <tr>
                 <td>
-                    <div class="component-name">{{ comp.name }}</div>
+                    <div class="component-name">
+                        <a href="{{ url_for('components.detail', component_id=comp.id) }}">{{ comp.name }}</a>
+                    </div>
                     {% if comp.description %}
                     <div class="component-description">{{ comp.description }}</div>
+                    {% endif %}
+                    {% if comp.extraction_source == 'manual' %}
+                    <span class="source-badge manual" title="Manually added">
+                        <i data-lucide="user" size="10"></i> Manual
+                    </span>
                     {% endif %}
                 </td>
                 <td>
@@ -303,6 +349,17 @@
                     {% else %}
                     —
                     {% endif %}
+                </td>
+                <td class="actions-cell">
+                    <a href="{{ url_for('components.edit', component_id=comp.id) }}"
+                       class="action-btn edit" title="Edit component">
+                        <i data-lucide="edit" size="16"></i>
+                    </a>
+                    <button type="button" class="action-btn delete"
+                            onclick="confirmDelete({{ comp.id }}, '{{ comp.name|e }}')"
+                            title="Delete component">
+                        <i data-lucide="trash-2" size="16"></i>
+                    </button>
                 </td>
             </tr>
             {% endfor %}
@@ -359,6 +416,25 @@
     {% endif %}
 </div>
 
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-content">
+        <h2 class="modal-title">Delete Component?</h2>
+        <div class="modal-body">
+            <p>Are you sure you want to delete <strong id="deleteComponentName"></strong>?</p>
+            <p>This action cannot be undone.</p>
+        </div>
+        <div class="modal-actions">
+            <button class="md-button md-button-outlined" onclick="hideDeleteModal()">Cancel</button>
+            <form id="deleteForm" method="POST" style="margin: 0;">
+                <button type="submit" class="md-button btn-danger">
+                    <i data-lucide="trash-2" size="16"></i> Delete
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     if (window.lucide && typeof window.lucide.createIcons === 'function') {
@@ -376,7 +452,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const formData = new FormData(filterForm);
             const params = new URLSearchParams();
 
-            // Only add non-empty values
             for (const [key, value] of formData.entries()) {
                 if (value && key !== 'page' && key !== 'per_page') {
                     params.append(key, value);
@@ -387,11 +462,33 @@ document.addEventListener('DOMContentLoaded', function () {
             exportBtn.href = baseExportUrl + (queryString ? '?' + queryString : '');
         }
 
-        // Update on any input change
         filterForm.querySelectorAll('input, select').forEach(el => {
             el.addEventListener('change', updateExportLink);
             el.addEventListener('input', updateExportLink);
         });
+    }
+});
+
+function confirmDelete(componentId, componentName) {
+    document.getElementById('deleteComponentName').textContent = componentName;
+    document.getElementById('deleteForm').action = "{{ url_for('components.delete', component_id=0) }}".replace('/0/', '/' + componentId + '/');
+    document.getElementById('deleteModal').classList.add('show');
+    lucide.createIcons();
+}
+
+function hideDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('show');
+}
+
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideDeleteModal();
+    }
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        hideDeleteModal();
     }
 });
 </script>
